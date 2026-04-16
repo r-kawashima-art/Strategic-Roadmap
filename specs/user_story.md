@@ -1,13 +1,29 @@
-# Online Traveling Agency Future Scenario Roadmap
+# Strategic Roadmap: OTA Future Scenario Visualizer
 
-## User Story
+## 1. User Story
 
-As a strategy planner at an Online Traveling Agency, I want to understand the future trends of the travel industry and the impact of AI on the industry, so that I can make strategic decisions to ensure the long-term success of the company.
+**As a** Strategy Planner at an Online Traveling Agency,
+**I want to** visualize divergent future scenarios based on AI adoption and market dynamics,
+**So that** I can identify "Turning Points" where specific decisions lead to corporate success or failure.
 
-## Context
+## 2. Context & Objectives
 
-The user has much interest in traveling agencies which are making huge growth through the introduction of AI and unique strategies. My Examples are Kiwi.com, Etraveli Group, and eDreams.
+The travel industry is facing massive disruption via AI (Generative AI, NDC, and personalized agents). This tool must model the strategic trajectories of leading OTAs such as **Kiwi.com**, **Etraveli Group**, and **eDreams Odigeo**, focusing on their financial resilience and technological adaptation.
 
-## Concrete Image
+## 3. Functional Requirements
 
-Based on the financial data and strategies of global online traveling agencies, the user wants to see the divergence of scenario lines so that what decisions can be turning points of successful and losing companies. The UI should be like a scenario-line-flowchart.
+- **FR-1: Scenario Divergence Engine**: Generate at least 4 distinct scenarios (e.g., Status Quo, AI-Dominant, Direct-Booking-Dominant, Disintermediated).
+- **FR-2: Turning Point Logic**: Identify specific decision nodes (e.g., "Implement NDC Standard By 2025" or "Launch AI Concierge") and their impact on market share.
+- **FR-3: Flowchart Visualization**: Render the roadmap as an interactive scenario-line-flowchart (Mermaid or D3.js).
+- **FR-4: Financial and Technological Linkage**: Correlate scenarios with key metrics (Revenue Growth, Market Share, and Technology Adoption and Strategic Positioning).
+
+## 4. Technical Constraints
+
+- **Analysis Frameworks**: Must utilize PESTEL and Porter's Five Forces.
+- **Scalability**: The system should allow adding new OTA competitors (e.g., Trip.com, Hopper) as data becomes available.
+
+## 5. Acceptance Criteria
+
+- [ ] Clear visualization of at least two branching paths starting from 1990 to 2040.
+- [ ] Each branch must have labeled "Turning Points" explaining the *why* of the divergence.
+- [ ] Scenario data is separable from the UI logic (Model/View separation).
