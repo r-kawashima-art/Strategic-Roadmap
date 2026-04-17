@@ -1,0 +1,639 @@
+[
+  {
+    "id": "scenario-001",
+    "name": "AI Leapfrog",
+    "description": "A scenario where aggressive AI adoption reshapes the OTA landscape, rewarding early movers with proprietary AI capabilities while commoditizing traditional search-and-book intermediaries.",
+    "timeline": [
+      {
+        "year": 1990,
+        "metrics": {
+          "revenue_index": 1.0,
+          "market_share": 0.02,
+          "tech_adoption_velocity": 0.05
+        },
+        "label": "OTA industry emerges"
+      },
+      {
+        "year": 1995,
+        "metrics": {
+          "revenue_index": 1.8,
+          "market_share": 0.05,
+          "tech_adoption_velocity": 0.1
+        },
+        "label": null
+      },
+      {
+        "year": 2000,
+        "metrics": {
+          "revenue_index": 4.0,
+          "market_share": 0.15,
+          "tech_adoption_velocity": 0.2
+        },
+        "label": "Dot-com boom & OTA expansion"
+      },
+      {
+        "year": 2005,
+        "metrics": {
+          "revenue_index": 6.5,
+          "market_share": 0.25,
+          "tech_adoption_velocity": 0.3
+        },
+        "label": null
+      },
+      {
+        "year": 2008,
+        "metrics": {
+          "revenue_index": 5.8,
+          "market_share": 0.28,
+          "tech_adoption_velocity": 0.35
+        },
+        "label": "Financial crisis impact"
+      },
+      {
+        "year": 2010,
+        "metrics": {
+          "revenue_index": 7.0,
+          "market_share": 0.3,
+          "tech_adoption_velocity": 0.4
+        },
+        "label": "Mobile booking begins"
+      },
+      {
+        "year": 2015,
+        "metrics": {
+          "revenue_index": 10.0,
+          "market_share": 0.35,
+          "tech_adoption_velocity": 0.5
+        },
+        "label": "Meta-search dominance"
+      },
+      {
+        "year": 2019,
+        "metrics": {
+          "revenue_index": 13.0,
+          "market_share": 0.38,
+          "tech_adoption_velocity": 0.55
+        },
+        "label": "Pre-pandemic peak"
+      },
+      {
+        "year": 2020,
+        "metrics": {
+          "revenue_index": 4.5,
+          "market_share": 0.3,
+          "tech_adoption_velocity": 0.58
+        },
+        "label": "COVID-19 collapse"
+      },
+      {
+        "year": 2023,
+        "metrics": {
+          "revenue_index": 11.0,
+          "market_share": 0.33,
+          "tech_adoption_velocity": 0.65
+        },
+        "label": "Recovery & GenAI emergence"
+      },
+      {
+        "year": 2025,
+        "metrics": {
+          "revenue_index": 14.0,
+          "market_share": 0.35,
+          "tech_adoption_velocity": 0.75
+        },
+        "label": "NDC adoption accelerates"
+      },
+      {
+        "year": 2028,
+        "metrics": {
+          "revenue_index": 18.0,
+          "market_share": 0.38,
+          "tech_adoption_velocity": 0.85
+        },
+        "label": null
+      },
+      {
+        "year": 2030,
+        "metrics": {
+          "revenue_index": 22.0,
+          "market_share": 0.4,
+          "tech_adoption_velocity": 0.9
+        },
+        "label": "AI agents reshape booking"
+      },
+      {
+        "year": 2035,
+        "metrics": {
+          "revenue_index": 30.0,
+          "market_share": 0.42,
+          "tech_adoption_velocity": 0.95
+        },
+        "label": null
+      },
+      {
+        "year": 2040,
+        "metrics": {
+          "revenue_index": 40.0,
+          "market_share": 0.45,
+          "tech_adoption_velocity": 0.98
+        },
+        "label": "Autonomous travel planning"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "tp-001",
+        "year": 2025,
+        "title": "NDC Standard Adoption",
+        "description": "Airlines push direct distribution via NDC, threatening OTA intermediation.",
+        "external_driver": "NDC adoption",
+        "branches": [
+          {
+            "id": "tp-001-a",
+            "label": "Embrace NDC",
+            "description": "Integrate NDC pipelines and offer rich airline content.",
+            "metric_delta": {
+              "revenue_index": 0.05,
+              "market_share": 0.02,
+              "tech_adoption_velocity": 0.1
+            },
+            "probability": 0.6,
+            "next_node_id": "tp-002"
+          },
+          {
+            "id": "tp-001-b",
+            "label": "Resist NDC",
+            "description": "Maintain legacy GDS relationships; risk content gaps.",
+            "metric_delta": {
+              "revenue_index": -0.03,
+              "market_share": -0.04,
+              "tech_adoption_velocity": 0.02
+            },
+            "probability": 0.4,
+            "next_node_id": "tp-002"
+          }
+        ]
+      },
+      {
+        "id": "tp-002",
+        "year": 2028,
+        "title": "AI Agent Gateway Decision",
+        "description": "Decide whether to build proprietary AI travel agents or partner with platform providers.",
+        "external_driver": "GenAI breakthrough",
+        "branches": [
+          {
+            "id": "tp-002-a",
+            "label": "Build Proprietary AI",
+            "description": "Heavy R&D investment in in-house AI concierge capabilities.",
+            "metric_delta": {
+              "revenue_index": 0.12,
+              "market_share": 0.06,
+              "tech_adoption_velocity": 0.15
+            },
+            "probability": 0.35,
+            "next_node_id": "tp-003"
+          },
+          {
+            "id": "tp-002-b",
+            "label": "Partner with AI Platforms",
+            "description": "Integrate with major AI assistants as a travel fulfillment backend.",
+            "metric_delta": {
+              "revenue_index": 0.08,
+              "market_share": 0.03,
+              "tech_adoption_velocity": 0.12
+            },
+            "probability": 0.45,
+            "next_node_id": "tp-003"
+          },
+          {
+            "id": "tp-002-c",
+            "label": "Wait and See",
+            "description": "Minimal AI investment; focus on existing search/book model.",
+            "metric_delta": {
+              "revenue_index": -0.02,
+              "market_share": -0.05,
+              "tech_adoption_velocity": 0.03
+            },
+            "probability": 0.2,
+            "next_node_id": "tp-003"
+          }
+        ]
+      },
+      {
+        "id": "tp-003",
+        "year": 2032,
+        "title": "Airline Direct Booking Dominance Tipping Point",
+        "description": "Airlines capture >50% of bookings direct; OTAs must redefine value proposition.",
+        "external_driver": "Airline direct booking dominance",
+        "branches": [
+          {
+            "id": "tp-003-a",
+            "label": "Pivot to Complex Itineraries",
+            "description": "Focus on multi-city, multi-modal trips that airlines cannot serve directly.",
+            "metric_delta": {
+              "revenue_index": 0.1,
+              "market_share": -0.02,
+              "tech_adoption_velocity": 0.08
+            },
+            "probability": 0.5,
+            "next_node_id": null
+          },
+          {
+            "id": "tp-003-b",
+            "label": "Become Aggregator Platform",
+            "description": "Transform into marketplace connecting travelers with suppliers via AI.",
+            "metric_delta": {
+              "revenue_index": 0.15,
+              "market_share": 0.05,
+              "tech_adoption_velocity": 0.12
+            },
+            "probability": 0.3,
+            "next_node_id": null
+          },
+          {
+            "id": "tp-003-c",
+            "label": "Consolidate or Exit",
+            "description": "Merge with competitors or exit market due to margin compression.",
+            "metric_delta": {
+              "revenue_index": -0.2,
+              "market_share": -0.15,
+              "tech_adoption_velocity": 0.0
+            },
+            "probability": 0.2,
+            "next_node_id": null
+          }
+        ]
+      }
+    ],
+    "strategic_profiles": [
+      {
+        "name": "Cost Leader",
+        "description": "Optimizes operations for price-sensitive segments via scale and automation.",
+        "ai_adoption_bias": 0.4,
+        "direct_booking_resilience": 0.3,
+        "strategic_stance": "Efficiency-led"
+      },
+      {
+        "name": "Differentiator",
+        "description": "Invests heavily in AI-driven personalization and premium experiences.",
+        "ai_adoption_bias": 0.9,
+        "direct_booking_resilience": 0.7,
+        "strategic_stance": "Innovation-led"
+      },
+      {
+        "name": "Niche Search",
+        "description": "Focuses on underserved routes and complex itineraries using proprietary technology.",
+        "ai_adoption_bias": 0.7,
+        "direct_booking_resilience": 0.5,
+        "strategic_stance": "Innovation-led"
+      }
+    ],
+    "competitors": [
+      {
+        "name": "Kiwi.com",
+        "key_capability": "Virtual Interlining",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.3,
+          "ai_agent_adoption": 0.6,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Niche Search"
+      },
+      {
+        "name": "eDreams ODIGEO",
+        "key_capability": "Prime Subscription",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.5,
+          "ai_agent_adoption": 0.5,
+          "strategic_orientation": "Efficiency-led"
+        },
+        "default_profile": "Cost Leader"
+      }
+    ],
+    "metadata": {
+      "author": "Strategic Roadmap Engine",
+      "version": "1.0",
+      "base_year": "2025",
+      "frameworks": "PESTEL, Porter's Five Forces, 2x2+S Matrix"
+    }
+  },
+  {
+    "id": "gen-002",
+    "name": "Path: Embrace NDC → Build Proprietary AI → Become Aggregator Platform",
+    "description": "Auto-generated scenario following: Embrace NDC → Build Proprietary AI → Become Aggregator Platform. Combined path probability: 6.3%. Composite score: 125.3.",
+    "timeline": [
+      {
+        "year": 1990,
+        "metrics": {
+          "revenue_index": 1.0,
+          "market_share": 0.02,
+          "tech_adoption_velocity": 0.05
+        },
+        "label": "OTA industry emerges"
+      },
+      {
+        "year": 1995,
+        "metrics": {
+          "revenue_index": 1.8,
+          "market_share": 0.05,
+          "tech_adoption_velocity": 0.1
+        },
+        "label": null
+      },
+      {
+        "year": 2000,
+        "metrics": {
+          "revenue_index": 4.0,
+          "market_share": 0.15,
+          "tech_adoption_velocity": 0.2
+        },
+        "label": "Dot-com boom & OTA expansion"
+      },
+      {
+        "year": 2005,
+        "metrics": {
+          "revenue_index": 6.5,
+          "market_share": 0.25,
+          "tech_adoption_velocity": 0.3
+        },
+        "label": null
+      },
+      {
+        "year": 2008,
+        "metrics": {
+          "revenue_index": 5.8,
+          "market_share": 0.28,
+          "tech_adoption_velocity": 0.35
+        },
+        "label": "Financial crisis impact"
+      },
+      {
+        "year": 2010,
+        "metrics": {
+          "revenue_index": 7.0,
+          "market_share": 0.3,
+          "tech_adoption_velocity": 0.4
+        },
+        "label": "Mobile booking begins"
+      },
+      {
+        "year": 2015,
+        "metrics": {
+          "revenue_index": 10.0,
+          "market_share": 0.35,
+          "tech_adoption_velocity": 0.5
+        },
+        "label": "Meta-search dominance"
+      },
+      {
+        "year": 2019,
+        "metrics": {
+          "revenue_index": 13.0,
+          "market_share": 0.38,
+          "tech_adoption_velocity": 0.55
+        },
+        "label": "Pre-pandemic peak"
+      },
+      {
+        "year": 2020,
+        "metrics": {
+          "revenue_index": 4.5,
+          "market_share": 0.3,
+          "tech_adoption_velocity": 0.58
+        },
+        "label": "COVID-19 collapse"
+      },
+      {
+        "year": 2023,
+        "metrics": {
+          "revenue_index": 11.0,
+          "market_share": 0.33,
+          "tech_adoption_velocity": 0.65
+        },
+        "label": "Recovery & GenAI emergence"
+      },
+      {
+        "year": 2025,
+        "metrics": {
+          "revenue_index": 14.025,
+          "market_share": 0.36,
+          "tech_adoption_velocity": 0.8
+        },
+        "label": "NDC adoption accelerates"
+      },
+      {
+        "year": 2028,
+        "metrics": {
+          "revenue_index": 14.0946,
+          "market_share": 0.3948,
+          "tech_adoption_velocity": 0.887
+        },
+        "label": null
+      },
+      {
+        "year": 2030,
+        "metrics": {
+          "revenue_index": 18.0946,
+          "market_share": 0.4148,
+          "tech_adoption_velocity": 0.937
+        },
+        "label": "AI agents reshape booking"
+      },
+      {
+        "year": 2035,
+        "metrics": {
+          "revenue_index": 18.9737,
+          "market_share": 0.4332,
+          "tech_adoption_velocity": 0.9803
+        },
+        "label": null
+      },
+      {
+        "year": 2040,
+        "metrics": {
+          "revenue_index": 28.9737,
+          "market_share": 0.4632,
+          "tech_adoption_velocity": 1.0
+        },
+        "label": "Autonomous travel planning"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "tp-001",
+        "year": 2025,
+        "title": "NDC Standard Adoption",
+        "description": "Airlines push direct distribution via NDC, threatening OTA intermediation.",
+        "external_driver": "NDC adoption",
+        "branches": [
+          {
+            "id": "tp-001-a",
+            "label": "Embrace NDC",
+            "description": "Integrate NDC pipelines and offer rich airline content.",
+            "metric_delta": {
+              "revenue_index": 0.05,
+              "market_share": 0.02,
+              "tech_adoption_velocity": 0.1
+            },
+            "probability": 0.6,
+            "next_node_id": "tp-002"
+          },
+          {
+            "id": "tp-001-b",
+            "label": "Resist NDC",
+            "description": "Maintain legacy GDS relationships; risk content gaps.",
+            "metric_delta": {
+              "revenue_index": -0.03,
+              "market_share": -0.04,
+              "tech_adoption_velocity": 0.02
+            },
+            "probability": 0.4,
+            "next_node_id": "tp-002"
+          }
+        ]
+      },
+      {
+        "id": "tp-002",
+        "year": 2028,
+        "title": "AI Agent Gateway Decision",
+        "description": "Decide whether to build proprietary AI travel agents or partner with platform providers.",
+        "external_driver": "GenAI breakthrough",
+        "branches": [
+          {
+            "id": "tp-002-a",
+            "label": "Build Proprietary AI",
+            "description": "Heavy R&D investment in in-house AI concierge capabilities.",
+            "metric_delta": {
+              "revenue_index": 0.12,
+              "market_share": 0.06,
+              "tech_adoption_velocity": 0.15
+            },
+            "probability": 0.35,
+            "next_node_id": "tp-003"
+          },
+          {
+            "id": "tp-002-b",
+            "label": "Partner with AI Platforms",
+            "description": "Integrate with major AI assistants as a travel fulfillment backend.",
+            "metric_delta": {
+              "revenue_index": 0.08,
+              "market_share": 0.03,
+              "tech_adoption_velocity": 0.12
+            },
+            "probability": 0.45,
+            "next_node_id": "tp-003"
+          },
+          {
+            "id": "tp-002-c",
+            "label": "Wait and See",
+            "description": "Minimal AI investment; focus on existing search/book model.",
+            "metric_delta": {
+              "revenue_index": -0.02,
+              "market_share": -0.05,
+              "tech_adoption_velocity": 0.03
+            },
+            "probability": 0.2,
+            "next_node_id": "tp-003"
+          }
+        ]
+      },
+      {
+        "id": "tp-003",
+        "year": 2032,
+        "title": "Airline Direct Booking Dominance Tipping Point",
+        "description": "Airlines capture >50% of bookings direct; OTAs must redefine value proposition.",
+        "external_driver": "Airline direct booking dominance",
+        "branches": [
+          {
+            "id": "tp-003-a",
+            "label": "Pivot to Complex Itineraries",
+            "description": "Focus on multi-city, multi-modal trips that airlines cannot serve directly.",
+            "metric_delta": {
+              "revenue_index": 0.1,
+              "market_share": -0.02,
+              "tech_adoption_velocity": 0.08
+            },
+            "probability": 0.5,
+            "next_node_id": null
+          },
+          {
+            "id": "tp-003-b",
+            "label": "Become Aggregator Platform",
+            "description": "Transform into marketplace connecting travelers with suppliers via AI.",
+            "metric_delta": {
+              "revenue_index": 0.15,
+              "market_share": 0.05,
+              "tech_adoption_velocity": 0.12
+            },
+            "probability": 0.3,
+            "next_node_id": null
+          },
+          {
+            "id": "tp-003-c",
+            "label": "Consolidate or Exit",
+            "description": "Merge with competitors or exit market due to margin compression.",
+            "metric_delta": {
+              "revenue_index": -0.2,
+              "market_share": -0.15,
+              "tech_adoption_velocity": 0.0
+            },
+            "probability": 0.2,
+            "next_node_id": null
+          }
+        ]
+      }
+    ],
+    "strategic_profiles": [
+      {
+        "name": "Cost Leader",
+        "description": "Optimizes operations for price-sensitive segments via scale and automation.",
+        "ai_adoption_bias": 0.4,
+        "direct_booking_resilience": 0.3,
+        "strategic_stance": "Efficiency-led"
+      },
+      {
+        "name": "Differentiator",
+        "description": "Invests heavily in AI-driven personalization and premium experiences.",
+        "ai_adoption_bias": 0.9,
+        "direct_booking_resilience": 0.7,
+        "strategic_stance": "Innovation-led"
+      },
+      {
+        "name": "Niche Search",
+        "description": "Focuses on underserved routes and complex itineraries using proprietary technology.",
+        "ai_adoption_bias": 0.7,
+        "direct_booking_resilience": 0.5,
+        "strategic_stance": "Innovation-led"
+      }
+    ],
+    "competitors": [
+      {
+        "name": "Kiwi.com",
+        "key_capability": "Virtual Interlining",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.3,
+          "ai_agent_adoption": 0.6,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Niche Search"
+      },
+      {
+        "name": "eDreams ODIGEO",
+        "key_capability": "Prime Subscription",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.5,
+          "ai_agent_adoption": 0.5,
+          "strategic_orientation": "Efficiency-led"
+        },
+        "default_profile": "Cost Leader"
+      }
+    ],
+    "metadata": {
+      "source_scenario": "scenario-001",
+      "branch_path": "[\"tp-001-a\", \"tp-002-a\", \"tp-003-b\"]",
+      "path_probability": "0.0630",
+      "composite_score": "125.29",
+      "weights": "{\"revenue\": 1.0, \"market_share\": 1.0, \"tech_adoption\": 1.0}"
+    }
+  }
+]
