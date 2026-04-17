@@ -74,15 +74,34 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
+**Obtain your two credentials.** These are not interchangeable:
+
+| Credential             | Where it comes from                                                                                   | Who sees it                                   |
+|---|---|---|
+| `ANTHROPIC_API_KEY`    | [console.anthropic.com](https://console.anthropic.com/) — externally issued, pay-per-token            | Server only; never sent to the browser        |
+| `ROADMAP_API_KEY`      | **You pick it.** Any random string you like. Acts as a shared-secret bearer token on the demo API.    | Both the server env var **and** the browser ⚙ API settings — they must match |
+
+To generate a strong `ROADMAP_API_KEY`, run either:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+# or:
+openssl rand -hex 32
+```
+
+Copy the output — you'll paste the **same string** into (a) the server's `ROADMAP_API_KEY` env var below and (b) the ⚙ API settings field inside the dashboard chat panel. The browser stores it in `localStorage` so you won't be asked again on that browser.
+
+> **This is demo-grade auth.** It's a single shared token, fine for localhost / internal use. Before any real deployment, replace it with per-user auth and narrow the CORS allowlist in `src/api/server.py`.
+
 **Export credentials** and start the API server:
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."   # your Anthropic API key — server-side only
-export ROADMAP_API_KEY="pick-a-token"    # bearer token that the UI will send back
+export ANTHROPIC_API_KEY="sk-ant-..."                     # from console.anthropic.com
+export ROADMAP_API_KEY="<paste the random string you generated>"
 .venv/bin/python -m uvicorn src.api.server:app --port 8787 --reload
 ```
 
-Then in a second terminal, launch the dashboard as in step 2, open the UI, click **💬 Chat** in the header, paste your `ROADMAP_API_KEY` into ⚙ API settings, and start talking to the scenario.
+Then in a second terminal, launch the dashboard as in step 2, open the UI, click **💬 Chat** in the header, paste the same `ROADMAP_API_KEY` into ⚙ API settings, and start talking to the scenario.
 
 **Endpoints**
 

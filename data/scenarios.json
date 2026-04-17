@@ -2,7 +2,7 @@
   {
     "id": "scenario-001",
     "name": "AI Leapfrog",
-    "description": "A scenario where aggressive AI adoption reshapes the OTA landscape, rewarding early movers with proprietary AI capabilities while commoditizing traditional search-and-book intermediaries.",
+    "description": "A scenario where NDC-driven retailing, Generative-AI travel agents, and airline direct-booking pressure compound over 2025–2040. Early movers that build or partner into AI concierges capture the consumer surface; laggards on traditional search-and-book UX commoditize. Airline direct booking crosses 50% by 2032, forcing OTAs to pivot to complex itineraries, become AI-first aggregators, or consolidate out.",
     "timeline": [
       {
         "year": 1990,
@@ -11,13 +11,13 @@
           "market_share": 0.02,
           "tech_adoption_velocity": 0.05
         },
-        "label": "OTA industry emerges"
+        "label": "OTA industry nascent (pre-web)"
       },
       {
         "year": 1995,
         "metrics": {
-          "revenue_index": 1.8,
-          "market_share": 0.05,
+          "revenue_index": 1.5,
+          "market_share": 0.03,
           "tech_adoption_velocity": 0.1
         },
         "label": null
@@ -25,151 +25,196 @@
       {
         "year": 2000,
         "metrics": {
-          "revenue_index": 4.0,
-          "market_share": 0.15,
-          "tech_adoption_velocity": 0.2
+          "revenue_index": 3.5,
+          "market_share": 0.12,
+          "tech_adoption_velocity": 0.22
         },
-        "label": "Dot-com boom & OTA expansion"
+        "label": "Dot-com peak; first OTA IPOs"
+      },
+      {
+        "year": 2001,
+        "metrics": {
+          "revenue_index": 2.8,
+          "market_share": 0.1,
+          "tech_adoption_velocity": 0.22
+        },
+        "label": "9/11 travel shock"
       },
       {
         "year": 2005,
         "metrics": {
-          "revenue_index": 6.5,
-          "market_share": 0.25,
-          "tech_adoption_velocity": 0.3
+          "revenue_index": 6.0,
+          "market_share": 0.22,
+          "tech_adoption_velocity": 0.32
         },
-        "label": null
+        "label": "Priceline acquires Booking.com"
+      },
+      {
+        "year": 2007,
+        "metrics": {
+          "revenue_index": 8.5,
+          "market_share": 0.28,
+          "tech_adoption_velocity": 0.38
+        },
+        "label": "iPhone launch — mobile era begins"
       },
       {
         "year": 2008,
         "metrics": {
-          "revenue_index": 5.8,
+          "revenue_index": 7.2,
           "market_share": 0.28,
-          "tech_adoption_velocity": 0.35
+          "tech_adoption_velocity": 0.4
         },
-        "label": "Financial crisis impact"
+        "label": "Global financial crisis"
       },
       {
         "year": 2010,
         "metrics": {
-          "revenue_index": 7.0,
-          "market_share": 0.3,
-          "tech_adoption_velocity": 0.4
+          "revenue_index": 8.5,
+          "market_share": 0.31,
+          "tech_adoption_velocity": 0.45
         },
-        "label": "Mobile booking begins"
+        "label": "Mobile booking scales"
+      },
+      {
+        "year": 2011,
+        "metrics": {
+          "revenue_index": 9.2,
+          "market_share": 0.33,
+          "tech_adoption_velocity": 0.48
+        },
+        "label": "Airbnb $1B valuation — home-sharing enters OTA airspace"
       },
       {
         "year": 2015,
         "metrics": {
-          "revenue_index": 10.0,
-          "market_share": 0.35,
-          "tech_adoption_velocity": 0.5
+          "revenue_index": 12.0,
+          "market_share": 0.36,
+          "tech_adoption_velocity": 0.58
         },
-        "label": "Meta-search dominance"
+        "label": "Meta-search era; mobile majority of bookings"
+      },
+      {
+        "year": 2017,
+        "metrics": {
+          "revenue_index": 14.0,
+          "market_share": 0.37,
+          "tech_adoption_velocity": 0.62
+        },
+        "label": "Google Flights / Hotel Ads push intensifies"
       },
       {
         "year": 2019,
         "metrics": {
-          "revenue_index": 13.0,
+          "revenue_index": 17.0,
           "market_share": 0.38,
-          "tech_adoption_velocity": 0.55
+          "tech_adoption_velocity": 0.68
         },
-        "label": "Pre-pandemic peak"
+        "label": "Pre-pandemic peak (~$400B gross bookings)"
       },
       {
         "year": 2020,
         "metrics": {
-          "revenue_index": 4.5,
-          "market_share": 0.3,
-          "tech_adoption_velocity": 0.58
+          "revenue_index": 5.5,
+          "market_share": 0.32,
+          "tech_adoption_velocity": 0.7
         },
-        "label": "COVID-19 collapse"
+        "label": "COVID-19 collapse (-67%)"
+      },
+      {
+        "year": 2022,
+        "metrics": {
+          "revenue_index": 14.5,
+          "market_share": 0.34,
+          "tech_adoption_velocity": 0.72
+        },
+        "label": "Recovery to pre-COVID volume for leaders"
       },
       {
         "year": 2023,
         "metrics": {
-          "revenue_index": 11.0,
-          "market_share": 0.33,
-          "tech_adoption_velocity": 0.65
+          "revenue_index": 18.0,
+          "market_share": 0.35,
+          "tech_adoption_velocity": 0.74
         },
-        "label": "Recovery & GenAI emergence"
+        "label": "GenAI emergence; Expedia Trip Planner / TripGenie launch"
       },
       {
         "year": 2025,
         "metrics": {
-          "revenue_index": 14.0,
-          "market_share": 0.35,
-          "tech_adoption_velocity": 0.75
+          "revenue_index": 22.0,
+          "market_share": 0.36,
+          "tech_adoption_velocity": 0.78
         },
-        "label": "NDC adoption accelerates"
+        "label": "NDC 21.3 mainstream; AI agent pilots"
       },
       {
         "year": 2028,
         "metrics": {
-          "revenue_index": 18.0,
+          "revenue_index": 28.0,
           "market_share": 0.38,
-          "tech_adoption_velocity": 0.85
+          "tech_adoption_velocity": 0.83
         },
         "label": null
       },
       {
         "year": 2030,
         "metrics": {
-          "revenue_index": 22.0,
+          "revenue_index": 33.0,
           "market_share": 0.4,
-          "tech_adoption_velocity": 0.9
+          "tech_adoption_velocity": 0.86
         },
         "label": "AI agents reshape booking"
       },
       {
         "year": 2035,
         "metrics": {
-          "revenue_index": 30.0,
+          "revenue_index": 45.0,
           "market_share": 0.42,
-          "tech_adoption_velocity": 0.95
+          "tech_adoption_velocity": 0.91
         },
         "label": null
       },
       {
         "year": 2040,
         "metrics": {
-          "revenue_index": 40.0,
+          "revenue_index": 60.0,
           "market_share": 0.45,
-          "tech_adoption_velocity": 0.98
+          "tech_adoption_velocity": 0.94
         },
-        "label": "Autonomous travel planning"
+        "label": "Autonomous travel planning default"
       }
     ],
     "nodes": [
       {
         "id": "tp-001",
         "year": 2025,
-        "title": "NDC Standard Adoption",
-        "description": "Airlines push direct distribution via NDC, threatening OTA intermediation.",
+        "title": "NDC + ONE Order Adoption",
+        "description": "IATA NDC 21.3 and ONE Order go mainstream on major carriers (Lufthansa Group, British Airways, American, Singapore). Retailing shifts from GDS passive content to airline-controlled offer management. OTAs decide whether to build direct NDC pipelines — unlocking ancillary revenue (seats, bags, meals) at the cost of higher integration effort — or stay passive behind GDS aggregators and risk eroding content parity against airline.com.",
         "external_driver": "NDC adoption",
         "branches": [
           {
             "id": "tp-001-a",
-            "label": "Embrace NDC",
-            "description": "Integrate NDC pipelines and offer rich airline content.",
+            "label": "Embrace NDC + ONE Order",
+            "description": "Build direct NDC pipelines to the major carriers; integrate airline Offer & Order management; capture rich content and ancillary margin. Higher cost-to-serve per booking, but a defensible content-parity moat.",
             "metric_delta": {
               "revenue_index": 0.05,
               "market_share": 0.02,
               "tech_adoption_velocity": 0.1
             },
-            "probability": 0.6,
+            "probability": 0.7,
             "next_node_id": "tp-002"
           },
           {
             "id": "tp-001-b",
-            "label": "Resist NDC",
-            "description": "Maintain legacy GDS relationships; risk content gaps.",
+            "label": "Stay GDS-first",
+            "description": "Maintain Amadeus / Sabre / Travelport as the primary channel; mitigate content gaps with aggregator partnerships. Lower upfront cost; gradual content parity erosion vs direct airline.com over 2–3 years.",
             "metric_delta": {
               "revenue_index": -0.03,
               "market_share": -0.04,
               "tech_adoption_velocity": 0.02
             },
-            "probability": 0.4,
+            "probability": 0.3,
             "next_node_id": "tp-002"
           }
         ]
@@ -178,37 +223,37 @@
         "id": "tp-002",
         "year": 2028,
         "title": "AI Agent Gateway Decision",
-        "description": "Decide whether to build proprietary AI travel agents or partner with platform providers.",
+        "description": "Generative-AI-powered travel agents (OpenAI Operator, Anthropic computer-use, Perplexity Travel, Google Gemini Travel) move from pilot to consumer default. Whoever sits between the user and the inventory captures the consumer relationship — and the margin. OTAs decide whether to build the agent themselves, partner with a platform provider, or defer the bet and protect the legacy search-and-book funnel.",
         "external_driver": "GenAI breakthrough",
         "branches": [
           {
             "id": "tp-002-a",
-            "label": "Build Proprietary AI",
-            "description": "Heavy R&D investment in in-house AI concierge capabilities.",
+            "label": "Build Proprietary AI Concierge",
+            "description": "Heavy R&D into in-house conversational booking (successor generations of Expedia Trip Planner, Trip.com TripGenie, Priceline Penny). Owns the consumer surface; defensible moat if adoption lands.",
             "metric_delta": {
               "revenue_index": 0.12,
               "market_share": 0.06,
               "tech_adoption_velocity": 0.15
             },
-            "probability": 0.35,
+            "probability": 0.3,
             "next_node_id": "tp-003"
           },
           {
             "id": "tp-002-b",
-            "label": "Partner with AI Platforms",
-            "description": "Integrate with major AI assistants as a travel fulfillment backend.",
+            "label": "Partner with AI Gatekeepers",
+            "description": "Integrate as the travel-fulfillment backend for OpenAI / Anthropic / Google agents. Fast to market, low R&D burn; gives up the consumer-facing surface to whoever owns the assistant.",
             "metric_delta": {
               "revenue_index": 0.08,
               "market_share": 0.03,
               "tech_adoption_velocity": 0.12
             },
-            "probability": 0.45,
+            "probability": 0.5,
             "next_node_id": "tp-003"
           },
           {
             "id": "tp-002-c",
-            "label": "Wait and See",
-            "description": "Minimal AI investment; focus on existing search/book model.",
+            "label": "Defer AI Investment",
+            "description": "Double down on search-and-book UX and performance marketing. Lowest short-term cost; highest risk of being routed around once agents reach mainstream adoption (2029–2031 central estimate).",
             "metric_delta": {
               "revenue_index": -0.02,
               "market_share": -0.05,
@@ -222,38 +267,38 @@
       {
         "id": "tp-003",
         "year": 2032,
-        "title": "Airline Direct Booking Dominance Tipping Point",
-        "description": "Airlines capture >50% of bookings direct; OTAs must redefine value proposition.",
+        "title": "Airline Direct-Booking Tipping Point",
+        "description": "Airlines capture >50% of flight bookings directly on domestic routes — propelled by NDC, loyalty-program lock-in, and AI agents that now query airline.com directly. OTAs no longer 'own' the flight transaction and must redefine the value proposition or consolidate.",
         "external_driver": "Airline direct booking dominance",
         "branches": [
           {
             "id": "tp-003-a",
             "label": "Pivot to Complex Itineraries",
-            "description": "Focus on multi-city, multi-modal trips that airlines cannot serve directly.",
+            "description": "Focus on multi-city, multi-modal (flight + rail + car + lodge), multi-PNR itineraries that airlines and their AI agents cannot serve directly. Higher margin per trip; smaller addressable market.",
             "metric_delta": {
               "revenue_index": 0.1,
               "market_share": -0.02,
               "tech_adoption_velocity": 0.08
             },
-            "probability": 0.5,
+            "probability": 0.45,
             "next_node_id": null
           },
           {
             "id": "tp-003-b",
-            "label": "Become Aggregator Platform",
-            "description": "Transform into marketplace connecting travelers with suppliers via AI.",
+            "label": "Become AI-First Aggregator",
+            "description": "Transform into a marketplace API layer that suppliers plug into and consumer-facing AI agents query. Volume play in a post-consumer-UX world; margin compresses but scale is enormous.",
             "metric_delta": {
               "revenue_index": 0.15,
               "market_share": 0.05,
               "tech_adoption_velocity": 0.12
             },
-            "probability": 0.3,
+            "probability": 0.35,
             "next_node_id": null
           },
           {
             "id": "tp-003-c",
             "label": "Consolidate or Exit",
-            "description": "Merge with competitors or exit market due to margin compression.",
+            "description": "M&A to gain scale, sell to a hyperscaler, or exit the market as unit economics compress beyond viable return on ad spend.",
             "metric_delta": {
               "revenue_index": -0.2,
               "market_share": -0.15,
@@ -268,21 +313,21 @@
     "strategic_profiles": [
       {
         "name": "Cost Leader",
-        "description": "Optimizes operations for price-sensitive segments via scale and automation.",
+        "description": "Volume-and-scale play: wins on commoditized hotel and flight inventory via performance marketing, aggressive cancellation flexibility, and operational efficiency. Typical of budget- focused brands (Agoda, eDreams), subscription-led price players, and flight-only aggregators.",
         "ai_adoption_bias": 0.4,
         "direct_booking_resilience": 0.3,
         "strategic_stance": "Efficiency-led"
       },
       {
         "name": "Differentiator",
-        "description": "Invests heavily in AI-driven personalization and premium experiences.",
+        "description": "Content and experience play: invests in AI-driven personalization, premium UX (Trip Planner, AI concierges), unique inventory (Vrbo / homes), and brand. Defensible against airline direct-booking pressure because the value-add isn't just the ticket — it's itinerary, stay, and ancillary.",
         "ai_adoption_bias": 0.9,
         "direct_booking_resilience": 0.7,
         "strategic_stance": "Innovation-led"
       },
       {
         "name": "Niche Search",
-        "description": "Focuses on underserved routes and complex itineraries using proprietary technology.",
+        "description": "Technical-moat play: solves a hard specialist problem airlines and hyperscalers can't easily copy — multi-city virtual interlining (Kiwi.com), complex multi-PNR itineraries, regional dominance. Volume is small but margin per booking and customer loyalty are high.",
         "ai_adoption_bias": 0.7,
         "direct_booking_resilience": 0.5,
         "strategic_stance": "Innovation-led"
@@ -291,37 +336,52 @@
     "competitors": [
       {
         "name": "Booking Holdings",
-        "key_capability": "Global meta-search + multi-brand scale",
-        "initial_position": {
-          "airline_direct_booking_dominance": 0.5,
-          "ai_agent_adoption": 0.55,
-          "strategic_orientation": "Innovation-led"
-        },
-        "default_profile": "Differentiator",
-        "initial_market_share": 0.3,
-        "metadata": {
-          "source": "Booking Holdings 2023 10-K",
-          "source_year": "2023"
-        }
-      },
-      {
-        "name": "Expedia Group",
-        "key_capability": "Brand portfolio + Trip Planner AI",
+        "key_capability": "Global performance-marketing scale; multi-brand (Booking.com, Priceline, Kayak); AI push via Priceline Penny",
         "initial_position": {
           "airline_direct_booking_dominance": 0.5,
           "ai_agent_adoption": 0.6,
           "strategic_orientation": "Innovation-led"
         },
         "default_profile": "Differentiator",
-        "initial_market_share": 0.18,
+        "initial_market_share": 0.28,
         "metadata": {
-          "source": "Expedia Group 2023 10-K",
+          "source": "Booking Holdings 2023 10-K (NASDAQ: BKNG, ~$21.4B revenue)",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Expedia Group",
+        "key_capability": "Brand portfolio (Expedia, Hotels.com, Vrbo); Trip Planner AI; retail + B2B (Expedia Partner Solutions)",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.5,
+          "ai_agent_adoption": 0.65,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.16,
+        "metadata": {
+          "source": "Expedia Group 2023 10-K (NASDAQ: EXPE, ~$12.8B revenue)",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Airbnb",
+        "key_capability": "Home-sharing marketplace + experiences; high brand recall with under-35 segment; AI concierge rollout announced 2024",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.2,
+          "ai_agent_adoption": 0.7,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.13,
+        "metadata": {
+          "source": "Airbnb Inc. 2023 10-K (NASDAQ: ABNB, ~$9.9B revenue)",
           "source_year": "2023"
         }
       },
       {
         "name": "Trip.com Group",
-        "key_capability": "APAC dominance + TripGenie AI assistant",
+        "key_capability": "APAC dominance (China/SEA); TripGenie AI assistant at scale; outbound China travel recovery tailwind",
         "initial_position": {
           "airline_direct_booking_dominance": 0.4,
           "ai_agent_adoption": 0.7,
@@ -330,20 +390,20 @@
         "default_profile": "Differentiator",
         "initial_market_share": 0.09,
         "metadata": {
-          "source": "Trip.com Group 2023 Annual Report",
+          "source": "Trip.com Group 2023 Annual Report (NASDAQ/HK: TCOM, ~$6.3B revenue)",
           "source_year": "2023"
         }
       },
       {
         "name": "Agoda",
-        "key_capability": "APAC accommodations + aggressive pricing",
+        "key_capability": "APAC accommodations specialist; aggressive pricing + mobile-first UX; part of Booking Holdings",
         "initial_position": {
           "airline_direct_booking_dominance": 0.4,
           "ai_agent_adoption": 0.55,
           "strategic_orientation": "Efficiency-led"
         },
         "default_profile": "Cost Leader",
-        "initial_market_share": 0.05,
+        "initial_market_share": 0.04,
         "metadata": {
           "source": "Booking Holdings 2023 10-K (Agoda segment)",
           "source_year": "2023"
@@ -351,31 +411,46 @@
       },
       {
         "name": "eDreams ODIGEO",
-        "key_capability": "Prime Subscription",
+        "key_capability": "Prime Subscription (6M+ members); flights-first European metasearch lineage",
         "initial_position": {
           "airline_direct_booking_dominance": 0.5,
-          "ai_agent_adoption": 0.5,
+          "ai_agent_adoption": 0.55,
           "strategic_orientation": "Efficiency-led"
         },
         "default_profile": "Cost Leader",
         "initial_market_share": 0.02,
         "metadata": {
-          "source": "eDreams ODIGEO FY2024 Annual Report",
+          "source": "eDreams ODIGEO FY2024 Annual Report (BME: EDR, ~€610M revenue)",
           "source_year": "2024"
         }
       },
       {
+        "name": "Etraveli Group",
+        "key_capability": "Nordic flights-focused OTA + white-label flight search backend (powers Booking.com Flights); B2B2C flight distribution specialist",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.45,
+          "ai_agent_adoption": 0.5,
+          "strategic_orientation": "Efficiency-led"
+        },
+        "default_profile": "Niche Search",
+        "initial_market_share": 0.015,
+        "metadata": {
+          "source": "Etraveli Group 2023 public filings (CVC Capital portfolio)",
+          "source_year": "2023"
+        }
+      },
+      {
         "name": "Kiwi.com",
-        "key_capability": "Virtual Interlining",
+        "key_capability": "Virtual Interlining — ML-generated multi-PNR itineraries across non-partner carriers (proprietary algorithm)",
         "initial_position": {
           "airline_direct_booking_dominance": 0.3,
-          "ai_agent_adoption": 0.6,
+          "ai_agent_adoption": 0.65,
           "strategic_orientation": "Innovation-led"
         },
         "default_profile": "Niche Search",
         "initial_market_share": 0.01,
         "metadata": {
-          "source": "Kiwi.com publicly reported revenue (private, 2023)",
+          "source": "Kiwi.com publicly reported revenue (private, General Atlantic-backed)",
           "source_year": "2023"
         }
       }
@@ -390,125 +465,247 @@
       "Booking Holdings": [
         {
           "year": 1990,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 1995,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2000,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2001,
+          "share": 0.28
         },
         {
           "year": 2005,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2007,
+          "share": 0.28
         },
         {
           "year": 2008,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2010,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2011,
+          "share": 0.28
         },
         {
           "year": 2015,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2017,
+          "share": 0.28
         },
         {
           "year": 2019,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2020,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2022,
+          "share": 0.28
         },
         {
           "year": 2023,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2025,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2028,
-          "share": 0.3413
+          "share": 0.2993
         },
         {
           "year": 2030,
-          "share": 0.3291
+          "share": 0.3092
         },
         {
           "year": 2035,
-          "share": 0.317
+          "share": 0.2971
         },
         {
           "year": 2040,
-          "share": 0.317
+          "share": 0.2971
         }
       ],
       "Expedia Group": [
         {
           "year": 1990,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 1995,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2000,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2001,
+          "share": 0.16
         },
         {
           "year": 2005,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2007,
+          "share": 0.16
         },
         {
           "year": 2008,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2010,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2011,
+          "share": 0.16
         },
         {
           "year": 2015,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2017,
+          "share": 0.16
         },
         {
           "year": 2019,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2020,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2022,
+          "share": 0.16
         },
         {
           "year": 2023,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2025,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2028,
-          "share": 0.2213
+          "share": 0.1875
         },
         {
           "year": 2030,
-          "share": 0.2092
+          "share": 0.1893
         },
         {
           "year": 2035,
-          "share": 0.1971
+          "share": 0.1772
         },
         {
           "year": 2040,
-          "share": 0.1971
+          "share": 0.1772
+        }
+      ],
+      "Airbnb": [
+        {
+          "year": 1990,
+          "share": 0.13
+        },
+        {
+          "year": 1995,
+          "share": 0.13
+        },
+        {
+          "year": 2000,
+          "share": 0.13
+        },
+        {
+          "year": 2001,
+          "share": 0.13
+        },
+        {
+          "year": 2005,
+          "share": 0.13
+        },
+        {
+          "year": 2007,
+          "share": 0.13
+        },
+        {
+          "year": 2008,
+          "share": 0.13
+        },
+        {
+          "year": 2010,
+          "share": 0.13
+        },
+        {
+          "year": 2011,
+          "share": 0.13
+        },
+        {
+          "year": 2015,
+          "share": 0.13
+        },
+        {
+          "year": 2017,
+          "share": 0.13
+        },
+        {
+          "year": 2019,
+          "share": 0.13
+        },
+        {
+          "year": 2020,
+          "share": 0.13
+        },
+        {
+          "year": 2022,
+          "share": 0.13
+        },
+        {
+          "year": 2023,
+          "share": 0.13
+        },
+        {
+          "year": 2025,
+          "share": 0.13
+        },
+        {
+          "year": 2028,
+          "share": 0.1596
+        },
+        {
+          "year": 2030,
+          "share": 0.1593
+        },
+        {
+          "year": 2035,
+          "share": 0.1473
+        },
+        {
+          "year": 2040,
+          "share": 0.1473
         }
       ],
       "Trip.com Group": [
@@ -525,7 +722,15 @@
           "share": 0.09
         },
         {
+          "year": 2001,
+          "share": 0.09
+        },
+        {
           "year": 2005,
+          "share": 0.09
+        },
+        {
+          "year": 2007,
           "share": 0.09
         },
         {
@@ -537,7 +742,15 @@
           "share": 0.09
         },
         {
+          "year": 2011,
+          "share": 0.09
+        },
+        {
           "year": 2015,
+          "share": 0.09
+        },
+        {
+          "year": 2017,
           "share": 0.09
         },
         {
@@ -546,6 +759,10 @@
         },
         {
           "year": 2020,
+          "share": 0.09
+        },
+        {
+          "year": 2022,
           "share": 0.09
         },
         {
@@ -558,7 +775,7 @@
         },
         {
           "year": 2028,
-          "share": 0.1313
+          "share": 0.1223
         },
         {
           "year": 2030,
@@ -576,63 +793,83 @@
       "Agoda": [
         {
           "year": 1990,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 1995,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2000,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2001,
+          "share": 0.04
         },
         {
           "year": 2005,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2007,
+          "share": 0.04
         },
         {
           "year": 2008,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2010,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2011,
+          "share": 0.04
         },
         {
           "year": 2015,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2017,
+          "share": 0.04
         },
         {
           "year": 2019,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2020,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2022,
+          "share": 0.04
         },
         {
           "year": 2023,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2025,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2028,
-          "share": 0.0709
+          "share": 0.0567
         },
         {
           "year": 2030,
-          "share": 0.0552
+          "share": 0.0452
         },
         {
           "year": 2035,
-          "share": 0.0395
+          "share": 0.0295
         },
         {
           "year": 2040,
-          "share": 0.0395
+          "share": 0.0295
         }
       ],
       "eDreams ODIGEO": [
@@ -649,7 +886,15 @@
           "share": 0.02
         },
         {
+          "year": 2001,
+          "share": 0.02
+        },
+        {
           "year": 2005,
+          "share": 0.02
+        },
+        {
+          "year": 2007,
           "share": 0.02
         },
         {
@@ -661,7 +906,15 @@
           "share": 0.02
         },
         {
+          "year": 2011,
+          "share": 0.02
+        },
+        {
           "year": 2015,
+          "share": 0.02
+        },
+        {
+          "year": 2017,
           "share": 0.02
         },
         {
@@ -670,6 +923,10 @@
         },
         {
           "year": 2020,
+          "share": 0.02
+        },
+        {
+          "year": 2022,
           "share": 0.02
         },
         {
@@ -682,7 +939,7 @@
         },
         {
           "year": 2028,
-          "share": 0.0409
+          "share": 0.0381
         },
         {
           "year": 2030,
@@ -690,11 +947,93 @@
         },
         {
           "year": 2035,
-          "share": 0.0094
+          "share": 0.0095
         },
         {
           "year": 2040,
-          "share": 0.0094
+          "share": 0.0095
+        }
+      ],
+      "Etraveli Group": [
+        {
+          "year": 1990,
+          "share": 0.015
+        },
+        {
+          "year": 1995,
+          "share": 0.015
+        },
+        {
+          "year": 2000,
+          "share": 0.015
+        },
+        {
+          "year": 2001,
+          "share": 0.015
+        },
+        {
+          "year": 2005,
+          "share": 0.015
+        },
+        {
+          "year": 2007,
+          "share": 0.015
+        },
+        {
+          "year": 2008,
+          "share": 0.015
+        },
+        {
+          "year": 2010,
+          "share": 0.015
+        },
+        {
+          "year": 2011,
+          "share": 0.015
+        },
+        {
+          "year": 2015,
+          "share": 0.015
+        },
+        {
+          "year": 2017,
+          "share": 0.015
+        },
+        {
+          "year": 2019,
+          "share": 0.015
+        },
+        {
+          "year": 2020,
+          "share": 0.015
+        },
+        {
+          "year": 2022,
+          "share": 0.015
+        },
+        {
+          "year": 2023,
+          "share": 0.015
+        },
+        {
+          "year": 2025,
+          "share": 0.015
+        },
+        {
+          "year": 2028,
+          "share": 0.0456
+        },
+        {
+          "year": 2030,
+          "share": 0.0351
+        },
+        {
+          "year": 2035,
+          "share": 0.0213
+        },
+        {
+          "year": 2040,
+          "share": 0.0213
         }
       ],
       "Kiwi.com": [
@@ -711,7 +1050,15 @@
           "share": 0.01
         },
         {
+          "year": 2001,
+          "share": 0.01
+        },
+        {
           "year": 2005,
+          "share": 0.01
+        },
+        {
+          "year": 2007,
           "share": 0.01
         },
         {
@@ -723,7 +1070,15 @@
           "share": 0.01
         },
         {
+          "year": 2011,
+          "share": 0.01
+        },
+        {
           "year": 2015,
+          "share": 0.01
+        },
+        {
+          "year": 2017,
           "share": 0.01
         },
         {
@@ -732,6 +1087,10 @@
         },
         {
           "year": 2020,
+          "share": 0.01
+        },
+        {
+          "year": 2022,
           "share": 0.01
         },
         {
@@ -744,7 +1103,7 @@
         },
         {
           "year": 2028,
-          "share": 0.0439
+          "share": 0.0409
         },
         {
           "year": 2030,
@@ -752,81 +1111,101 @@
         },
         {
           "year": 2035,
-          "share": 0.0164
+          "share": 0.0165
         },
         {
           "year": 2040,
-          "share": 0.0164
+          "share": 0.0165
         }
       ],
       "Other": [
         {
           "year": 1990,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 1995,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2000,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2001,
+          "share": 0.255
         },
         {
           "year": 2005,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2007,
+          "share": 0.255
         },
         {
           "year": 2008,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2010,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2011,
+          "share": 0.255
         },
         {
           "year": 2015,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2017,
+          "share": 0.255
         },
         {
           "year": 2019,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2020,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2022,
+          "share": 0.255
         },
         {
           "year": 2023,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2025,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2028,
-          "share": 0.1504
+          "share": 0.05
         },
         {
           "year": 2030,
-          "share": 0.2318
+          "share": 0.0872
         },
         {
           "year": 2035,
-          "share": 0.3133
+          "share": 0.1943
         },
         {
           "year": 2040,
-          "share": 0.3133
+          "share": 0.1943
         }
       ]
     }
   },
   {
     "id": "gen-002",
-    "name": "Path: Embrace NDC → Build Proprietary AI → Become Aggregator Platform",
-    "description": "Auto-generated scenario following: Embrace NDC → Build Proprietary AI → Become Aggregator Platform. Combined path probability: 6.3%. Composite score: 126.9.",
+    "name": "Path: Embrace NDC + ONE Order → Build Proprietary AI Concierge → Become AI-First Aggregator",
+    "description": "Auto-generated scenario following: Embrace NDC + ONE Order → Build Proprietary AI Concierge → Become AI-First Aggregator. Combined path probability: 7.3%. Composite score: 143.6.",
     "timeline": [
       {
         "year": 1990,
@@ -835,13 +1214,13 @@
           "market_share": 0.02,
           "tech_adoption_velocity": 0.05
         },
-        "label": "OTA industry emerges"
+        "label": "OTA industry nascent (pre-web)"
       },
       {
         "year": 1995,
         "metrics": {
-          "revenue_index": 1.8,
-          "market_share": 0.05,
+          "revenue_index": 1.5,
+          "market_share": 0.03,
           "tech_adoption_velocity": 0.1
         },
         "label": null
@@ -849,151 +1228,196 @@
       {
         "year": 2000,
         "metrics": {
-          "revenue_index": 4.0,
-          "market_share": 0.15,
-          "tech_adoption_velocity": 0.2
+          "revenue_index": 3.5,
+          "market_share": 0.12,
+          "tech_adoption_velocity": 0.22
         },
-        "label": "Dot-com boom & OTA expansion"
+        "label": "Dot-com peak; first OTA IPOs"
+      },
+      {
+        "year": 2001,
+        "metrics": {
+          "revenue_index": 2.8,
+          "market_share": 0.1,
+          "tech_adoption_velocity": 0.22
+        },
+        "label": "9/11 travel shock"
       },
       {
         "year": 2005,
         "metrics": {
-          "revenue_index": 6.5,
-          "market_share": 0.25,
-          "tech_adoption_velocity": 0.3
+          "revenue_index": 6.0,
+          "market_share": 0.22,
+          "tech_adoption_velocity": 0.32
         },
-        "label": null
+        "label": "Priceline acquires Booking.com"
+      },
+      {
+        "year": 2007,
+        "metrics": {
+          "revenue_index": 8.5,
+          "market_share": 0.28,
+          "tech_adoption_velocity": 0.38
+        },
+        "label": "iPhone launch — mobile era begins"
       },
       {
         "year": 2008,
         "metrics": {
-          "revenue_index": 5.8,
+          "revenue_index": 7.2,
           "market_share": 0.28,
-          "tech_adoption_velocity": 0.35
+          "tech_adoption_velocity": 0.4
         },
-        "label": "Financial crisis impact"
+        "label": "Global financial crisis"
       },
       {
         "year": 2010,
         "metrics": {
-          "revenue_index": 7.0,
-          "market_share": 0.3,
-          "tech_adoption_velocity": 0.4
+          "revenue_index": 8.5,
+          "market_share": 0.31,
+          "tech_adoption_velocity": 0.45
         },
-        "label": "Mobile booking begins"
+        "label": "Mobile booking scales"
+      },
+      {
+        "year": 2011,
+        "metrics": {
+          "revenue_index": 9.2,
+          "market_share": 0.33,
+          "tech_adoption_velocity": 0.48
+        },
+        "label": "Airbnb $1B valuation — home-sharing enters OTA airspace"
       },
       {
         "year": 2015,
         "metrics": {
-          "revenue_index": 10.0,
-          "market_share": 0.35,
-          "tech_adoption_velocity": 0.5
+          "revenue_index": 12.0,
+          "market_share": 0.36,
+          "tech_adoption_velocity": 0.58
         },
-        "label": "Meta-search dominance"
+        "label": "Meta-search era; mobile majority of bookings"
+      },
+      {
+        "year": 2017,
+        "metrics": {
+          "revenue_index": 14.0,
+          "market_share": 0.37,
+          "tech_adoption_velocity": 0.62
+        },
+        "label": "Google Flights / Hotel Ads push intensifies"
       },
       {
         "year": 2019,
         "metrics": {
-          "revenue_index": 13.0,
+          "revenue_index": 17.0,
           "market_share": 0.38,
-          "tech_adoption_velocity": 0.55
+          "tech_adoption_velocity": 0.68
         },
-        "label": "Pre-pandemic peak"
+        "label": "Pre-pandemic peak (~$400B gross bookings)"
       },
       {
         "year": 2020,
         "metrics": {
-          "revenue_index": 4.5,
-          "market_share": 0.3,
-          "tech_adoption_velocity": 0.58
+          "revenue_index": 5.5,
+          "market_share": 0.32,
+          "tech_adoption_velocity": 0.7
         },
-        "label": "COVID-19 collapse"
+        "label": "COVID-19 collapse (-67%)"
+      },
+      {
+        "year": 2022,
+        "metrics": {
+          "revenue_index": 14.5,
+          "market_share": 0.34,
+          "tech_adoption_velocity": 0.72
+        },
+        "label": "Recovery to pre-COVID volume for leaders"
       },
       {
         "year": 2023,
         "metrics": {
-          "revenue_index": 11.0,
-          "market_share": 0.33,
-          "tech_adoption_velocity": 0.65
+          "revenue_index": 18.0,
+          "market_share": 0.35,
+          "tech_adoption_velocity": 0.74
         },
-        "label": "Recovery & GenAI emergence"
+        "label": "GenAI emergence; Expedia Trip Planner / TripGenie launch"
       },
       {
         "year": 2025,
         "metrics": {
-          "revenue_index": 14.0297,
-          "market_share": 0.3619,
-          "tech_adoption_velocity": 0.8093
+          "revenue_index": 22.03,
+          "market_share": 0.372,
+          "tech_adoption_velocity": 0.84
         },
-        "label": "NDC adoption accelerates"
+        "label": "NDC 21.3 mainstream; AI agent pilots"
       },
       {
         "year": 2028,
         "metrics": {
-          "revenue_index": 14.1153,
-          "market_share": 0.4047,
-          "tech_adoption_velocity": 0.9163
+          "revenue_index": 22.1194,
+          "market_share": 0.4167,
+          "tech_adoption_velocity": 0.9518
         },
         "label": null
       },
       {
         "year": 2030,
         "metrics": {
-          "revenue_index": 18.1153,
-          "market_share": 0.4247,
-          "tech_adoption_velocity": 0.9663
+          "revenue_index": 27.1194,
+          "market_share": 0.4367,
+          "tech_adoption_velocity": 0.9818
         },
         "label": "AI agents reshape booking"
       },
       {
         "year": 2035,
         "metrics": {
-          "revenue_index": 19.0118,
-          "market_share": 0.4488,
-          "tech_adoption_velocity": 0.9978
+          "revenue_index": 29.4187,
+          "market_share": 0.4618,
+          "tech_adoption_velocity": 1.0
         },
         "label": null
       },
       {
         "year": 2040,
         "metrics": {
-          "revenue_index": 29.0118,
-          "market_share": 0.4788,
+          "revenue_index": 44.4187,
+          "market_share": 0.4918,
           "tech_adoption_velocity": 1.0
         },
-        "label": "Autonomous travel planning"
+        "label": "Autonomous travel planning default"
       }
     ],
     "nodes": [
       {
         "id": "tp-001",
         "year": 2025,
-        "title": "NDC Standard Adoption",
-        "description": "Airlines push direct distribution via NDC, threatening OTA intermediation.",
+        "title": "NDC + ONE Order Adoption",
+        "description": "IATA NDC 21.3 and ONE Order go mainstream on major carriers (Lufthansa Group, British Airways, American, Singapore). Retailing shifts from GDS passive content to airline-controlled offer management. OTAs decide whether to build direct NDC pipelines — unlocking ancillary revenue (seats, bags, meals) at the cost of higher integration effort — or stay passive behind GDS aggregators and risk eroding content parity against airline.com.",
         "external_driver": "NDC adoption",
         "branches": [
           {
             "id": "tp-001-a",
-            "label": "Embrace NDC",
-            "description": "Integrate NDC pipelines and offer rich airline content.",
+            "label": "Embrace NDC + ONE Order",
+            "description": "Build direct NDC pipelines to the major carriers; integrate airline Offer & Order management; capture rich content and ancillary margin. Higher cost-to-serve per booking, but a defensible content-parity moat.",
             "metric_delta": {
               "revenue_index": 0.05,
               "market_share": 0.02,
               "tech_adoption_velocity": 0.1
             },
-            "probability": 0.6,
+            "probability": 0.7,
             "next_node_id": "tp-002"
           },
           {
             "id": "tp-001-b",
-            "label": "Resist NDC",
-            "description": "Maintain legacy GDS relationships; risk content gaps.",
+            "label": "Stay GDS-first",
+            "description": "Maintain Amadeus / Sabre / Travelport as the primary channel; mitigate content gaps with aggregator partnerships. Lower upfront cost; gradual content parity erosion vs direct airline.com over 2–3 years.",
             "metric_delta": {
               "revenue_index": -0.03,
               "market_share": -0.04,
               "tech_adoption_velocity": 0.02
             },
-            "probability": 0.4,
+            "probability": 0.3,
             "next_node_id": "tp-002"
           }
         ]
@@ -1002,37 +1426,37 @@
         "id": "tp-002",
         "year": 2028,
         "title": "AI Agent Gateway Decision",
-        "description": "Decide whether to build proprietary AI travel agents or partner with platform providers.",
+        "description": "Generative-AI-powered travel agents (OpenAI Operator, Anthropic computer-use, Perplexity Travel, Google Gemini Travel) move from pilot to consumer default. Whoever sits between the user and the inventory captures the consumer relationship — and the margin. OTAs decide whether to build the agent themselves, partner with a platform provider, or defer the bet and protect the legacy search-and-book funnel.",
         "external_driver": "GenAI breakthrough",
         "branches": [
           {
             "id": "tp-002-a",
-            "label": "Build Proprietary AI",
-            "description": "Heavy R&D investment in in-house AI concierge capabilities.",
+            "label": "Build Proprietary AI Concierge",
+            "description": "Heavy R&D into in-house conversational booking (successor generations of Expedia Trip Planner, Trip.com TripGenie, Priceline Penny). Owns the consumer surface; defensible moat if adoption lands.",
             "metric_delta": {
               "revenue_index": 0.12,
               "market_share": 0.06,
               "tech_adoption_velocity": 0.15
             },
-            "probability": 0.35,
+            "probability": 0.3,
             "next_node_id": "tp-003"
           },
           {
             "id": "tp-002-b",
-            "label": "Partner with AI Platforms",
-            "description": "Integrate with major AI assistants as a travel fulfillment backend.",
+            "label": "Partner with AI Gatekeepers",
+            "description": "Integrate as the travel-fulfillment backend for OpenAI / Anthropic / Google agents. Fast to market, low R&D burn; gives up the consumer-facing surface to whoever owns the assistant.",
             "metric_delta": {
               "revenue_index": 0.08,
               "market_share": 0.03,
               "tech_adoption_velocity": 0.12
             },
-            "probability": 0.45,
+            "probability": 0.5,
             "next_node_id": "tp-003"
           },
           {
             "id": "tp-002-c",
-            "label": "Wait and See",
-            "description": "Minimal AI investment; focus on existing search/book model.",
+            "label": "Defer AI Investment",
+            "description": "Double down on search-and-book UX and performance marketing. Lowest short-term cost; highest risk of being routed around once agents reach mainstream adoption (2029–2031 central estimate).",
             "metric_delta": {
               "revenue_index": -0.02,
               "market_share": -0.05,
@@ -1046,38 +1470,38 @@
       {
         "id": "tp-003",
         "year": 2032,
-        "title": "Airline Direct Booking Dominance Tipping Point",
-        "description": "Airlines capture >50% of bookings direct; OTAs must redefine value proposition.",
+        "title": "Airline Direct-Booking Tipping Point",
+        "description": "Airlines capture >50% of flight bookings directly on domestic routes — propelled by NDC, loyalty-program lock-in, and AI agents that now query airline.com directly. OTAs no longer 'own' the flight transaction and must redefine the value proposition or consolidate.",
         "external_driver": "Airline direct booking dominance",
         "branches": [
           {
             "id": "tp-003-a",
             "label": "Pivot to Complex Itineraries",
-            "description": "Focus on multi-city, multi-modal trips that airlines cannot serve directly.",
+            "description": "Focus on multi-city, multi-modal (flight + rail + car + lodge), multi-PNR itineraries that airlines and their AI agents cannot serve directly. Higher margin per trip; smaller addressable market.",
             "metric_delta": {
               "revenue_index": 0.1,
               "market_share": -0.02,
               "tech_adoption_velocity": 0.08
             },
-            "probability": 0.5,
+            "probability": 0.45,
             "next_node_id": null
           },
           {
             "id": "tp-003-b",
-            "label": "Become Aggregator Platform",
-            "description": "Transform into marketplace connecting travelers with suppliers via AI.",
+            "label": "Become AI-First Aggregator",
+            "description": "Transform into a marketplace API layer that suppliers plug into and consumer-facing AI agents query. Volume play in a post-consumer-UX world; margin compresses but scale is enormous.",
             "metric_delta": {
               "revenue_index": 0.15,
               "market_share": 0.05,
               "tech_adoption_velocity": 0.12
             },
-            "probability": 0.3,
+            "probability": 0.35,
             "next_node_id": null
           },
           {
             "id": "tp-003-c",
             "label": "Consolidate or Exit",
-            "description": "Merge with competitors or exit market due to margin compression.",
+            "description": "M&A to gain scale, sell to a hyperscaler, or exit the market as unit economics compress beyond viable return on ad spend.",
             "metric_delta": {
               "revenue_index": -0.2,
               "market_share": -0.15,
@@ -1092,21 +1516,21 @@
     "strategic_profiles": [
       {
         "name": "Cost Leader",
-        "description": "Optimizes operations for price-sensitive segments via scale and automation.",
+        "description": "Volume-and-scale play: wins on commoditized hotel and flight inventory via performance marketing, aggressive cancellation flexibility, and operational efficiency. Typical of budget- focused brands (Agoda, eDreams), subscription-led price players, and flight-only aggregators.",
         "ai_adoption_bias": 0.4,
         "direct_booking_resilience": 0.3,
         "strategic_stance": "Efficiency-led"
       },
       {
         "name": "Differentiator",
-        "description": "Invests heavily in AI-driven personalization and premium experiences.",
+        "description": "Content and experience play: invests in AI-driven personalization, premium UX (Trip Planner, AI concierges), unique inventory (Vrbo / homes), and brand. Defensible against airline direct-booking pressure because the value-add isn't just the ticket — it's itinerary, stay, and ancillary.",
         "ai_adoption_bias": 0.9,
         "direct_booking_resilience": 0.7,
         "strategic_stance": "Innovation-led"
       },
       {
         "name": "Niche Search",
-        "description": "Focuses on underserved routes and complex itineraries using proprietary technology.",
+        "description": "Technical-moat play: solves a hard specialist problem airlines and hyperscalers can't easily copy — multi-city virtual interlining (Kiwi.com), complex multi-PNR itineraries, regional dominance. Volume is small but margin per booking and customer loyalty are high.",
         "ai_adoption_bias": 0.7,
         "direct_booking_resilience": 0.5,
         "strategic_stance": "Innovation-led"
@@ -1115,37 +1539,52 @@
     "competitors": [
       {
         "name": "Booking Holdings",
-        "key_capability": "Global meta-search + multi-brand scale",
-        "initial_position": {
-          "airline_direct_booking_dominance": 0.5,
-          "ai_agent_adoption": 0.55,
-          "strategic_orientation": "Innovation-led"
-        },
-        "default_profile": "Differentiator",
-        "initial_market_share": 0.3,
-        "metadata": {
-          "source": "Booking Holdings 2023 10-K",
-          "source_year": "2023"
-        }
-      },
-      {
-        "name": "Expedia Group",
-        "key_capability": "Brand portfolio + Trip Planner AI",
+        "key_capability": "Global performance-marketing scale; multi-brand (Booking.com, Priceline, Kayak); AI push via Priceline Penny",
         "initial_position": {
           "airline_direct_booking_dominance": 0.5,
           "ai_agent_adoption": 0.6,
           "strategic_orientation": "Innovation-led"
         },
         "default_profile": "Differentiator",
-        "initial_market_share": 0.18,
+        "initial_market_share": 0.28,
         "metadata": {
-          "source": "Expedia Group 2023 10-K",
+          "source": "Booking Holdings 2023 10-K (NASDAQ: BKNG, ~$21.4B revenue)",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Expedia Group",
+        "key_capability": "Brand portfolio (Expedia, Hotels.com, Vrbo); Trip Planner AI; retail + B2B (Expedia Partner Solutions)",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.5,
+          "ai_agent_adoption": 0.65,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.16,
+        "metadata": {
+          "source": "Expedia Group 2023 10-K (NASDAQ: EXPE, ~$12.8B revenue)",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Airbnb",
+        "key_capability": "Home-sharing marketplace + experiences; high brand recall with under-35 segment; AI concierge rollout announced 2024",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.2,
+          "ai_agent_adoption": 0.7,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.13,
+        "metadata": {
+          "source": "Airbnb Inc. 2023 10-K (NASDAQ: ABNB, ~$9.9B revenue)",
           "source_year": "2023"
         }
       },
       {
         "name": "Trip.com Group",
-        "key_capability": "APAC dominance + TripGenie AI assistant",
+        "key_capability": "APAC dominance (China/SEA); TripGenie AI assistant at scale; outbound China travel recovery tailwind",
         "initial_position": {
           "airline_direct_booking_dominance": 0.4,
           "ai_agent_adoption": 0.7,
@@ -1154,20 +1593,20 @@
         "default_profile": "Differentiator",
         "initial_market_share": 0.09,
         "metadata": {
-          "source": "Trip.com Group 2023 Annual Report",
+          "source": "Trip.com Group 2023 Annual Report (NASDAQ/HK: TCOM, ~$6.3B revenue)",
           "source_year": "2023"
         }
       },
       {
         "name": "Agoda",
-        "key_capability": "APAC accommodations + aggressive pricing",
+        "key_capability": "APAC accommodations specialist; aggressive pricing + mobile-first UX; part of Booking Holdings",
         "initial_position": {
           "airline_direct_booking_dominance": 0.4,
           "ai_agent_adoption": 0.55,
           "strategic_orientation": "Efficiency-led"
         },
         "default_profile": "Cost Leader",
-        "initial_market_share": 0.05,
+        "initial_market_share": 0.04,
         "metadata": {
           "source": "Booking Holdings 2023 10-K (Agoda segment)",
           "source_year": "2023"
@@ -1175,31 +1614,46 @@
       },
       {
         "name": "eDreams ODIGEO",
-        "key_capability": "Prime Subscription",
+        "key_capability": "Prime Subscription (6M+ members); flights-first European metasearch lineage",
         "initial_position": {
           "airline_direct_booking_dominance": 0.5,
-          "ai_agent_adoption": 0.5,
+          "ai_agent_adoption": 0.55,
           "strategic_orientation": "Efficiency-led"
         },
         "default_profile": "Cost Leader",
         "initial_market_share": 0.02,
         "metadata": {
-          "source": "eDreams ODIGEO FY2024 Annual Report",
+          "source": "eDreams ODIGEO FY2024 Annual Report (BME: EDR, ~€610M revenue)",
           "source_year": "2024"
         }
       },
       {
+        "name": "Etraveli Group",
+        "key_capability": "Nordic flights-focused OTA + white-label flight search backend (powers Booking.com Flights); B2B2C flight distribution specialist",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.45,
+          "ai_agent_adoption": 0.5,
+          "strategic_orientation": "Efficiency-led"
+        },
+        "default_profile": "Niche Search",
+        "initial_market_share": 0.015,
+        "metadata": {
+          "source": "Etraveli Group 2023 public filings (CVC Capital portfolio)",
+          "source_year": "2023"
+        }
+      },
+      {
         "name": "Kiwi.com",
-        "key_capability": "Virtual Interlining",
+        "key_capability": "Virtual Interlining — ML-generated multi-PNR itineraries across non-partner carriers (proprietary algorithm)",
         "initial_position": {
           "airline_direct_booking_dominance": 0.3,
-          "ai_agent_adoption": 0.6,
+          "ai_agent_adoption": 0.65,
           "strategic_orientation": "Innovation-led"
         },
         "default_profile": "Niche Search",
         "initial_market_share": 0.01,
         "metadata": {
-          "source": "Kiwi.com publicly reported revenue (private, 2023)",
+          "source": "Kiwi.com publicly reported revenue (private, General Atlantic-backed)",
           "source_year": "2023"
         }
       }
@@ -1207,133 +1661,255 @@
     "metadata": {
       "source_scenario": "scenario-001",
       "branch_path": "[\"tp-001-a\", \"tp-002-a\", \"tp-003-b\"]",
-      "path_probability": "0.0630",
-      "composite_score": "126.89",
+      "path_probability": "0.0735",
+      "composite_score": "143.60",
       "weights": "{\"revenue\": 1.0, \"market_share\": 1.0, \"tech_adoption\": 1.0}"
     },
     "market_share_projection": {
       "Booking Holdings": [
         {
           "year": 1990,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 1995,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2000,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2001,
+          "share": 0.28
         },
         {
           "year": 2005,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2007,
+          "share": 0.28
         },
         {
           "year": 2008,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2010,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2011,
+          "share": 0.28
         },
         {
           "year": 2015,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2017,
+          "share": 0.28
         },
         {
           "year": 2019,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2020,
-          "share": 0.3
+          "share": 0.28
+        },
+        {
+          "year": 2022,
+          "share": 0.28
         },
         {
           "year": 2023,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2025,
-          "share": 0.3
+          "share": 0.28
         },
         {
           "year": 2028,
-          "share": 0.358
+          "share": 0.2763
         },
         {
           "year": 2030,
-          "share": 0.3433
+          "share": 0.2629
         },
         {
           "year": 2035,
-          "share": 0.3309
+          "share": 0.2519
         },
         {
           "year": 2040,
-          "share": 0.3309
+          "share": 0.2519
         }
       ],
       "Expedia Group": [
         {
           "year": 1990,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 1995,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2000,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2001,
+          "share": 0.16
         },
         {
           "year": 2005,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2007,
+          "share": 0.16
         },
         {
           "year": 2008,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2010,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2011,
+          "share": 0.16
         },
         {
           "year": 2015,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2017,
+          "share": 0.16
         },
         {
           "year": 2019,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2020,
-          "share": 0.18
+          "share": 0.16
+        },
+        {
+          "year": 2022,
+          "share": 0.16
         },
         {
           "year": 2023,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2025,
-          "share": 0.18
+          "share": 0.16
         },
         {
           "year": 2028,
-          "share": 0.2415
+          "share": 0.1812
         },
         {
           "year": 2030,
-          "share": 0.2373
+          "share": 0.1773
         },
         {
           "year": 2035,
-          "share": 0.2337
+          "share": 0.1742
         },
         {
           "year": 2040,
-          "share": 0.2337
+          "share": 0.1742
+        }
+      ],
+      "Airbnb": [
+        {
+          "year": 1990,
+          "share": 0.13
+        },
+        {
+          "year": 1995,
+          "share": 0.13
+        },
+        {
+          "year": 2000,
+          "share": 0.13
+        },
+        {
+          "year": 2001,
+          "share": 0.13
+        },
+        {
+          "year": 2005,
+          "share": 0.13
+        },
+        {
+          "year": 2007,
+          "share": 0.13
+        },
+        {
+          "year": 2008,
+          "share": 0.13
+        },
+        {
+          "year": 2010,
+          "share": 0.13
+        },
+        {
+          "year": 2011,
+          "share": 0.13
+        },
+        {
+          "year": 2015,
+          "share": 0.13
+        },
+        {
+          "year": 2017,
+          "share": 0.13
+        },
+        {
+          "year": 2019,
+          "share": 0.13
+        },
+        {
+          "year": 2020,
+          "share": 0.13
+        },
+        {
+          "year": 2022,
+          "share": 0.13
+        },
+        {
+          "year": 2023,
+          "share": 0.13
+        },
+        {
+          "year": 2025,
+          "share": 0.13
+        },
+        {
+          "year": 2028,
+          "share": 0.1574
+        },
+        {
+          "year": 2030,
+          "share": 0.156
+        },
+        {
+          "year": 2035,
+          "share": 0.1549
+        },
+        {
+          "year": 2040,
+          "share": 0.1549
         }
       ],
       "Trip.com Group": [
@@ -1350,7 +1926,15 @@
           "share": 0.09
         },
         {
+          "year": 2001,
+          "share": 0.09
+        },
+        {
           "year": 2005,
+          "share": 0.09
+        },
+        {
+          "year": 2007,
           "share": 0.09
         },
         {
@@ -1362,7 +1946,15 @@
           "share": 0.09
         },
         {
+          "year": 2011,
+          "share": 0.09
+        },
+        {
           "year": 2015,
+          "share": 0.09
+        },
+        {
+          "year": 2017,
           "share": 0.09
         },
         {
@@ -1371,6 +1963,10 @@
         },
         {
           "year": 2020,
+          "share": 0.09
+        },
+        {
+          "year": 2022,
           "share": 0.09
         },
         {
@@ -1383,81 +1979,101 @@
         },
         {
           "year": 2028,
-          "share": 0.1541
+          "share": 0.1257
         },
         {
           "year": 2030,
-          "share": 0.1579
+          "share": 0.1275
         },
         {
           "year": 2035,
-          "share": 0.1611
+          "share": 0.1289
         },
         {
           "year": 2040,
-          "share": 0.1611
+          "share": 0.1289
         }
       ],
       "Agoda": [
         {
           "year": 1990,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 1995,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2000,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2001,
+          "share": 0.04
         },
         {
           "year": 2005,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2007,
+          "share": 0.04
         },
         {
           "year": 2008,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2010,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2011,
+          "share": 0.04
         },
         {
           "year": 2015,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2017,
+          "share": 0.04
         },
         {
           "year": 2019,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2020,
-          "share": 0.05
+          "share": 0.04
+        },
+        {
+          "year": 2022,
+          "share": 0.04
         },
         {
           "year": 2023,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2025,
-          "share": 0.05
+          "share": 0.04
         },
         {
           "year": 2028,
-          "share": 0.0802
+          "share": 0.0575
         },
         {
           "year": 2030,
-          "share": 0.0825
+          "share": 0.0595
         },
         {
           "year": 2035,
-          "share": 0.0845
+          "share": 0.0611
         },
         {
           "year": 2040,
-          "share": 0.0845
+          "share": 0.0611
         }
       ],
       "eDreams ODIGEO": [
@@ -1474,7 +2090,15 @@
           "share": 0.02
         },
         {
+          "year": 2001,
+          "share": 0.02
+        },
+        {
           "year": 2005,
+          "share": 0.02
+        },
+        {
+          "year": 2007,
           "share": 0.02
         },
         {
@@ -1486,7 +2110,15 @@
           "share": 0.02
         },
         {
+          "year": 2011,
+          "share": 0.02
+        },
+        {
           "year": 2015,
+          "share": 0.02
+        },
+        {
+          "year": 2017,
           "share": 0.02
         },
         {
@@ -1495,6 +2127,10 @@
         },
         {
           "year": 2020,
+          "share": 0.02
+        },
+        {
+          "year": 2022,
           "share": 0.02
         },
         {
@@ -1507,19 +2143,101 @@
         },
         {
           "year": 2028,
-          "share": 0.0511
+          "share": 0.0417
         },
         {
           "year": 2030,
-          "share": 0.0559
+          "share": 0.0452
         },
         {
           "year": 2035,
-          "share": 0.06
+          "share": 0.0481
         },
         {
           "year": 2040,
-          "share": 0.06
+          "share": 0.0481
+        }
+      ],
+      "Etraveli Group": [
+        {
+          "year": 1990,
+          "share": 0.015
+        },
+        {
+          "year": 1995,
+          "share": 0.015
+        },
+        {
+          "year": 2000,
+          "share": 0.015
+        },
+        {
+          "year": 2001,
+          "share": 0.015
+        },
+        {
+          "year": 2005,
+          "share": 0.015
+        },
+        {
+          "year": 2007,
+          "share": 0.015
+        },
+        {
+          "year": 2008,
+          "share": 0.015
+        },
+        {
+          "year": 2010,
+          "share": 0.015
+        },
+        {
+          "year": 2011,
+          "share": 0.015
+        },
+        {
+          "year": 2015,
+          "share": 0.015
+        },
+        {
+          "year": 2017,
+          "share": 0.015
+        },
+        {
+          "year": 2019,
+          "share": 0.015
+        },
+        {
+          "year": 2020,
+          "share": 0.015
+        },
+        {
+          "year": 2022,
+          "share": 0.015
+        },
+        {
+          "year": 2023,
+          "share": 0.015
+        },
+        {
+          "year": 2025,
+          "share": 0.015
+        },
+        {
+          "year": 2028,
+          "share": 0.0571
+        },
+        {
+          "year": 2030,
+          "share": 0.0625
+        },
+        {
+          "year": 2035,
+          "share": 0.0669
+        },
+        {
+          "year": 2040,
+          "share": 0.0669
         }
       ],
       "Kiwi.com": [
@@ -1536,7 +2254,15 @@
           "share": 0.01
         },
         {
+          "year": 2001,
+          "share": 0.01
+        },
+        {
           "year": 2005,
+          "share": 0.01
+        },
+        {
+          "year": 2007,
           "share": 0.01
         },
         {
@@ -1548,7 +2274,15 @@
           "share": 0.01
         },
         {
+          "year": 2011,
+          "share": 0.01
+        },
+        {
           "year": 2015,
+          "share": 0.01
+        },
+        {
+          "year": 2017,
           "share": 0.01
         },
         {
@@ -1557,6 +2291,10 @@
         },
         {
           "year": 2020,
+          "share": 0.01
+        },
+        {
+          "year": 2022,
           "share": 0.01
         },
         {
@@ -1569,65 +2307,85 @@
         },
         {
           "year": 2028,
-          "share": 0.0651
+          "share": 0.0531
         },
         {
           "year": 2030,
-          "share": 0.0731
+          "share": 0.0591
         },
         {
           "year": 2035,
-          "share": 0.0798
+          "share": 0.064
         },
         {
           "year": 2040,
-          "share": 0.0798
+          "share": 0.064
         }
       ],
       "Other": [
         {
           "year": 1990,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 1995,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2000,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2001,
+          "share": 0.255
         },
         {
           "year": 2005,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2007,
+          "share": 0.255
         },
         {
           "year": 2008,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2010,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2011,
+          "share": 0.255
         },
         {
           "year": 2015,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2017,
+          "share": 0.255
         },
         {
           "year": 2019,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2020,
-          "share": 0.35
+          "share": 0.255
+        },
+        {
+          "year": 2022,
+          "share": 0.255
         },
         {
           "year": 2023,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2025,
-          "share": 0.35
+          "share": 0.255
         },
         {
           "year": 2028,

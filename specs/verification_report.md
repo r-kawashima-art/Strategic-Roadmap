@@ -44,7 +44,7 @@ test_ndc_favours_efficiency_led_over_innovation_led (tests.test_wargame.Narrativ
 Under NDC adoption, an efficiency-led profile should out-fit an ... ok
 
 ----------------------------------------------------------------------
-Ran 16 tests in 0.016s
+Ran 16 tests in 0.021s
 
 OK
 ```
@@ -89,11 +89,11 @@ OK
 
 ## Historical Backtest (1990–2025)
 
-- Data points compared: **11**
+- Data points compared: **16**
 - Mean absolute error vs. baseline timeline:
-  - `revenue_index`: 0.0027
-  - `market_share`: 0.0011
-  - `tech_adoption_velocity`: 0.0054
+  - `revenue_index`: 0.0019
+  - `market_share`: 0.0008
+  - `tech_adoption_velocity`: 0.0037
 
 ## Narrative Spot-Checks — Materialized Paths
 
@@ -101,9 +101,9 @@ For each canonical branch path, the 2040 endpoint metrics are:
 
 | Path | 2040 revenue idx | 2040 market share | 2040 tech adoption |
 |---|---:|---:|---:|
-| Optimistic (Embrace NDC → Build AI → Become Platform) | 29.01 | 47.88% | 100.00% |
-| Pessimistic (Resist NDC → Wait and See → Consolidate/Exit) | 28.46 | 7.66% | 84.33% |
-| Middle path (Embrace NDC → Partner AI → Pivot Complex) | 28.95 | 39.81% | 100.00% |
+| Optimistic (Embrace NDC → Build AI → Become Platform) | 44.42 | 49.18% | 100.00% |
+| Pessimistic (Resist NDC → Wait and See → Consolidate/Exit) | 43.86 | 8.63% | 87.44% |
+| Middle path (Embrace NDC → Partner AI → Pivot Complex) | 44.36 | 40.96% | 100.00% |
 
 These endpoints should rank pessimistic < middle < optimistic on revenue. If they don't, either the branch deltas or the fit-engine weightings need to be re-examined.
 
@@ -111,42 +111,42 @@ These endpoints should rank pessimistic < middle < optimistic on revenue. If the
 
 *Scenario under review:* **AI Leapfrog** (`scenario-001`)
 
-A scenario where aggressive AI adoption reshapes the OTA landscape, rewarding early movers with proprietary AI capabilities while commoditizing traditional search-and-book intermediaries.
+A scenario where NDC-driven retailing, Generative-AI travel agents, and airline direct-booking pressure compound over 2025–2040. Early movers that build or partner into AI concierges capture the consumer surface; laggards on traditional search-and-book UX commoditize. Airline direct booking crosses 50% by 2032, forcing OTAs to pivot to complex itineraries, become AI-first aggregators, or consolidate out.
 
-### 2025 — NDC Standard Adoption (`tp-001`)
+### 2025 — NDC + ONE Order Adoption (`tp-001`)
 
 **External driver:** NDC adoption
 
-> Airlines push direct distribution via NDC, threatening OTA intermediation.
+> IATA NDC 21.3 and ONE Order go mainstream on major carriers (Lufthansa Group, British Airways, American, Singapore). Retailing shifts from GDS passive content to airline-controlled offer management. OTAs decide whether to build direct NDC pipelines — unlocking ancillary revenue (seats, bags, meals) at the cost of higher integration effort — or stay passive behind GDS aggregators and risk eroding content parity against airline.com.
 
 | Branch | Label | Probability | Δrev | Δms | Δtav | Rationale |
 |---|---|---:|---:|---:|---:|---|
-| `tp-001-a` | **Embrace NDC** | 60% | +0.05 | +2.00% | +10.00% | Integrate NDC pipelines and offer rich airline content. |
-| `tp-001-b` | **Resist NDC** | 40% | -0.03 | -4.00% | +2.00% | Maintain legacy GDS relationships; risk content gaps. |
+| `tp-001-a` | **Embrace NDC + ONE Order** | 70% | +0.05 | +2.00% | +10.00% | Build direct NDC pipelines to the major carriers; integrate airline Offer & Order management; capture rich content and ancillary margin. Higher cost-to-serve per booking, but a defensible content-parity moat. |
+| `tp-001-b` | **Stay GDS-first** | 30% | -0.03 | -4.00% | +2.00% | Maintain Amadeus / Sabre / Travelport as the primary channel; mitigate content gaps with aggregator partnerships. Lower upfront cost; gradual content parity erosion vs direct airline.com over 2–3 years. |
 
 ### 2028 — AI Agent Gateway Decision (`tp-002`)
 
 **External driver:** GenAI breakthrough
 
-> Decide whether to build proprietary AI travel agents or partner with platform providers.
+> Generative-AI-powered travel agents (OpenAI Operator, Anthropic computer-use, Perplexity Travel, Google Gemini Travel) move from pilot to consumer default. Whoever sits between the user and the inventory captures the consumer relationship — and the margin. OTAs decide whether to build the agent themselves, partner with a platform provider, or defer the bet and protect the legacy search-and-book funnel.
 
 | Branch | Label | Probability | Δrev | Δms | Δtav | Rationale |
 |---|---|---:|---:|---:|---:|---|
-| `tp-002-a` | **Build Proprietary AI** | 35% | +0.12 | +6.00% | +15.00% | Heavy R&D investment in in-house AI concierge capabilities. |
-| `tp-002-b` | **Partner with AI Platforms** | 45% | +0.08 | +3.00% | +12.00% | Integrate with major AI assistants as a travel fulfillment backend. |
-| `tp-002-c` | **Wait and See** | 20% | -0.02 | -5.00% | +3.00% | Minimal AI investment; focus on existing search/book model. |
+| `tp-002-a` | **Build Proprietary AI Concierge** | 30% | +0.12 | +6.00% | +15.00% | Heavy R&D into in-house conversational booking (successor generations of Expedia Trip Planner, Trip.com TripGenie, Priceline Penny). Owns the consumer surface; defensible moat if adoption lands. |
+| `tp-002-b` | **Partner with AI Gatekeepers** | 50% | +0.08 | +3.00% | +12.00% | Integrate as the travel-fulfillment backend for OpenAI / Anthropic / Google agents. Fast to market, low R&D burn; gives up the consumer-facing surface to whoever owns the assistant. |
+| `tp-002-c` | **Defer AI Investment** | 20% | -0.02 | -5.00% | +3.00% | Double down on search-and-book UX and performance marketing. Lowest short-term cost; highest risk of being routed around once agents reach mainstream adoption (2029–2031 central estimate). |
 
-### 2032 — Airline Direct Booking Dominance Tipping Point (`tp-003`)
+### 2032 — Airline Direct-Booking Tipping Point (`tp-003`)
 
 **External driver:** Airline direct booking dominance
 
-> Airlines capture >50% of bookings direct; OTAs must redefine value proposition.
+> Airlines capture >50% of flight bookings directly on domestic routes — propelled by NDC, loyalty-program lock-in, and AI agents that now query airline.com directly. OTAs no longer 'own' the flight transaction and must redefine the value proposition or consolidate.
 
 | Branch | Label | Probability | Δrev | Δms | Δtav | Rationale |
 |---|---|---:|---:|---:|---:|---|
-| `tp-003-a` | **Pivot to Complex Itineraries** | 50% | +0.10 | -2.00% | +8.00% | Focus on multi-city, multi-modal trips that airlines cannot serve directly. |
-| `tp-003-b` | **Become Aggregator Platform** | 30% | +0.15 | +5.00% | +12.00% | Transform into marketplace connecting travelers with suppliers via AI. |
-| `tp-003-c` | **Consolidate or Exit** | 20% | -0.20 | -15.00% | +0.00% | Merge with competitors or exit market due to margin compression. |
+| `tp-003-a` | **Pivot to Complex Itineraries** | 45% | +0.10 | -2.00% | +8.00% | Focus on multi-city, multi-modal (flight + rail + car + lodge), multi-PNR itineraries that airlines and their AI agents cannot serve directly. Higher margin per trip; smaller addressable market. |
+| `tp-003-b` | **Become AI-First Aggregator** | 35% | +0.15 | +5.00% | +12.00% | Transform into a marketplace API layer that suppliers plug into and consumer-facing AI agents query. Volume play in a post-consumer-UX world; margin compresses but scale is enormous. |
+| `tp-003-c` | **Consolidate or Exit** | 20% | -0.20 | -15.00% | +0.00% | M&A to gain scale, sell to a hyperscaler, or exit the market as unit economics compress beyond viable return on ad spend. |
 
 ## Reviewer Checklist
 
