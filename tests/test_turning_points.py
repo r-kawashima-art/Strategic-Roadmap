@@ -114,6 +114,35 @@ class TurningPointStructureTests(unittest.TestCase):
                 f"either add it to DRIVER_WEIGHTS or reuse an existing driver",
             )
 
+    def test_every_competitor_has_source_attribution(self) -> None:
+        """FR-6 / Phase-5: every CompetitorProfile must carry `source` and
+        `source_year` in its metadata so the reviewer report can flag any
+        OTA whose seed-share value is undocumented.
+        """
+        for c in self.scenario.competitors:
+            self.assertTrue(
+                c.metadata.get("source", "").strip(),
+                f"{c.name} missing metadata.source — seed market share is unattributed",
+            )
+            self.assertTrue(
+                c.metadata.get("source_year", "").strip(),
+                f"{c.name} missing metadata.source_year — data freshness cannot be audited",
+            )
+
+    def test_every_competitor_has_initial_market_share(self) -> None:
+        """FR-6: every competitor must have a positive seed share so the
+        Market Share Comparison panel has something to render.
+        """
+        for c in self.scenario.competitors:
+            self.assertGreater(
+                c.initial_market_share, 0.0,
+                f"{c.name} has zero initial_market_share — would disappear from the comparison view",
+            )
+            self.assertLessEqual(
+                c.initial_market_share, 1.0,
+                f"{c.name} initial_market_share > 1.0 — this is a 0..1 fraction, not a percentage",
+            )
+
     def test_nodes_are_ordered_in_time(self) -> None:
         """Turning points should progress forward in time so the flowchart
         reads left-to-right without reordering.

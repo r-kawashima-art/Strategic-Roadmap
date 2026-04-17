@@ -89,6 +89,8 @@ class CompetitorProfile:
     key_capability: str
     initial_position: MatrixPosition
     default_profile: str  # References StrategicProfile.name
+    initial_market_share: float = 0.0  # normalized revenue-share proxy (0..1)
+    metadata: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -103,6 +105,10 @@ class Scenario:
     strategic_profiles: List[StrategicProfile]
     competitors: List[CompetitorProfile]
     metadata: Dict[str, str] = field(default_factory=dict)
+    # Per-competitor market-share trajectory across the timeline; populated
+    # by Simulator.project_market_shares() during scenario generation.
+    # Shape: {"Competitor Name" or "Other": [{"year": int, "share": float}, ...]}
+    market_share_projection: Dict[str, List[Dict[str, float]]] = field(default_factory=dict)
 
 
 def build_sample_scenario() -> Scenario:
@@ -134,18 +140,76 @@ def build_sample_scenario() -> Scenario:
     ]
 
     # --- Competitor Profiles ---
+    # initial_market_share values are normalized revenue-share proxies derived
+    # from each firm's most recent public filings (see metadata.source /
+    # source_year). Tracked OTAs sum to ~0.65; the remaining ~0.35 is folded
+    # into the implicit "Other" bucket at projection time.
     competitors = [
         CompetitorProfile(
-            name="Kiwi.com",
-            key_capability="Virtual Interlining",
-            initial_position=MatrixPosition(0.3, 0.6, StrategicStance.INNOVATION_LED),
-            default_profile="Niche Search",
+            name="Booking Holdings",
+            key_capability="Global meta-search + multi-brand scale",
+            initial_position=MatrixPosition(0.50, 0.55, StrategicStance.INNOVATION_LED),
+            default_profile="Differentiator",
+            initial_market_share=0.30,
+            metadata={
+                "source": "Booking Holdings 2023 10-K",
+                "source_year": "2023",
+            },
+        ),
+        CompetitorProfile(
+            name="Expedia Group",
+            key_capability="Brand portfolio + Trip Planner AI",
+            initial_position=MatrixPosition(0.50, 0.60, StrategicStance.INNOVATION_LED),
+            default_profile="Differentiator",
+            initial_market_share=0.18,
+            metadata={
+                "source": "Expedia Group 2023 10-K",
+                "source_year": "2023",
+            },
+        ),
+        CompetitorProfile(
+            name="Trip.com Group",
+            key_capability="APAC dominance + TripGenie AI assistant",
+            initial_position=MatrixPosition(0.40, 0.70, StrategicStance.INNOVATION_LED),
+            default_profile="Differentiator",
+            initial_market_share=0.09,
+            metadata={
+                "source": "Trip.com Group 2023 Annual Report",
+                "source_year": "2023",
+            },
+        ),
+        CompetitorProfile(
+            name="Agoda",
+            key_capability="APAC accommodations + aggressive pricing",
+            initial_position=MatrixPosition(0.40, 0.55, StrategicStance.EFFICIENCY_LED),
+            default_profile="Cost Leader",
+            initial_market_share=0.05,
+            metadata={
+                "source": "Booking Holdings 2023 10-K (Agoda segment)",
+                "source_year": "2023",
+            },
         ),
         CompetitorProfile(
             name="eDreams ODIGEO",
             key_capability="Prime Subscription",
             initial_position=MatrixPosition(0.5, 0.5, StrategicStance.EFFICIENCY_LED),
             default_profile="Cost Leader",
+            initial_market_share=0.02,
+            metadata={
+                "source": "eDreams ODIGEO FY2024 Annual Report",
+                "source_year": "2024",
+            },
+        ),
+        CompetitorProfile(
+            name="Kiwi.com",
+            key_capability="Virtual Interlining",
+            initial_position=MatrixPosition(0.3, 0.6, StrategicStance.INNOVATION_LED),
+            default_profile="Niche Search",
+            initial_market_share=0.01,
+            metadata={
+                "source": "Kiwi.com publicly reported revenue (private, 2023)",
+                "source_year": "2023",
+            },
         ),
     ]
 

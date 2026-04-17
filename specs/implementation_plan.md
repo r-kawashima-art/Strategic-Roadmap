@@ -129,11 +129,77 @@ Extend `src/ui/index.html` with a new **"Market Share"** panel beneath the exist
 - Add a test in `tests/test_wargame.py` that every generated scenario's `market_share_projection` keeps each competitor's share in `[0, 1]` and that the sum across tracked OTAs plus "Other" is `1.0 ± ε` at every year.
 - Add a turning-point test that the stronger-resilience / higher-AI-bias competitors end 2040 with a higher share than weaker ones under the optimistic path (narrative consistency check, same shape as the existing Phase 4 tests).
 
-### Phase 6: Interactive Future Prediction (FR-5)
+### Phase 6: UI Polish — On-Node Metrics (FR-4 update) + Adjustable Layout
+
+Two user-story changes land here because both touch `src/ui/index.html` and both serve the same goal — letting the strategy planner read richer at-a-glance information *and* control how the dashboard partitions screen real estate. Bundling them avoids re-opening Phase 3 and lets the team ship one coherent polish pass.
+
+#### 6.1 Adjustable Layout (new acceptance criterion)
+
+User-story acceptance addition: *"The layout of the UI should be flexible, and the size of each main UI division (e.g., scenario visualization, market share comparison, etc.) should be adjustable by the user."*
+
+Today's layout is a fixed 3-zone grid: `(flowchart pane | detail panel)` over `(metrics timeline)` over `(market-share panel)`. Replace with user-adjustable splits:
+
+- **Draggable dividers** on all three major seams:
+  1. Flowchart pane ↔ Detail panel (horizontal).
+  2. Main-split ↔ Turning-point timeline (vertical).
+  3. Turning-point timeline ↔ Market-share panel (vertical).
+- **Minimum sizes** — every division has an enforced `min-width` / `min-height` so a user can't collapse a pane out of existence. Handles clamp visibly at the limit.
+- **Persistence** — serialize pane sizes to `localStorage` under key `ota-roadmap-layout-v1`. The planner's preferred layout survives reloads; bumping the version suffix forces a reset the next release.
+- **Reset to default** — a small "Reset layout" control in the header (next to the scenario selector). Clearing `localStorage` and re-applying the baseline grid sizes restores the shipped defaults.
+- **Responsive fallback** — below 1024 px viewport width, drop to a single-column stack (flowchart → detail → metrics → market share) with vertical-only resize handles. Below 640 px, disable resize handles entirely — the screen is too narrow for meaningful splits.
+- **Implementation** — use native `resize: both` CSS where it fits, plus small custom drag-handle components for flex-child splits CSS can't express. No layout library: budget is **< 150 lines** of vanilla JS. Use a `ResizeObserver` on each pane to trigger `chart.resize()` on Chart.js instances and `panZoom.resize()` on svg-pan-zoom, so contents don't crop or leave empty space after a drag.
+
+#### 6.2 Acceptance for Phase 6
+
+- [ ] Every turning-point hexagon shows Δrev / Δshare / Δtav chips legible at the default fit-to-viewport zoom level.
+- [ ] Every outcome node shows 2040 Revenue Index × market share % + dominant stance glyph.
+- [ ] Every historical milestone shows its KPI triple inline.
+- [ ] All three pane dividers are draggable on ≥ 1024 px viewports.
+- [ ] Pane sizes persist across page reloads; "Reset layout" restores the default grid.
+- [ ] Below 1024 px the layout stacks gracefully; below 640 px resize handles are disabled.
+- [ ] Chart.js and svg-pan-zoom resize correctly when any divider is dragged — no cropping, no empty bands, no stale SVG viewport.
+
+### Phase 8: Remove Metrics Timeline UI Division (Scope Cut)
+
+The user story's new *Not-Todos* list explicitly opts the **Metrics Timeline** out of the UI:
+
+> *"Do NOT make a UI division of Metrics Timeline."*
+
+This phase retracts the Metrics Timeline that was introduced in Phase 3 (and included in the M3 / M4 milestones) so the shipped dashboard matches the revised scope. It is **purely subtractive** — no schema, simulator, data-layer, or test changes — and can execute independently of Phase 7 (FR-5) in either order. After Phase 8, the dashboard renders header + flowchart/detail split + market-share panel only, with **two** resize handles instead of the three described in Phase 6.
+
+#### 7.1 Deletions in `src/ui/index.html`
+
+- **HTML** — delete the `<div class="chart-section">` block entirely (metric toggle buttons for *Revenue Index / Market Share / Tech Adoption* plus `<canvas id="timeline-chart">`). Delete the resize handle `data-resize="row-metrics"` that sits between the main split and the timeline.
+- **CSS** — delete the rule blocks for `.chart-section`, `.chart-header`, `.metric-toggles`, `.metric-btn`, `.metric-btn.on`, and `.chart-wrap`. Remove the `--row-metrics` CSS custom property and simplify `body { grid-template-rows: … }` to carry only *header + main-split + row-handle + market-section*.
+- **JavaScript** —
+  - Delete the `COLORS` token object used by the timeline chart.
+  - Delete `renderChart()` and the module-level `chart` variable.
+  - Delete `toggleMetric()` and the `activeMetrics` `Set`.
+  - Remove every `renderChart()` / `chart.resize()` call site — currently in `init()`, `onScenarioChange()`, and `notifyPanesResized()`.
+  - Remove the `'row-metrics'` key from `LAYOUT_MIN`, `LAYOUT_MAX`, and `LAYOUT_TARGET`. On `applyStoredLayout()`, silently ignore any `row-metrics` entry left over in `localStorage` from earlier releases — do not re-write it on next save.
+  - Remove `.chart-wrap` from the `ResizeObserver.observe()` target list.
+- **Keep** the `turningLinePlugin` registration and its reference to `baseScenario.nodes`. The **Market Share Comparison** chart (Phase 5) relies on this plugin to render the 2025 / 2028 / 2032 vertical markers; removing the plugin would silently break that panel.
+
+#### 7.2 Migration hygiene
+
+- Running `python3 src/engine/simulator.py` still emits `market_share_projection` for every scenario — the data layer is untouched. A clean reload after the cut should show zero network 404s and zero console errors about undefined handlers.
+- Users carrying a stored layout under `ota-roadmap-layout-v1` with an orphaned `row-metrics` key see the rest of their persisted sizes honoured; the obsolete key is simply dropped on next write. No forced reset required.
+- Update [docs/walkthrough.md](../docs/walkthrough.md): delete the *Metrics timeline chart* sub-section under Phase 3 and shrink the layout ASCII diagram to *header → main-split → market-share*. Note the scope cut in a new Phase 8 subsection for traceability.
+
+#### 7.3 Acceptance for Phase 8
+
+- [ ] `<canvas id="timeline-chart">` is no longer present in the rendered DOM.
+- [ ] No CSS rules reference `.chart-section`, `.metric-toggles`, or `.chart-wrap`.
+- [ ] Browser console shows no `ReferenceError` or `TypeError` on page load, scenario switch, layout drag, or `Reset layout` click.
+- [ ] Dragging the remaining two handles (flowchart ↔ detail, main-split ↔ market) resizes cleanly; `Reset layout` still restores defaults.
+- [ ] The Market Share Comparison chart still shows the 2025 / 2028 / 2032 vertical turning-point markers (confirms `turningLinePlugin` survived the cut).
+- [ ] `python3 -m tests.run_verification` → 29/29 pass (no UI tests exist today, but the backend suite must stay green).
+
+### Phase 8: Interactive Future Prediction (FR-5)
 
 FR-5 adds a conversational layer so that strategy planners can interrogate scenarios in natural language and revise them without touching JSON or Python directly.
 
-#### 6.1 API Backend (`src/api/server.py`)
+#### 8.1 API Backend (`src/api/server.py`)
 
 Build a lightweight **FastAPI** server that acts as the bridge between the UI, the simulation engine, and the Claude API.
 
@@ -143,13 +209,13 @@ Build a lightweight **FastAPI** server that acts as the bridge between the UI, t
 
 Authentication: a single bearer token configured via environment variable (`ROADMAP_API_KEY`) is sufficient for internal/demo use.
 
-#### 6.2 Claude API Integration
+#### 8.2 Claude API Integration
 
 - Use **`claude-sonnet-4-6`** for chat (latency-sensitive) and **`claude-opus-4-7`** for revision translation (accuracy-sensitive, less frequent).
 - Enable **prompt caching** on the scenario context block, which is large and static between messages in the same session — this avoids re-tokenising the full JSON on every turn.
 - For `/revise`, expose a `apply_scenario_diff` tool so Claude returns a machine-readable patch rather than prose, keeping the revision path deterministic and auditable.
 
-#### 6.3 UI Chat Panel
+#### 8.3 UI Chat Panel
 
 Extend `src/ui/index.html` with a collapsible chat panel docked to the right side of the flowchart pane.
 
@@ -167,3 +233,5 @@ Extend `src/ui/index.html` with a collapsible chat panel docked to the right sid
 5. **M5: Interactive Prediction**: `/chat` endpoint live; users can ask questions and receive scenario-grounded answers via streaming.
 6. **M6: Scenario Revision**: `/revise` endpoint live; natural-language edits round-trip through the engine and update the diagram without a page reload.
 7. **M7: Market Share Comparison**: Multi-OTA market-share view live; scenario-linked Chart.js panel shows Expedia / Booking / Trip.com / Agoda / Kiwi / eDreams trajectories side by side with toggleable series and a delta-vs-baseline summary table.
+8. **M8: Dashboard Polish**: Flowchart nodes carry revenue / share / tech-adoption chips plus stance glyphs at a glance (FR-4 update), and every main UI division is user-resizable with persistence and a reset-to-default control (new acceptance criterion).
+9. **M9: Scope Cut — Metrics Timeline Removed**: The Metrics Timeline UI division is deleted per the user-story *Not-Todos*. The dashboard now renders header + flowchart/detail split + market-share panel only, with two resize handles instead of three; the `turningLinePlugin` is retained so the market-share chart keeps its turning-point markers.

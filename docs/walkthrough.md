@@ -1,7 +1,7 @@
 # Project Walkthrough: Strategic Roadmap OTA Visualizer
 
 **Date:** 2026-04-17
-**Status:** Phases 1–4 complete · Phase 5 not started
+**Status:** Phases 1–6 complete · Phase 7 (FR-5 conversational layer) not started
 
 ---
 
@@ -273,6 +273,75 @@ python3 -m unittest tests.test_turning_points -v
 - Gather structured strategy-stakeholder feedback against the generated `verification_report.md` reviewer checklist.
 - If any checklist item comes back unchecked, adjust `FitEngine.DRIVER_WEIGHTS`, branch `probability`, or branch `metric_delta` in `schema.py` and re-run the verification suite.
 - Consider adding the remaining OTA competitors from the user story (Etraveli Group, Trip.com, Hopper) as `CompetitorProfile` entries — the clarity suite will automatically extend its checks to cover them.
+
+---
+
+## Phase 6 — UI Polish: On-Node Metrics (FR-4 update) + Adjustable Layout
+
+**File:** [src/ui/index.html](../src/ui/index.html)
+
+### What was built
+
+A single UI-polish pass that bundles two user-story changes — the tightened FR-4 requirement ("metrics *on flowchart nodes*") and the new acceptance item for a user-resizable dashboard layout. Both landed in one pass because both touch the same file and serve the same planner-facing goal.
+
+#### On-node KPI chips (FR-4 update)
+
+`buildDef(scenario)` now injects KPI text into every Mermaid node label so a reader gets the key signal at a glance without hovering:
+
+| Node type | What the label now shows |
+|---|---|
+| **Turning-point hexagon** | `year` + ⚡ title + chip row `▲R +0.05 · ▲M +2% · ▲T +10%` built from the primary (highest-probability) branch's `metric_delta` |
+| **Outcome node** | `2040` + branch label + projected 2040 KPIs (`rev 40.0× · ms 47% · tav 100%` — baseline 2040 + branch delta, clamped to \[0, 1\] on share/tav) + stance glyph (⚡ Innovation-led if `Δtav > 0.08`, ⚙ Efficiency-led otherwise) |
+| **Historical milestone** | `year` + label + KPI triple inline (`rev 4.5× · ms 30% · tav 58%`) |
+
+Helper functions `glyph`, `signed`, `signedPct`, `deltaChips`, `milestoneKpis`, and `outcomeKpis` keep all formatting in one place. Chips use plain-text glyphs (▲ / ▼ / ·) rather than HTML `<span>`s with inline colour — this sidesteps Mermaid's label-parse pitfalls around nested quotes and lets the hexagon's own colour scheme carry the positive/negative framing.
+
+#### Adjustable layout (new acceptance criterion)
+
+The body switched from flexbox to CSS grid driven by three custom properties that the user's drag actions write to:
+
+```css
+body {
+  --row-metrics: 220px;                       /* metrics timeline row */
+  --row-market:  360px;                       /* market share row     */
+  grid-template-rows: auto minmax(120px, 1fr) 6px var(--row-metrics) 6px var(--row-market);
+}
+.main-split {
+  --col-detail: 300px;                        /* detail panel column  */
+  grid-template-columns: minmax(240px, 1fr) 6px var(--col-detail);
+}
+```
+
+Three drag handles sit on the seams — one column handle (flowchart ↔ detail) and two row handles (main-split ↔ metrics, metrics ↔ market). Each handle:
+
+- Has `role="separator"`, `aria-orientation`, `tabindex="0"`, and an `aria-label` — keyboard users can focus it and nudge ±8 px (±32 px with `Shift`) via arrow keys.
+- Uses `pointerdown` / `pointermove` / `pointerup` so mouse and touch behave identically.
+- Clamps to a per-dimension `LAYOUT_MIN` floor (`col-detail`≥240 px, `row-metrics`≥140 px, `row-market`≥200 px) and a `LAYOUT_MAX` ceiling capped at 60 % of viewport.
+- On `pointerup`, reads the computed CSS variable back out and writes it to `localStorage` under key `ota-roadmap-layout-v1`. Bumping the `v1` suffix on a future release invalidates stored sizes cleanly.
+- Adds `body.resizing` during a drag so `user-select: none` prevents accidental text selection across the dashboard.
+
+A **"Reset layout"** button in the header next to the scenario selector clears `localStorage` and removes the inline CSS variables, so the shipped defaults come back.
+
+#### Chart and flowchart reflow
+
+Any resize — whether a drag, a window-size change, or the `Reset layout` click — fires `notifyPanesResized()`, which calls `chart.resize()`, `msChart.resize()`, and `panZoom.resize()`. A `ResizeObserver` on `.diagram-wrap`, `.chart-wrap`, and `.market-chart-wrap` catches continuous reflow during a drag, debounced through `requestAnimationFrame` so Chart.js and svg-pan-zoom never re-layout more than once per frame.
+
+#### Responsive fallbacks
+
+- **≤ 1024 px viewport** — the grid drops to a stacked single column, the column handle is hidden, and the detail pane gains a top border so it still reads as a distinct section.
+- **≤ 640 px viewport** — all resize handles are hidden; on phone-width screens, dragged splits are more annoying than useful.
+
+### Milestone M8 — Dashboard Polish ✅
+
+Every Mermaid node now carries the FR-4 data (Δrev / Δshare / Δtav chips on turning points, projected 2040 KPIs + stance glyph on outcomes, KPI triples on milestones), and all three main UI divisions are user-resizable with localStorage persistence, keyboard nudging, a Reset button, and clean responsive fallbacks below 1024 / 640 px.
+
+### Verification
+
+`python3 -m tests.run_verification` → **29/29 PASS** (Phase 6 is UI-only; no backend tests touched). HTML tag balance is clean; page serves over HTTP and contains all the expected new hooks (`resize-handle`, `LAYOUT_KEY`, `notifyPanesResized`, `deltaChips`, `outcomeKpis`, `reset-layout-btn`). Browser-side acceptance still requires manual walkthrough — see the Phase 6 §6.2 checklist in [specs/implementation_plan.md](../specs/implementation_plan.md).
+
+### Known gap — FR-4 primary-branch assumption
+
+The turning-point chips show the *highest-probability* branch's delta as a "primary signal." This is deliberately a single-signal summary, not a composite — if a turning point has a near-tied 40/40/20 probability split across three branches, the hexagon chip only represents the 40 % branch. Hovering (unchanged) still surfaces every branch in the Detail Panel, and for tightly-contested nodes a planner should treat the chip as directional, not definitive.
 
 ---
 

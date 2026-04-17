@@ -37,6 +37,24 @@ from schema import (
 # ---------------------------------------------------------------------------
 
 
+def _interp(year: int, series: List[Tuple[int, float]]) -> float:
+    """Linearly interpolate a (year, value) series at `year`, flat-extending
+    at the ends."""
+    if not series:
+        return 0.0
+    if year <= series[0][0]:
+        return series[0][1]
+    if year >= series[-1][0]:
+        return series[-1][1]
+    for i in range(len(series) - 1):
+        y0, v0 = series[i]
+        y1, v1 = series[i + 1]
+        if y0 <= year <= y1:
+            t = (year - y0) / (y1 - y0)
+            return v0 + t * (v1 - v0)
+    return series[-1][1]
+
+
 @dataclass
 class CompetitorState:
     """Evolving state for one competitor during a simulation run."""
@@ -443,6 +461,86 @@ class Simulator:
             details=details,
         )
 
+    # ---- per-competitor market-share projection (FR-6) --------------------
+
+
+    def project_market_shares(
+        self,
+        result: SimulationResult,
+    ) -> Dict[str, List[Dict[str, float]]]:
+        """Project per-competitor market-share trajectories across the full
+        timeline (FR-6 / Phase 5).
+
+        The existing simulation seeds every competitor with the same aggregate
+        baseline `market_share`; we reuse the *delta* each competitor picks up
+        from that baseline and apply it on top of its own
+        `initial_market_share`. This keeps the aggregate backtest / projection
+        math unchanged while still producing differentiated per-competitor
+        trajectories.
+
+        Shares are normalized per year so the tracked competitors plus an
+        implicit "Other" bucket always sum to 1.0, letting stacked or
+        comparative views be read directly.
+
+        Returns:
+            ``{"Competitor": [{"year": Y, "share": S}, ...], ..., "Other": ...}``
+        """
+        timeline_years = [dp.year for dp in self.scenario.timeline]
+        if not self.scenario.nodes:
+            return {}
+        first_year = min(n.year for n in self.scenario.nodes)
+        aggregate_baseline = self._baseline_metrics(first_year).market_share
+
+        initial_shares: Dict[str, float] = {
+            c.name: getattr(c, "initial_market_share", 0.0)
+            for c in self.scenario.competitors
+        }
+
+        # Build (year, share) anchors per competitor:
+        #   first_year seeded from initial_market_share, then each simulation
+        #   step contributes its year and the competitor's delta-adjusted share.
+        anchors: Dict[str, List[Tuple[int, float]]] = {
+            name: [(first_year, share)] for name, share in initial_shares.items()
+        }
+        for step in result.steps:
+            for cs in step.competitor_states:
+                applied_delta = cs.metrics.market_share - aggregate_baseline
+                projected = max(0.0, initial_shares.get(cs.name, 0.0) + applied_delta)
+                anchors[cs.name].append((step.year, projected))
+
+        # Interpolate / flat-extrapolate to every timeline year.
+        projection: Dict[str, List[Dict[str, float]]] = {}
+        for name, series in anchors.items():
+            series_sorted = sorted(series, key=lambda p: p[0])
+            projection[name] = [
+                {"year": ty, "share": _interp(ty, series_sorted)}
+                for ty in timeline_years
+            ]
+
+        # Normalize per year so tracked + Other sums to 1.0. If the tracked
+        # sum exceeds 1.0 we scale it down proportionally, leaving a small
+        # floor for Other so the bucket remains meaningful.
+        tracked_names = list(projection.keys())
+        other: List[Dict[str, float]] = []
+        for idx, ty in enumerate(timeline_years):
+            tracked_sum = sum(projection[name][idx]["share"] for name in tracked_names)
+            if tracked_sum > 0.95:
+                scale = 0.95 / tracked_sum if tracked_sum > 0 else 1.0
+                for name in tracked_names:
+                    projection[name][idx]["share"] *= scale
+                tracked_sum = sum(projection[name][idx]["share"] for name in tracked_names)
+            other_share = max(0.0, 1.0 - tracked_sum)
+            other.append({"year": ty, "share": other_share})
+
+        projection["Other"] = other
+
+        # Round for JSON readability
+        for name in projection:
+            for pt in projection[name]:
+                pt["share"] = round(pt["share"], 4)
+
+        return projection
+
     # ---- scenario generation ----------------------------------------------
 
     def generate_scenarios(
@@ -508,6 +606,7 @@ class Simulator:
                     "composite_score": f"{score:.2f}",
                     "weights": json.dumps(w),
                 },
+                market_share_projection=self.project_market_shares(sim_result),
             )
             scenarios.append(new_scenario)
 
@@ -565,7 +664,15 @@ def main() -> None:
     out_path = save_scenarios(generated, DATA_DIR / "scenarios_generated.json")
     print(f"\nSaved generated scenarios to {out_path}")
 
-    # Also update the main scenarios.json with the top-ranked scenario
+    # Also update the main scenarios.json with the top-ranked scenario.
+    # Attach a market_share_projection to the base scenario using its own
+    # highest-probability path so the UI's Market Share panel has something
+    # to render for the "AI Leapfrog" baseline as well.
+    base_choices = {n.id: max(n.branches, key=lambda b: b.probability).id
+                    for n in scenario.nodes}
+    base_result = sim.run(base_choices)
+    scenario.market_share_projection = sim.project_market_shares(base_result)
+
     top = generated[0]
     save_scenarios([scenario, top], DATA_DIR / "scenarios.json")
     print(f"Updated scenarios.json with base + top-ranked scenario.")

@@ -290,14 +290,64 @@
     ],
     "competitors": [
       {
-        "name": "Kiwi.com",
-        "key_capability": "Virtual Interlining",
+        "name": "Booking Holdings",
+        "key_capability": "Global meta-search + multi-brand scale",
         "initial_position": {
-          "airline_direct_booking_dominance": 0.3,
+          "airline_direct_booking_dominance": 0.5,
+          "ai_agent_adoption": 0.55,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.3,
+        "metadata": {
+          "source": "Booking Holdings 2023 10-K",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Expedia Group",
+        "key_capability": "Brand portfolio + Trip Planner AI",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.5,
           "ai_agent_adoption": 0.6,
           "strategic_orientation": "Innovation-led"
         },
-        "default_profile": "Niche Search"
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.18,
+        "metadata": {
+          "source": "Expedia Group 2023 10-K",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Trip.com Group",
+        "key_capability": "APAC dominance + TripGenie AI assistant",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.4,
+          "ai_agent_adoption": 0.7,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.09,
+        "metadata": {
+          "source": "Trip.com Group 2023 Annual Report",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Agoda",
+        "key_capability": "APAC accommodations + aggressive pricing",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.4,
+          "ai_agent_adoption": 0.55,
+          "strategic_orientation": "Efficiency-led"
+        },
+        "default_profile": "Cost Leader",
+        "initial_market_share": 0.05,
+        "metadata": {
+          "source": "Booking Holdings 2023 10-K (Agoda segment)",
+          "source_year": "2023"
+        }
       },
       {
         "name": "eDreams ODIGEO",
@@ -307,7 +357,27 @@
           "ai_agent_adoption": 0.5,
           "strategic_orientation": "Efficiency-led"
         },
-        "default_profile": "Cost Leader"
+        "default_profile": "Cost Leader",
+        "initial_market_share": 0.02,
+        "metadata": {
+          "source": "eDreams ODIGEO FY2024 Annual Report",
+          "source_year": "2024"
+        }
+      },
+      {
+        "name": "Kiwi.com",
+        "key_capability": "Virtual Interlining",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.3,
+          "ai_agent_adoption": 0.6,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Niche Search",
+        "initial_market_share": 0.01,
+        "metadata": {
+          "source": "Kiwi.com publicly reported revenue (private, 2023)",
+          "source_year": "2023"
+        }
       }
     ],
     "metadata": {
@@ -315,12 +385,448 @@
       "version": "1.0",
       "base_year": "2025",
       "frameworks": "PESTEL, Porter's Five Forces, 2x2+S Matrix"
+    },
+    "market_share_projection": {
+      "Booking Holdings": [
+        {
+          "year": 1990,
+          "share": 0.3
+        },
+        {
+          "year": 1995,
+          "share": 0.3
+        },
+        {
+          "year": 2000,
+          "share": 0.3
+        },
+        {
+          "year": 2005,
+          "share": 0.3
+        },
+        {
+          "year": 2008,
+          "share": 0.3
+        },
+        {
+          "year": 2010,
+          "share": 0.3
+        },
+        {
+          "year": 2015,
+          "share": 0.3
+        },
+        {
+          "year": 2019,
+          "share": 0.3
+        },
+        {
+          "year": 2020,
+          "share": 0.3
+        },
+        {
+          "year": 2023,
+          "share": 0.3
+        },
+        {
+          "year": 2025,
+          "share": 0.3
+        },
+        {
+          "year": 2028,
+          "share": 0.3413
+        },
+        {
+          "year": 2030,
+          "share": 0.3291
+        },
+        {
+          "year": 2035,
+          "share": 0.317
+        },
+        {
+          "year": 2040,
+          "share": 0.317
+        }
+      ],
+      "Expedia Group": [
+        {
+          "year": 1990,
+          "share": 0.18
+        },
+        {
+          "year": 1995,
+          "share": 0.18
+        },
+        {
+          "year": 2000,
+          "share": 0.18
+        },
+        {
+          "year": 2005,
+          "share": 0.18
+        },
+        {
+          "year": 2008,
+          "share": 0.18
+        },
+        {
+          "year": 2010,
+          "share": 0.18
+        },
+        {
+          "year": 2015,
+          "share": 0.18
+        },
+        {
+          "year": 2019,
+          "share": 0.18
+        },
+        {
+          "year": 2020,
+          "share": 0.18
+        },
+        {
+          "year": 2023,
+          "share": 0.18
+        },
+        {
+          "year": 2025,
+          "share": 0.18
+        },
+        {
+          "year": 2028,
+          "share": 0.2213
+        },
+        {
+          "year": 2030,
+          "share": 0.2092
+        },
+        {
+          "year": 2035,
+          "share": 0.1971
+        },
+        {
+          "year": 2040,
+          "share": 0.1971
+        }
+      ],
+      "Trip.com Group": [
+        {
+          "year": 1990,
+          "share": 0.09
+        },
+        {
+          "year": 1995,
+          "share": 0.09
+        },
+        {
+          "year": 2000,
+          "share": 0.09
+        },
+        {
+          "year": 2005,
+          "share": 0.09
+        },
+        {
+          "year": 2008,
+          "share": 0.09
+        },
+        {
+          "year": 2010,
+          "share": 0.09
+        },
+        {
+          "year": 2015,
+          "share": 0.09
+        },
+        {
+          "year": 2019,
+          "share": 0.09
+        },
+        {
+          "year": 2020,
+          "share": 0.09
+        },
+        {
+          "year": 2023,
+          "share": 0.09
+        },
+        {
+          "year": 2025,
+          "share": 0.09
+        },
+        {
+          "year": 2028,
+          "share": 0.1313
+        },
+        {
+          "year": 2030,
+          "share": 0.1193
+        },
+        {
+          "year": 2035,
+          "share": 0.1073
+        },
+        {
+          "year": 2040,
+          "share": 0.1073
+        }
+      ],
+      "Agoda": [
+        {
+          "year": 1990,
+          "share": 0.05
+        },
+        {
+          "year": 1995,
+          "share": 0.05
+        },
+        {
+          "year": 2000,
+          "share": 0.05
+        },
+        {
+          "year": 2005,
+          "share": 0.05
+        },
+        {
+          "year": 2008,
+          "share": 0.05
+        },
+        {
+          "year": 2010,
+          "share": 0.05
+        },
+        {
+          "year": 2015,
+          "share": 0.05
+        },
+        {
+          "year": 2019,
+          "share": 0.05
+        },
+        {
+          "year": 2020,
+          "share": 0.05
+        },
+        {
+          "year": 2023,
+          "share": 0.05
+        },
+        {
+          "year": 2025,
+          "share": 0.05
+        },
+        {
+          "year": 2028,
+          "share": 0.0709
+        },
+        {
+          "year": 2030,
+          "share": 0.0552
+        },
+        {
+          "year": 2035,
+          "share": 0.0395
+        },
+        {
+          "year": 2040,
+          "share": 0.0395
+        }
+      ],
+      "eDreams ODIGEO": [
+        {
+          "year": 1990,
+          "share": 0.02
+        },
+        {
+          "year": 1995,
+          "share": 0.02
+        },
+        {
+          "year": 2000,
+          "share": 0.02
+        },
+        {
+          "year": 2005,
+          "share": 0.02
+        },
+        {
+          "year": 2008,
+          "share": 0.02
+        },
+        {
+          "year": 2010,
+          "share": 0.02
+        },
+        {
+          "year": 2015,
+          "share": 0.02
+        },
+        {
+          "year": 2019,
+          "share": 0.02
+        },
+        {
+          "year": 2020,
+          "share": 0.02
+        },
+        {
+          "year": 2023,
+          "share": 0.02
+        },
+        {
+          "year": 2025,
+          "share": 0.02
+        },
+        {
+          "year": 2028,
+          "share": 0.0409
+        },
+        {
+          "year": 2030,
+          "share": 0.0252
+        },
+        {
+          "year": 2035,
+          "share": 0.0094
+        },
+        {
+          "year": 2040,
+          "share": 0.0094
+        }
+      ],
+      "Kiwi.com": [
+        {
+          "year": 1990,
+          "share": 0.01
+        },
+        {
+          "year": 1995,
+          "share": 0.01
+        },
+        {
+          "year": 2000,
+          "share": 0.01
+        },
+        {
+          "year": 2005,
+          "share": 0.01
+        },
+        {
+          "year": 2008,
+          "share": 0.01
+        },
+        {
+          "year": 2010,
+          "share": 0.01
+        },
+        {
+          "year": 2015,
+          "share": 0.01
+        },
+        {
+          "year": 2019,
+          "share": 0.01
+        },
+        {
+          "year": 2020,
+          "share": 0.01
+        },
+        {
+          "year": 2023,
+          "share": 0.01
+        },
+        {
+          "year": 2025,
+          "share": 0.01
+        },
+        {
+          "year": 2028,
+          "share": 0.0439
+        },
+        {
+          "year": 2030,
+          "share": 0.0302
+        },
+        {
+          "year": 2035,
+          "share": 0.0164
+        },
+        {
+          "year": 2040,
+          "share": 0.0164
+        }
+      ],
+      "Other": [
+        {
+          "year": 1990,
+          "share": 0.35
+        },
+        {
+          "year": 1995,
+          "share": 0.35
+        },
+        {
+          "year": 2000,
+          "share": 0.35
+        },
+        {
+          "year": 2005,
+          "share": 0.35
+        },
+        {
+          "year": 2008,
+          "share": 0.35
+        },
+        {
+          "year": 2010,
+          "share": 0.35
+        },
+        {
+          "year": 2015,
+          "share": 0.35
+        },
+        {
+          "year": 2019,
+          "share": 0.35
+        },
+        {
+          "year": 2020,
+          "share": 0.35
+        },
+        {
+          "year": 2023,
+          "share": 0.35
+        },
+        {
+          "year": 2025,
+          "share": 0.35
+        },
+        {
+          "year": 2028,
+          "share": 0.1504
+        },
+        {
+          "year": 2030,
+          "share": 0.2318
+        },
+        {
+          "year": 2035,
+          "share": 0.3133
+        },
+        {
+          "year": 2040,
+          "share": 0.3133
+        }
+      ]
     }
   },
   {
     "id": "gen-002",
     "name": "Path: Embrace NDC → Build Proprietary AI → Become Aggregator Platform",
-    "description": "Auto-generated scenario following: Embrace NDC → Build Proprietary AI → Become Aggregator Platform. Combined path probability: 6.3%. Composite score: 125.3.",
+    "description": "Auto-generated scenario following: Embrace NDC → Build Proprietary AI → Become Aggregator Platform. Combined path probability: 6.3%. Composite score: 126.9.",
     "timeline": [
       {
         "year": 1990,
@@ -415,44 +921,44 @@
       {
         "year": 2025,
         "metrics": {
-          "revenue_index": 14.025,
-          "market_share": 0.36,
-          "tech_adoption_velocity": 0.8
+          "revenue_index": 14.0297,
+          "market_share": 0.3619,
+          "tech_adoption_velocity": 0.8093
         },
         "label": "NDC adoption accelerates"
       },
       {
         "year": 2028,
         "metrics": {
-          "revenue_index": 14.0946,
-          "market_share": 0.3948,
-          "tech_adoption_velocity": 0.887
+          "revenue_index": 14.1153,
+          "market_share": 0.4047,
+          "tech_adoption_velocity": 0.9163
         },
         "label": null
       },
       {
         "year": 2030,
         "metrics": {
-          "revenue_index": 18.0946,
-          "market_share": 0.4148,
-          "tech_adoption_velocity": 0.937
+          "revenue_index": 18.1153,
+          "market_share": 0.4247,
+          "tech_adoption_velocity": 0.9663
         },
         "label": "AI agents reshape booking"
       },
       {
         "year": 2035,
         "metrics": {
-          "revenue_index": 18.9737,
-          "market_share": 0.4332,
-          "tech_adoption_velocity": 0.9803
+          "revenue_index": 19.0118,
+          "market_share": 0.4488,
+          "tech_adoption_velocity": 0.9978
         },
         "label": null
       },
       {
         "year": 2040,
         "metrics": {
-          "revenue_index": 28.9737,
-          "market_share": 0.4632,
+          "revenue_index": 29.0118,
+          "market_share": 0.4788,
           "tech_adoption_velocity": 1.0
         },
         "label": "Autonomous travel planning"
@@ -608,14 +1114,64 @@
     ],
     "competitors": [
       {
-        "name": "Kiwi.com",
-        "key_capability": "Virtual Interlining",
+        "name": "Booking Holdings",
+        "key_capability": "Global meta-search + multi-brand scale",
         "initial_position": {
-          "airline_direct_booking_dominance": 0.3,
+          "airline_direct_booking_dominance": 0.5,
+          "ai_agent_adoption": 0.55,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.3,
+        "metadata": {
+          "source": "Booking Holdings 2023 10-K",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Expedia Group",
+        "key_capability": "Brand portfolio + Trip Planner AI",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.5,
           "ai_agent_adoption": 0.6,
           "strategic_orientation": "Innovation-led"
         },
-        "default_profile": "Niche Search"
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.18,
+        "metadata": {
+          "source": "Expedia Group 2023 10-K",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Trip.com Group",
+        "key_capability": "APAC dominance + TripGenie AI assistant",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.4,
+          "ai_agent_adoption": 0.7,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Differentiator",
+        "initial_market_share": 0.09,
+        "metadata": {
+          "source": "Trip.com Group 2023 Annual Report",
+          "source_year": "2023"
+        }
+      },
+      {
+        "name": "Agoda",
+        "key_capability": "APAC accommodations + aggressive pricing",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.4,
+          "ai_agent_adoption": 0.55,
+          "strategic_orientation": "Efficiency-led"
+        },
+        "default_profile": "Cost Leader",
+        "initial_market_share": 0.05,
+        "metadata": {
+          "source": "Booking Holdings 2023 10-K (Agoda segment)",
+          "source_year": "2023"
+        }
       },
       {
         "name": "eDreams ODIGEO",
@@ -625,15 +1181,471 @@
           "ai_agent_adoption": 0.5,
           "strategic_orientation": "Efficiency-led"
         },
-        "default_profile": "Cost Leader"
+        "default_profile": "Cost Leader",
+        "initial_market_share": 0.02,
+        "metadata": {
+          "source": "eDreams ODIGEO FY2024 Annual Report",
+          "source_year": "2024"
+        }
+      },
+      {
+        "name": "Kiwi.com",
+        "key_capability": "Virtual Interlining",
+        "initial_position": {
+          "airline_direct_booking_dominance": 0.3,
+          "ai_agent_adoption": 0.6,
+          "strategic_orientation": "Innovation-led"
+        },
+        "default_profile": "Niche Search",
+        "initial_market_share": 0.01,
+        "metadata": {
+          "source": "Kiwi.com publicly reported revenue (private, 2023)",
+          "source_year": "2023"
+        }
       }
     ],
     "metadata": {
       "source_scenario": "scenario-001",
       "branch_path": "[\"tp-001-a\", \"tp-002-a\", \"tp-003-b\"]",
       "path_probability": "0.0630",
-      "composite_score": "125.29",
+      "composite_score": "126.89",
       "weights": "{\"revenue\": 1.0, \"market_share\": 1.0, \"tech_adoption\": 1.0}"
+    },
+    "market_share_projection": {
+      "Booking Holdings": [
+        {
+          "year": 1990,
+          "share": 0.3
+        },
+        {
+          "year": 1995,
+          "share": 0.3
+        },
+        {
+          "year": 2000,
+          "share": 0.3
+        },
+        {
+          "year": 2005,
+          "share": 0.3
+        },
+        {
+          "year": 2008,
+          "share": 0.3
+        },
+        {
+          "year": 2010,
+          "share": 0.3
+        },
+        {
+          "year": 2015,
+          "share": 0.3
+        },
+        {
+          "year": 2019,
+          "share": 0.3
+        },
+        {
+          "year": 2020,
+          "share": 0.3
+        },
+        {
+          "year": 2023,
+          "share": 0.3
+        },
+        {
+          "year": 2025,
+          "share": 0.3
+        },
+        {
+          "year": 2028,
+          "share": 0.358
+        },
+        {
+          "year": 2030,
+          "share": 0.3433
+        },
+        {
+          "year": 2035,
+          "share": 0.3309
+        },
+        {
+          "year": 2040,
+          "share": 0.3309
+        }
+      ],
+      "Expedia Group": [
+        {
+          "year": 1990,
+          "share": 0.18
+        },
+        {
+          "year": 1995,
+          "share": 0.18
+        },
+        {
+          "year": 2000,
+          "share": 0.18
+        },
+        {
+          "year": 2005,
+          "share": 0.18
+        },
+        {
+          "year": 2008,
+          "share": 0.18
+        },
+        {
+          "year": 2010,
+          "share": 0.18
+        },
+        {
+          "year": 2015,
+          "share": 0.18
+        },
+        {
+          "year": 2019,
+          "share": 0.18
+        },
+        {
+          "year": 2020,
+          "share": 0.18
+        },
+        {
+          "year": 2023,
+          "share": 0.18
+        },
+        {
+          "year": 2025,
+          "share": 0.18
+        },
+        {
+          "year": 2028,
+          "share": 0.2415
+        },
+        {
+          "year": 2030,
+          "share": 0.2373
+        },
+        {
+          "year": 2035,
+          "share": 0.2337
+        },
+        {
+          "year": 2040,
+          "share": 0.2337
+        }
+      ],
+      "Trip.com Group": [
+        {
+          "year": 1990,
+          "share": 0.09
+        },
+        {
+          "year": 1995,
+          "share": 0.09
+        },
+        {
+          "year": 2000,
+          "share": 0.09
+        },
+        {
+          "year": 2005,
+          "share": 0.09
+        },
+        {
+          "year": 2008,
+          "share": 0.09
+        },
+        {
+          "year": 2010,
+          "share": 0.09
+        },
+        {
+          "year": 2015,
+          "share": 0.09
+        },
+        {
+          "year": 2019,
+          "share": 0.09
+        },
+        {
+          "year": 2020,
+          "share": 0.09
+        },
+        {
+          "year": 2023,
+          "share": 0.09
+        },
+        {
+          "year": 2025,
+          "share": 0.09
+        },
+        {
+          "year": 2028,
+          "share": 0.1541
+        },
+        {
+          "year": 2030,
+          "share": 0.1579
+        },
+        {
+          "year": 2035,
+          "share": 0.1611
+        },
+        {
+          "year": 2040,
+          "share": 0.1611
+        }
+      ],
+      "Agoda": [
+        {
+          "year": 1990,
+          "share": 0.05
+        },
+        {
+          "year": 1995,
+          "share": 0.05
+        },
+        {
+          "year": 2000,
+          "share": 0.05
+        },
+        {
+          "year": 2005,
+          "share": 0.05
+        },
+        {
+          "year": 2008,
+          "share": 0.05
+        },
+        {
+          "year": 2010,
+          "share": 0.05
+        },
+        {
+          "year": 2015,
+          "share": 0.05
+        },
+        {
+          "year": 2019,
+          "share": 0.05
+        },
+        {
+          "year": 2020,
+          "share": 0.05
+        },
+        {
+          "year": 2023,
+          "share": 0.05
+        },
+        {
+          "year": 2025,
+          "share": 0.05
+        },
+        {
+          "year": 2028,
+          "share": 0.0802
+        },
+        {
+          "year": 2030,
+          "share": 0.0825
+        },
+        {
+          "year": 2035,
+          "share": 0.0845
+        },
+        {
+          "year": 2040,
+          "share": 0.0845
+        }
+      ],
+      "eDreams ODIGEO": [
+        {
+          "year": 1990,
+          "share": 0.02
+        },
+        {
+          "year": 1995,
+          "share": 0.02
+        },
+        {
+          "year": 2000,
+          "share": 0.02
+        },
+        {
+          "year": 2005,
+          "share": 0.02
+        },
+        {
+          "year": 2008,
+          "share": 0.02
+        },
+        {
+          "year": 2010,
+          "share": 0.02
+        },
+        {
+          "year": 2015,
+          "share": 0.02
+        },
+        {
+          "year": 2019,
+          "share": 0.02
+        },
+        {
+          "year": 2020,
+          "share": 0.02
+        },
+        {
+          "year": 2023,
+          "share": 0.02
+        },
+        {
+          "year": 2025,
+          "share": 0.02
+        },
+        {
+          "year": 2028,
+          "share": 0.0511
+        },
+        {
+          "year": 2030,
+          "share": 0.0559
+        },
+        {
+          "year": 2035,
+          "share": 0.06
+        },
+        {
+          "year": 2040,
+          "share": 0.06
+        }
+      ],
+      "Kiwi.com": [
+        {
+          "year": 1990,
+          "share": 0.01
+        },
+        {
+          "year": 1995,
+          "share": 0.01
+        },
+        {
+          "year": 2000,
+          "share": 0.01
+        },
+        {
+          "year": 2005,
+          "share": 0.01
+        },
+        {
+          "year": 2008,
+          "share": 0.01
+        },
+        {
+          "year": 2010,
+          "share": 0.01
+        },
+        {
+          "year": 2015,
+          "share": 0.01
+        },
+        {
+          "year": 2019,
+          "share": 0.01
+        },
+        {
+          "year": 2020,
+          "share": 0.01
+        },
+        {
+          "year": 2023,
+          "share": 0.01
+        },
+        {
+          "year": 2025,
+          "share": 0.01
+        },
+        {
+          "year": 2028,
+          "share": 0.0651
+        },
+        {
+          "year": 2030,
+          "share": 0.0731
+        },
+        {
+          "year": 2035,
+          "share": 0.0798
+        },
+        {
+          "year": 2040,
+          "share": 0.0798
+        }
+      ],
+      "Other": [
+        {
+          "year": 1990,
+          "share": 0.35
+        },
+        {
+          "year": 1995,
+          "share": 0.35
+        },
+        {
+          "year": 2000,
+          "share": 0.35
+        },
+        {
+          "year": 2005,
+          "share": 0.35
+        },
+        {
+          "year": 2008,
+          "share": 0.35
+        },
+        {
+          "year": 2010,
+          "share": 0.35
+        },
+        {
+          "year": 2015,
+          "share": 0.35
+        },
+        {
+          "year": 2019,
+          "share": 0.35
+        },
+        {
+          "year": 2020,
+          "share": 0.35
+        },
+        {
+          "year": 2023,
+          "share": 0.35
+        },
+        {
+          "year": 2025,
+          "share": 0.35
+        },
+        {
+          "year": 2028,
+          "share": 0.05
+        },
+        {
+          "year": 2030,
+          "share": 0.05
+        },
+        {
+          "year": 2035,
+          "share": 0.05
+        },
+        {
+          "year": 2040,
+          "share": 0.05
+        }
+      ]
     }
   }
 ]

@@ -31,9 +31,14 @@
       font-family: 'Segoe UI', system-ui, sans-serif;
       font-size: 14px;
       line-height: 1.5;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;                /* each pane scrolls internally */
+      display: grid;
+      /* Rows: header · main-split · h-handle · metrics · h-handle · market
+         --row-* are bound to localStorage on layout drag (Phase 6 §6.1). */
+      --row-metrics: 220px;
+      --row-market:  360px;
+      grid-template-rows: auto minmax(120px, 1fr) var(--divider-size, 6px) var(--row-metrics) var(--divider-size, 6px) var(--row-market);
     }
 
     /* ── Header ──────────────────────────────────────────────────────────── */
@@ -71,11 +76,55 @@
     /* ── Main split ──────────────────────────────────────────────────────── */
     .main-split {
       display: grid;
-      grid-template-columns: 1fr 300px;
-      flex: 1 0 0;
+      --col-detail: 300px;
+      grid-template-columns: minmax(240px, 1fr) var(--divider-size, 6px) var(--col-detail);
       min-height: 0;
       border-bottom: 1px solid var(--border);
     }
+
+    /* ── Resize handles (Phase 6 §6.1 — adjustable layout) ──────────────── */
+    .resize-handle {
+      background: var(--surface2);
+      position: relative;
+      transition: background 0.12s;
+      z-index: 3;
+    }
+    .resize-handle:hover,
+    .resize-handle.dragging { background: var(--accent); }
+    .resize-handle-col { cursor: col-resize; height: 100%; }
+    .resize-handle-row { cursor: row-resize; width: 100%; }
+    /* Bigger hit target than the visible bar */
+    .resize-handle::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+    }
+    .resize-handle-col::after { top: 0; bottom: 0; left: -4px; right: -4px; }
+    .resize-handle-row::after { left: 0; right: 0; top: -4px; bottom: -4px; }
+    /* Dots indicator so users notice the handle */
+    .resize-handle::before {
+      content: '';
+      position: absolute;
+      background: var(--muted);
+      border-radius: 1px;
+      opacity: 0.6;
+    }
+    .resize-handle-col::before { left: 2px; top: 50%; width: 2px; height: 32px; transform: translateY(-50%); }
+    .resize-handle-row::before { top: 2px; left: 50%; height: 2px; width: 32px; transform: translateX(-50%); }
+    body.resizing,
+    body.resizing * { user-select: none !important; }
+
+    .reset-layout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.7rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .reset-layout-btn:hover { color: var(--text); border-color: var(--accent); }
 
     /* ── Flowchart pane ──────────────────────────────────────────────────── */
     .flowchart-pane {
@@ -323,7 +372,8 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      flex-shrink: 0;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .chart-header {
@@ -350,7 +400,58 @@
       color: #fff;
     }
 
-    .chart-wrap { height: 200px; position: relative; }
+    .chart-wrap { flex: 1 1 0; min-height: 120px; position: relative; }
+
+    /* ── Market Share panel (FR-6) ──────────────────────────────────────── */
+    .market-section {
+      padding: 0.25rem 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      background: var(--surface);
+      min-height: 0;
+      overflow: auto;
+    }
+    .market-chart-wrap { flex: 1 1 0; min-height: 180px; position: relative; }
+    .market-table-wrap { overflow-x: auto; }
+    table.ms-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+    }
+    table.ms-table th,
+    table.ms-table td {
+      padding: 0.4rem 0.6rem;
+      text-align: right;
+      border-bottom: 1px solid var(--surface2);
+      color: var(--text);
+      white-space: nowrap;
+    }
+    table.ms-table th {
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.65rem;
+    }
+    table.ms-table td.name,
+    table.ms-table th.name {
+      text-align: left;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    table.ms-table tr.other-row td {
+      color: var(--muted);
+      font-style: italic;
+    }
+    .ms-delta.pos { color: #34d399; }
+    .ms-delta.neg { color: #f87171; }
+    .ms-delta.zer { color: var(--muted); }
+    .ms-note {
+      font-size: 0.65rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
 
     /* ── Tooltip overlay ─────────────────────────────────────────────────── */
     #tooltip {
@@ -369,6 +470,29 @@
     #tooltip.show { opacity: 1; }
     #tooltip h4 { font-size: 0.82rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem; }
     #tooltip p  { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+
+    /* ── Responsive fallbacks (Phase 6 §6.1) ─────────────────────────────── */
+    @media (max-width: 1024px) {
+      /* Stack the main split vertically; column handle collapses. */
+      body {
+        height: auto;
+        min-height: 100vh;
+        overflow: auto;
+        grid-template-rows: auto auto auto auto;
+      }
+      .main-split {
+        grid-template-columns: 1fr;
+      }
+      .resize-handle-col { display: none; }
+      .detail-pane { border-left: none; border-top: 1px solid var(--border); }
+      .chart-section, .market-section { min-height: 220px; }
+    }
+    @media (max-width: 640px) {
+      /* Below mobile width, drop all resize handles — screen is too narrow
+         to partition meaningfully. */
+      .resize-handle { display: none; }
+      body { grid-template-rows: auto auto auto auto; }
+    }
   </style>
 </head>
 <body>
@@ -382,6 +506,8 @@
     <div class="selector-group">
       <label for="scen-sel">Timeline:</label>
       <select id="scen-sel" onchange="onScenarioChange()"></select>
+      <button class="reset-layout-btn" id="reset-layout-btn" type="button"
+              aria-label="Reset dashboard layout to defaults">Reset layout</button>
     </div>
   </header>
 
@@ -425,6 +551,13 @@
       </div>
     </div>
 
+    <!-- Column resize handle (flowchart ↔ detail) -->
+    <div class="resize-handle resize-handle-col"
+         data-resize="col-detail" data-axis="x"
+         role="separator" aria-orientation="vertical"
+         aria-label="Drag to resize the detail panel"
+         tabindex="0"></div>
+
     <!-- Detail panel -->
     <div class="detail-pane">
       <div class="pane-title">Turning Point Details</div>
@@ -436,6 +569,13 @@
       </div>
     </div>
   </div>
+
+  <!-- Row resize handle (main-split ↔ metrics timeline) -->
+  <div class="resize-handle resize-handle-row"
+       data-resize="row-metrics" data-axis="y"
+       role="separator" aria-orientation="horizontal"
+       aria-label="Drag to resize the metrics timeline"
+       tabindex="0"></div>
 
   <!-- ── Metrics Timeline ───────────────────────────────────────────────── -->
   <div class="chart-section">
@@ -452,6 +592,38 @@
     </div>
   </div>
 
+  <!-- Row resize handle (metrics timeline ↔ market share) -->
+  <div class="resize-handle resize-handle-row"
+       data-resize="row-market" data-axis="y"
+       role="separator" aria-orientation="horizontal"
+       aria-label="Drag to resize the market share panel"
+       tabindex="0"></div>
+
+  <!-- ── Market Share Comparison (FR-6) ─────────────────────────────────── -->
+  <div class="market-section">
+    <div class="chart-header">
+      <div class="pane-title" style="margin:0">Market Share Comparison</div>
+      <span class="ms-note">Normalized revenue-share proxy — not a forecast. Click a legend entry to toggle a competitor.</span>
+    </div>
+    <div class="market-chart-wrap">
+      <canvas id="market-chart"></canvas>
+    </div>
+    <div class="market-table-wrap">
+      <table class="ms-table" id="ms-table">
+        <thead>
+          <tr>
+            <th class="name">Competitor</th>
+            <th>2025</th>
+            <th>2030</th>
+            <th>2040</th>
+            <th>Δ vs. base (2040)</th>
+          </tr>
+        </thead>
+        <tbody id="ms-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- ── Tooltip overlay ────────────────────────────────────────────────── -->
   <div id="tooltip">
     <h4 id="tt-title"></h4>
@@ -462,7 +634,7 @@
   <script>
   // ── Embedded fallback (mirrors data/scenarios.json) ──────────────────────
   // Update by re-running src/engine/simulator.py → saves data/scenarios.json
-  const FALLBACK = [{"id":"scenario-001","name":"AI Leapfrog","description":"A scenario where aggressive AI adoption reshapes the OTA landscape, rewarding early movers with proprietary AI capabilities while commoditizing traditional search-and-book intermediaries.","timeline":[{"year":1990,"metrics":{"revenue_index":1.0,"market_share":0.02,"tech_adoption_velocity":0.05},"label":"OTA industry emerges"},{"year":1995,"metrics":{"revenue_index":1.8,"market_share":0.05,"tech_adoption_velocity":0.1},"label":null},{"year":2000,"metrics":{"revenue_index":4.0,"market_share":0.15,"tech_adoption_velocity":0.2},"label":"Dot-com boom & OTA expansion"},{"year":2005,"metrics":{"revenue_index":6.5,"market_share":0.25,"tech_adoption_velocity":0.3},"label":null},{"year":2008,"metrics":{"revenue_index":5.8,"market_share":0.28,"tech_adoption_velocity":0.35},"label":"Financial crisis impact"},{"year":2010,"metrics":{"revenue_index":7.0,"market_share":0.3,"tech_adoption_velocity":0.4},"label":"Mobile booking begins"},{"year":2015,"metrics":{"revenue_index":10.0,"market_share":0.35,"tech_adoption_velocity":0.5},"label":"Meta-search dominance"},{"year":2019,"metrics":{"revenue_index":13.0,"market_share":0.38,"tech_adoption_velocity":0.55},"label":"Pre-pandemic peak"},{"year":2020,"metrics":{"revenue_index":4.5,"market_share":0.3,"tech_adoption_velocity":0.58},"label":"COVID-19 collapse"},{"year":2023,"metrics":{"revenue_index":11.0,"market_share":0.33,"tech_adoption_velocity":0.65},"label":"Recovery & GenAI emergence"},{"year":2025,"metrics":{"revenue_index":14.0,"market_share":0.35,"tech_adoption_velocity":0.75},"label":"NDC adoption accelerates"},{"year":2028,"metrics":{"revenue_index":18.0,"market_share":0.38,"tech_adoption_velocity":0.85},"label":null},{"year":2030,"metrics":{"revenue_index":22.0,"market_share":0.4,"tech_adoption_velocity":0.9},"label":"AI agents reshape booking"},{"year":2035,"metrics":{"revenue_index":30.0,"market_share":0.42,"tech_adoption_velocity":0.95},"label":null},{"year":2040,"metrics":{"revenue_index":40.0,"market_share":0.45,"tech_adoption_velocity":0.98},"label":"Autonomous travel planning"}],"nodes":[{"id":"tp-001","year":2025,"title":"NDC Standard Adoption","description":"Airlines push direct distribution via NDC, threatening OTA intermediation.","external_driver":"NDC adoption","branches":[{"id":"tp-001-a","label":"Embrace NDC","description":"Integrate NDC pipelines and offer rich airline content.","metric_delta":{"revenue_index":0.05,"market_share":0.02,"tech_adoption_velocity":0.1},"probability":0.6,"next_node_id":"tp-002"},{"id":"tp-001-b","label":"Resist NDC","description":"Maintain legacy GDS relationships; risk content gaps.","metric_delta":{"revenue_index":-0.03,"market_share":-0.04,"tech_adoption_velocity":0.02},"probability":0.4,"next_node_id":"tp-002"}]},{"id":"tp-002","year":2028,"title":"AI Agent Gateway Decision","description":"Decide whether to build proprietary AI travel agents or partner with platform providers.","external_driver":"GenAI breakthrough","branches":[{"id":"tp-002-a","label":"Build Proprietary AI","description":"Heavy R&D investment in in-house AI concierge capabilities.","metric_delta":{"revenue_index":0.12,"market_share":0.06,"tech_adoption_velocity":0.15},"probability":0.35,"next_node_id":"tp-003"},{"id":"tp-002-b","label":"Partner with AI Platforms","description":"Integrate with major AI assistants as a travel fulfillment backend.","metric_delta":{"revenue_index":0.08,"market_share":0.03,"tech_adoption_velocity":0.12},"probability":0.45,"next_node_id":"tp-003"},{"id":"tp-002-c","label":"Wait and See","description":"Minimal AI investment; focus on existing search/book model.","metric_delta":{"revenue_index":-0.02,"market_share":-0.05,"tech_adoption_velocity":0.03},"probability":0.2,"next_node_id":"tp-003"}]},{"id":"tp-003","year":2032,"title":"Airline Direct Booking Dominance Tipping Point","description":"Airlines capture >50% of bookings direct; OTAs must redefine value proposition.","external_driver":"Airline direct booking dominance","branches":[{"id":"tp-003-a","label":"Pivot to Complex Itineraries","description":"Focus on multi-city, multi-modal trips that airlines cannot serve directly.","metric_delta":{"revenue_index":0.1,"market_share":-0.02,"tech_adoption_velocity":0.08},"probability":0.5,"next_node_id":null},{"id":"tp-003-b","label":"Become Aggregator Platform","description":"Transform into marketplace connecting travelers with suppliers via AI.","metric_delta":{"revenue_index":0.15,"market_share":0.05,"tech_adoption_velocity":0.12},"probability":0.3,"next_node_id":null},{"id":"tp-003-c","label":"Consolidate or Exit","description":"Merge with competitors or exit market due to margin compression.","metric_delta":{"revenue_index":-0.2,"market_share":-0.15,"tech_adoption_velocity":0.0},"probability":0.2,"next_node_id":null}]}],"strategic_profiles":[{"name":"Cost Leader","description":"Optimizes operations for price-sensitive segments via scale and automation.","ai_adoption_bias":0.4,"direct_booking_resilience":0.3,"strategic_stance":"Efficiency-led"},{"name":"Differentiator","description":"Invests heavily in AI-driven personalization and premium experiences.","ai_adoption_bias":0.9,"direct_booking_resilience":0.7,"strategic_stance":"Innovation-led"},{"name":"Niche Search","description":"Focuses on underserved routes and complex itineraries using proprietary technology.","ai_adoption_bias":0.7,"direct_booking_resilience":0.5,"strategic_stance":"Innovation-led"}],"competitors":[{"name":"Kiwi.com","key_capability":"Virtual Interlining","initial_position":{"airline_direct_booking_dominance":0.3,"ai_agent_adoption":0.6,"strategic_orientation":"Innovation-led"},"default_profile":"Niche Search"},{"name":"eDreams ODIGEO","key_capability":"Prime Subscription","initial_position":{"airline_direct_booking_dominance":0.5,"ai_agent_adoption":0.5,"strategic_orientation":"Efficiency-led"},"default_profile":"Cost Leader"}],"metadata":{"author":"Strategic Roadmap Engine","version":"1.0","base_year":"2025","frameworks":"PESTEL, Porter's Five Forces, 2x2+S Matrix"}}];
+  const FALLBACK = [{"id":"scenario-001","name":"AI Leapfrog","description":"A scenario where aggressive AI adoption reshapes the OTA landscape, rewarding early movers with proprietary AI capabilities while commoditizing traditional search-and-book intermediaries.","timeline":[{"year":1990,"metrics":{"revenue_index":1.0,"market_share":0.02,"tech_adoption_velocity":0.05},"label":"OTA industry emerges"},{"year":1995,"metrics":{"revenue_index":1.8,"market_share":0.05,"tech_adoption_velocity":0.1},"label":null},{"year":2000,"metrics":{"revenue_index":4.0,"market_share":0.15,"tech_adoption_velocity":0.2},"label":"Dot-com boom & OTA expansion"},{"year":2005,"metrics":{"revenue_index":6.5,"market_share":0.25,"tech_adoption_velocity":0.3},"label":null},{"year":2008,"metrics":{"revenue_index":5.8,"market_share":0.28,"tech_adoption_velocity":0.35},"label":"Financial crisis impact"},{"year":2010,"metrics":{"revenue_index":7.0,"market_share":0.3,"tech_adoption_velocity":0.4},"label":"Mobile booking begins"},{"year":2015,"metrics":{"revenue_index":10.0,"market_share":0.35,"tech_adoption_velocity":0.5},"label":"Meta-search dominance"},{"year":2019,"metrics":{"revenue_index":13.0,"market_share":0.38,"tech_adoption_velocity":0.55},"label":"Pre-pandemic peak"},{"year":2020,"metrics":{"revenue_index":4.5,"market_share":0.3,"tech_adoption_velocity":0.58},"label":"COVID-19 collapse"},{"year":2023,"metrics":{"revenue_index":11.0,"market_share":0.33,"tech_adoption_velocity":0.65},"label":"Recovery & GenAI emergence"},{"year":2025,"metrics":{"revenue_index":14.0,"market_share":0.35,"tech_adoption_velocity":0.75},"label":"NDC adoption accelerates"},{"year":2028,"metrics":{"revenue_index":18.0,"market_share":0.38,"tech_adoption_velocity":0.85},"label":null},{"year":2030,"metrics":{"revenue_index":22.0,"market_share":0.4,"tech_adoption_velocity":0.9},"label":"AI agents reshape booking"},{"year":2035,"metrics":{"revenue_index":30.0,"market_share":0.42,"tech_adoption_velocity":0.95},"label":null},{"year":2040,"metrics":{"revenue_index":40.0,"market_share":0.45,"tech_adoption_velocity":0.98},"label":"Autonomous travel planning"}],"nodes":[{"id":"tp-001","year":2025,"title":"NDC Standard Adoption","description":"Airlines push direct distribution via NDC, threatening OTA intermediation.","external_driver":"NDC adoption","branches":[{"id":"tp-001-a","label":"Embrace NDC","description":"Integrate NDC pipelines and offer rich airline content.","metric_delta":{"revenue_index":0.05,"market_share":0.02,"tech_adoption_velocity":0.1},"probability":0.6,"next_node_id":"tp-002"},{"id":"tp-001-b","label":"Resist NDC","description":"Maintain legacy GDS relationships; risk content gaps.","metric_delta":{"revenue_index":-0.03,"market_share":-0.04,"tech_adoption_velocity":0.02},"probability":0.4,"next_node_id":"tp-002"}]},{"id":"tp-002","year":2028,"title":"AI Agent Gateway Decision","description":"Decide whether to build proprietary AI travel agents or partner with platform providers.","external_driver":"GenAI breakthrough","branches":[{"id":"tp-002-a","label":"Build Proprietary AI","description":"Heavy R&D investment in in-house AI concierge capabilities.","metric_delta":{"revenue_index":0.12,"market_share":0.06,"tech_adoption_velocity":0.15},"probability":0.35,"next_node_id":"tp-003"},{"id":"tp-002-b","label":"Partner with AI Platforms","description":"Integrate with major AI assistants as a travel fulfillment backend.","metric_delta":{"revenue_index":0.08,"market_share":0.03,"tech_adoption_velocity":0.12},"probability":0.45,"next_node_id":"tp-003"},{"id":"tp-002-c","label":"Wait and See","description":"Minimal AI investment; focus on existing search/book model.","metric_delta":{"revenue_index":-0.02,"market_share":-0.05,"tech_adoption_velocity":0.03},"probability":0.2,"next_node_id":"tp-003"}]},{"id":"tp-003","year":2032,"title":"Airline Direct Booking Dominance Tipping Point","description":"Airlines capture >50% of bookings direct; OTAs must redefine value proposition.","external_driver":"Airline direct booking dominance","branches":[{"id":"tp-003-a","label":"Pivot to Complex Itineraries","description":"Focus on multi-city, multi-modal trips that airlines cannot serve directly.","metric_delta":{"revenue_index":0.1,"market_share":-0.02,"tech_adoption_velocity":0.08},"probability":0.5,"next_node_id":null},{"id":"tp-003-b","label":"Become Aggregator Platform","description":"Transform into marketplace connecting travelers with suppliers via AI.","metric_delta":{"revenue_index":0.15,"market_share":0.05,"tech_adoption_velocity":0.12},"probability":0.3,"next_node_id":null},{"id":"tp-003-c","label":"Consolidate or Exit","description":"Merge with competitors or exit market due to margin compression.","metric_delta":{"revenue_index":-0.2,"market_share":-0.15,"tech_adoption_velocity":0.0},"probability":0.2,"next_node_id":null}]}],"strategic_profiles":[{"name":"Cost Leader","description":"Optimizes operations for price-sensitive segments via scale and automation.","ai_adoption_bias":0.4,"direct_booking_resilience":0.3,"strategic_stance":"Efficiency-led"},{"name":"Differentiator","description":"Invests heavily in AI-driven personalization and premium experiences.","ai_adoption_bias":0.9,"direct_booking_resilience":0.7,"strategic_stance":"Innovation-led"},{"name":"Niche Search","description":"Focuses on underserved routes and complex itineraries using proprietary technology.","ai_adoption_bias":0.7,"direct_booking_resilience":0.5,"strategic_stance":"Innovation-led"}],"competitors":[{"name":"Booking Holdings","key_capability":"Global meta-search + multi-brand scale","initial_position":{"airline_direct_booking_dominance":0.5,"ai_agent_adoption":0.55,"strategic_orientation":"Innovation-led"},"default_profile":"Differentiator","initial_market_share":0.3,"metadata":{"source":"Booking Holdings 2023 10-K","source_year":"2023"}},{"name":"Expedia Group","key_capability":"Brand portfolio + Trip Planner AI","initial_position":{"airline_direct_booking_dominance":0.5,"ai_agent_adoption":0.6,"strategic_orientation":"Innovation-led"},"default_profile":"Differentiator","initial_market_share":0.18,"metadata":{"source":"Expedia Group 2023 10-K","source_year":"2023"}},{"name":"Trip.com Group","key_capability":"APAC dominance + TripGenie AI assistant","initial_position":{"airline_direct_booking_dominance":0.4,"ai_agent_adoption":0.7,"strategic_orientation":"Innovation-led"},"default_profile":"Differentiator","initial_market_share":0.09,"metadata":{"source":"Trip.com Group 2023 Annual Report","source_year":"2023"}},{"name":"Agoda","key_capability":"APAC accommodations + aggressive pricing","initial_position":{"airline_direct_booking_dominance":0.4,"ai_agent_adoption":0.55,"strategic_orientation":"Efficiency-led"},"default_profile":"Cost Leader","initial_market_share":0.05,"metadata":{"source":"Booking Holdings 2023 10-K (Agoda segment)","source_year":"2023"}},{"name":"eDreams ODIGEO","key_capability":"Prime Subscription","initial_position":{"airline_direct_booking_dominance":0.5,"ai_agent_adoption":0.5,"strategic_orientation":"Efficiency-led"},"default_profile":"Cost Leader","initial_market_share":0.02,"metadata":{"source":"eDreams ODIGEO FY2024 Annual Report","source_year":"2024"}},{"name":"Kiwi.com","key_capability":"Virtual Interlining","initial_position":{"airline_direct_booking_dominance":0.3,"ai_agent_adoption":0.6,"strategic_orientation":"Innovation-led"},"default_profile":"Niche Search","initial_market_share":0.01,"metadata":{"source":"Kiwi.com publicly reported revenue (private, 2023)","source_year":"2023"}}],"metadata":{"author":"Strategic Roadmap Engine","version":"1.0","base_year":"2025","frameworks":"PESTEL, Porter's Five Forces, 2x2+S Matrix"},"market_share_projection":{"Booking Holdings":[{"year":1990,"share":0.3},{"year":1995,"share":0.3},{"year":2000,"share":0.3},{"year":2005,"share":0.3},{"year":2008,"share":0.3},{"year":2010,"share":0.3},{"year":2015,"share":0.3},{"year":2019,"share":0.3},{"year":2020,"share":0.3},{"year":2023,"share":0.3},{"year":2025,"share":0.3},{"year":2028,"share":0.3413},{"year":2030,"share":0.3291},{"year":2035,"share":0.317},{"year":2040,"share":0.317}],"Expedia Group":[{"year":1990,"share":0.18},{"year":1995,"share":0.18},{"year":2000,"share":0.18},{"year":2005,"share":0.18},{"year":2008,"share":0.18},{"year":2010,"share":0.18},{"year":2015,"share":0.18},{"year":2019,"share":0.18},{"year":2020,"share":0.18},{"year":2023,"share":0.18},{"year":2025,"share":0.18},{"year":2028,"share":0.2213},{"year":2030,"share":0.2092},{"year":2035,"share":0.1971},{"year":2040,"share":0.1971}],"Trip.com Group":[{"year":1990,"share":0.09},{"year":1995,"share":0.09},{"year":2000,"share":0.09},{"year":2005,"share":0.09},{"year":2008,"share":0.09},{"year":2010,"share":0.09},{"year":2015,"share":0.09},{"year":2019,"share":0.09},{"year":2020,"share":0.09},{"year":2023,"share":0.09},{"year":2025,"share":0.09},{"year":2028,"share":0.1313},{"year":2030,"share":0.1193},{"year":2035,"share":0.1073},{"year":2040,"share":0.1073}],"Agoda":[{"year":1990,"share":0.05},{"year":1995,"share":0.05},{"year":2000,"share":0.05},{"year":2005,"share":0.05},{"year":2008,"share":0.05},{"year":2010,"share":0.05},{"year":2015,"share":0.05},{"year":2019,"share":0.05},{"year":2020,"share":0.05},{"year":2023,"share":0.05},{"year":2025,"share":0.05},{"year":2028,"share":0.0709},{"year":2030,"share":0.0552},{"year":2035,"share":0.0395},{"year":2040,"share":0.0395}],"eDreams ODIGEO":[{"year":1990,"share":0.02},{"year":1995,"share":0.02},{"year":2000,"share":0.02},{"year":2005,"share":0.02},{"year":2008,"share":0.02},{"year":2010,"share":0.02},{"year":2015,"share":0.02},{"year":2019,"share":0.02},{"year":2020,"share":0.02},{"year":2023,"share":0.02},{"year":2025,"share":0.02},{"year":2028,"share":0.0409},{"year":2030,"share":0.0252},{"year":2035,"share":0.0094},{"year":2040,"share":0.0094}],"Kiwi.com":[{"year":1990,"share":0.01},{"year":1995,"share":0.01},{"year":2000,"share":0.01},{"year":2005,"share":0.01},{"year":2008,"share":0.01},{"year":2010,"share":0.01},{"year":2015,"share":0.01},{"year":2019,"share":0.01},{"year":2020,"share":0.01},{"year":2023,"share":0.01},{"year":2025,"share":0.01},{"year":2028,"share":0.0439},{"year":2030,"share":0.0302},{"year":2035,"share":0.0164},{"year":2040,"share":0.0164}],"Other":[{"year":1990,"share":0.35},{"year":1995,"share":0.35},{"year":2000,"share":0.35},{"year":2005,"share":0.35},{"year":2008,"share":0.35},{"year":2010,"share":0.35},{"year":2015,"share":0.35},{"year":2019,"share":0.35},{"year":2020,"share":0.35},{"year":2023,"share":0.35},{"year":2025,"share":0.35},{"year":2028,"share":0.1504},{"year":2030,"share":0.2318},{"year":2035,"share":0.3133},{"year":2040,"share":0.3133}]}}];
 
   // ── State ─────────────────────────────────────────────────────────────────
   let scenarios        = [];
@@ -522,6 +694,7 @@
     buildSelector();
     await renderFlowchart(baseScenario);
     renderChart();
+    renderMarketShare();
   }
 
   // ── Scenario selector ─────────────────────────────────────────────────────
@@ -543,6 +716,7 @@
     // diagram is fully visible (FR-3 §3.4 acceptance).
     renderFlowchart(scen, { preserveView: userZoomed });
     renderChart();
+    renderMarketShare();
   }
 
   // ── Mermaid diagram ───────────────────────────────────────────────────────
@@ -567,7 +741,8 @@
     let prevId = null;
     milestones.forEach(m => {
       const id = `HIST_${m.year}`;
-      lines.push(`    ${id}(["${m.year}<br/>${m.label}"])`);
+      const kpis = milestoneKpis(m);
+      lines.push(`    ${id}(["${m.year}<br/>${m.label}<br/>${kpis}"])`);
       lines.push(`    class ${id} hist`);
       if (prevId) lines.push(`    ${prevId} --> ${id}`);
       prevId = id;
@@ -577,7 +752,10 @@
     // Turning points and their branches
     sorted.forEach((node, ni) => {
       const tpId = `TP_${node.id.replace(/-/g, '_')}`;
-      lines.push(`    ${tpId}{{"${node.year}<br/>⚡ ${escMd(node.title)}"}}`);
+      // FR-4: primary-branch (highest-probability) delta chips on the hexagon
+      const primary = node.branches.reduce((a, b) => b.probability > a.probability ? b : a);
+      const tpChips = deltaChips(primary.metric_delta);
+      lines.push(`    ${tpId}{{"${node.year}<br/>⚡ ${escMd(node.title)}<br/>${tpChips}"}}`);
       lines.push(`    class ${tpId} tp`);
       nodeMap[tpId] = { type: 'turning_point', data: node };
 
@@ -595,10 +773,12 @@
             lines.push(`    ${tpId} -->|${edge}| ${nextId}`);
           }
         } else {
-          // Terminal outcome node
+          // Terminal outcome node — FR-4: 2040 KPIs + stance glyph on the node
           const endId    = `END_${branch.id.replace(/-/g, '_')}`;
           const endClass = branch.metric_delta.revenue_index >= 0 ? 'endP' : 'endN';
-          lines.push(`    ${endId}(["2040<br/>${escMd(branch.label)}"])`);
+          const endKpis  = outcomeKpis(scenario, branch);
+          const stance   = branch.metric_delta.tech_adoption_velocity > 0.08 ? '⚡ Innovation' : '⚙ Efficiency';
+          lines.push(`    ${endId}(["2040<br/>${escMd(branch.label)}<br/>${endKpis}<br/>${stance}"])`);
           lines.push(`    class ${endId} ${endClass}`);
           lines.push(`    ${tpId} -->|${edge}| ${endId}`);
           nodeMap[endId] = { type: 'outcome', data: branch };
@@ -607,6 +787,42 @@
     });
 
     return lines.join('\n');
+  }
+
+  // ── On-node KPI formatting (FR-4 update) ──────────────────────────────────
+  // Glyph shorthand: ▲ positive delta, ▼ negative, · near-zero.
+  // Labels stay plain text so Mermaid's label parser never tangles with HTML.
+  function glyph(v) { return v > 0.001 ? '▲' : v < -0.001 ? '▼' : '·'; }
+  function signed(v, digits = 2) {
+    const sign = v > 0 ? '+' : v < 0 ? '' : '';
+    return `${sign}${v.toFixed(digits)}`;
+  }
+  function signedPct(v) {
+    const pct = v * 100;
+    const sign = pct > 0 ? '+' : pct < 0 ? '' : '';
+    return `${sign}${pct.toFixed(0)}%`;
+  }
+  function deltaChips(delta) {
+    return [
+      `${glyph(delta.revenue_index)}R ${signed(delta.revenue_index)}`,
+      `${glyph(delta.market_share)}M ${signedPct(delta.market_share)}`,
+      `${glyph(delta.tech_adoption_velocity)}T ${signedPct(delta.tech_adoption_velocity)}`,
+    ].join(' · ');
+  }
+  function milestoneKpis(m) {
+    const rev   = m.metrics.revenue_index.toFixed(1);
+    const share = Math.round(m.metrics.market_share * 100);
+    const tech  = Math.round(m.metrics.tech_adoption_velocity * 100);
+    return `rev ${rev}× · ms ${share}% · tav ${tech}%`;
+  }
+  // 2040 projected KPIs for an outcome: baseline 2040 + branch delta.
+  function outcomeKpis(scenario, branch) {
+    const t2040 = scenario.timeline.find(t => t.year === 2040) || scenario.timeline[scenario.timeline.length - 1];
+    if (!t2040) return deltaChips(branch.metric_delta);
+    const rev   = (t2040.metrics.revenue_index + branch.metric_delta.revenue_index).toFixed(1);
+    const share = Math.round(Math.max(0, Math.min(1, t2040.metrics.market_share + branch.metric_delta.market_share)) * 100);
+    const tech  = Math.round(Math.max(0, Math.min(1, t2040.metrics.tech_adoption_velocity + branch.metric_delta.tech_adoption_velocity)) * 100);
+    return `rev ${rev}× · ms ${share}% · tav ${tech}%`;
   }
 
   function escMd(str) {
@@ -1081,6 +1297,147 @@
     });
   }
 
+  // ── Market Share panel (FR-6) ─────────────────────────────────────────────
+  // Stable colour palette. Keys are competitor names from scenarios.json;
+  // "Other" bucket always renders last in muted grey.
+  const MS_COLORS = [
+    '#60a5fa',  // Booking Holdings  — blue
+    '#fbbf24',  // Expedia Group     — amber
+    '#a78bfa',  // Trip.com Group    — violet
+    '#f472b6',  // Agoda             — pink
+    '#34d399',  // eDreams ODIGEO    — emerald
+    '#fb923c',  // Kiwi.com          — orange
+  ];
+  const MS_OTHER_COLOR = '#64748b';
+
+  // Preserve the user's legend toggles across scenario switches.
+  const msHidden = new Set();
+  let msChart = null;
+
+  function renderMarketShare() {
+    const scen = scenarios[activeScenIdx] || baseScenario;
+    const baseMsp = baseScenario ? (baseScenario.market_share_projection || {}) : {};
+    const msp = scen.market_share_projection || {};
+    const tbody = document.getElementById('ms-tbody');
+
+    if (!tbody) return;
+    if (!msp || Object.keys(msp).length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">
+          No market-share projection available for this scenario.<br>
+          Re-run <code>python3 src/engine/simulator.py</code> after updating the data.
+        </td></tr>`;
+      if (msChart) { msChart.destroy(); msChart = null; }
+      return;
+    }
+
+    // Keep "Other" last so the visual order in the legend / table is stable.
+    const names = Object.keys(msp).filter(n => n !== 'Other').concat(
+      'Other' in msp ? ['Other'] : []
+    );
+
+    const years = (msp[names[0]] || []).map(p => p.year);
+
+    const datasets = names.map((name, i) => {
+      const isOther = name === 'Other';
+      const colour = isOther ? MS_OTHER_COLOR : MS_COLORS[i % MS_COLORS.length];
+      return {
+        label: name,
+        data: msp[name].map(p => +(p.share * 100).toFixed(2)),
+        borderColor: colour,
+        backgroundColor: colour + '22',
+        borderWidth: isOther ? 1.5 : 2,
+        borderDash: isOther ? [4, 4] : [],
+        fill: false,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        hidden: msHidden.has(name),
+      };
+    });
+
+    const ctx = document.getElementById('market-chart').getContext('2d');
+    if (msChart) msChart.destroy();
+    msChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: years, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#94a3b8', font: { size: 11 }, padding: 10, boxWidth: 12 },
+            onClick(e, item, legend) {
+              const ci = legend.chart;
+              const visibleCount = ci.data.datasets.filter((_, i) => ci.getDatasetMeta(i).hidden !== true).length;
+              const meta = ci.getDatasetMeta(item.datasetIndex);
+              const willHide = meta.hidden === null ? true : !meta.hidden;
+              // Never let the user hide the last visible series.
+              if (willHide && visibleCount <= 1) return;
+              meta.hidden = willHide;
+              const label = ci.data.datasets[item.datasetIndex].label;
+              if (willHide) msHidden.add(label); else msHidden.delete(label);
+              ci.update();
+            },
+          },
+          tooltip: {
+            backgroundColor: '#1e293b',
+            borderColor:     '#475569',
+            borderWidth: 1,
+            titleColor: '#f1f5f9',
+            bodyColor:  '#94a3b8',
+            callbacks: {
+              label: item => `${item.dataset.label}: ${item.parsed.y.toFixed(1)}%`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid:  { color: '#1e293b' },
+            ticks: { color: '#64748b', font: { size: 10 } },
+          },
+          y: {
+            grid: { color: '#1e293b' },
+            ticks: { color: '#64748b', font: { size: 10 }, callback: v => v + '%' },
+            title: { display: true, text: 'Market share (%)', color: '#64748b', font: { size: 10 } },
+            min: 0,
+          },
+        },
+      },
+    });
+
+    // Summary table: 2025 / 2030 / 2040 + Δ vs. base scenario at 2040.
+    const rows = names.map(name => {
+      const series = msp[name] || [];
+      const pick = year => {
+        const pt = series.find(p => p.year === year);
+        return pt ? pt.share : null;
+      };
+      const baseSeries = baseMsp[name] || [];
+      const basePick2040 = (baseSeries.find(p => p.year === 2040) || {}).share;
+      const own2040 = pick(2040);
+      let deltaCell = '—';
+      if (basePick2040 !== undefined && own2040 !== null) {
+        const d = (own2040 - basePick2040) * 100;
+        const cls = d > 0.05 ? 'pos' : d < -0.05 ? 'neg' : 'zer';
+        const sign = d >= 0 ? '+' : '';
+        deltaCell = `<span class="ms-delta ${cls}">${sign}${d.toFixed(2)} pp</span>`;
+      }
+      const fmt = v => v === null ? '—' : (v * 100).toFixed(1) + '%';
+      return `
+        <tr class="${name === 'Other' ? 'other-row' : ''}">
+          <td class="name">${name}</td>
+          <td>${fmt(pick(2025))}</td>
+          <td>${fmt(pick(2030))}</td>
+          <td>${fmt(pick(2040))}</td>
+          <td>${deltaCell}</td>
+        </tr>`;
+    }).join('');
+    tbody.innerHTML = rows;
+  }
+
   function toggleMetric(btn) {
     const m = btn.dataset.m;
     if (activeMetrics.has(m)) {
@@ -1091,7 +1448,164 @@
     renderChart();
   }
 
+  // ── Adjustable Layout (Phase 6 §6.1) ──────────────────────────────────────
+  // Drag handles update CSS custom properties on <body> / .main-split which
+  // in turn drive the grid track sizes. Sizes persist to localStorage keyed
+  // by `LAYOUT_KEY`. Bumping LAYOUT_VERSION suffix forces a reset on the
+  // next page load.
+  const LAYOUT_VERSION = 'v1';
+  const LAYOUT_KEY     = 'ota-roadmap-layout-' + LAYOUT_VERSION;
+  const LAYOUT_MIN = {
+    'col-detail':   240,
+    'row-metrics':  140,
+    'row-market':   200,
+  };
+  const LAYOUT_MAX = {
+    'col-detail':  () => Math.max(260, window.innerWidth  * 0.6),
+    'row-metrics': () => Math.max(180, window.innerHeight * 0.6),
+    'row-market':  () => Math.max(220, window.innerHeight * 0.6),
+  };
+  const LAYOUT_TARGET = {
+    'col-detail':   () => document.querySelector('.main-split'),
+    'row-metrics':  () => document.body,
+    'row-market':   () => document.body,
+  };
+
+  function clampLayout(key, value) {
+    const min = LAYOUT_MIN[key];
+    const max = LAYOUT_MAX[key]();
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function readLayout() {
+    try { return JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}'); }
+    catch { return {}; }
+  }
+
+  function writeLayout(state) {
+    try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(state)); } catch {}
+  }
+
+  function applyStoredLayout() {
+    const state = readLayout();
+    Object.entries(state).forEach(([key, value]) => {
+      const target = LAYOUT_TARGET[key] && LAYOUT_TARGET[key]();
+      if (target) target.style.setProperty('--' + key, clampLayout(key, value) + 'px');
+    });
+  }
+
+  function resetLayout() {
+    try { localStorage.removeItem(LAYOUT_KEY); } catch {}
+    document.querySelector('.main-split')?.style.removeProperty('--col-detail');
+    document.body.style.removeProperty('--row-metrics');
+    document.body.style.removeProperty('--row-market');
+    notifyPanesResized();
+  }
+
+  function bindLayoutHandles() {
+    document.querySelectorAll('.resize-handle').forEach(handle => {
+      const key  = handle.dataset.resize;
+      const axis = handle.dataset.axis;
+      if (!key || !axis) return;
+
+      let startPos = 0;
+      let startValue = 0;
+      let target = null;
+
+      const onMove = e => {
+        const delta = (axis === 'x' ? e.clientX : e.clientY) - startPos;
+        // Handle sits AFTER the flex region and BEFORE the target region, so
+        // dragging toward the target shrinks it. For x-axis: handle between
+        // flowchart (flex) and detail (fixed) — moving right grows flowchart,
+        // so detail = start - delta. Same math for the vertical handles.
+        const next = clampLayout(key, startValue - delta);
+        target.style.setProperty('--' + key, next + 'px');
+      };
+
+      const onUp = () => {
+        document.body.classList.remove('resizing');
+        handle.classList.remove('dragging');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        const currentPx = parseFloat(getComputedStyle(target).getPropertyValue('--' + key)) || startValue;
+        const state = readLayout();
+        state[key] = currentPx;
+        writeLayout(state);
+        notifyPanesResized();
+      };
+
+      handle.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        target = LAYOUT_TARGET[key]();
+        if (!target) return;
+        startPos = axis === 'x' ? e.clientX : e.clientY;
+        // Read the current computed size so the first delta is relative to
+        // what the user actually sees, not a stale stored value.
+        const computedRect = axis === 'x'
+          ? document.querySelector('.detail-pane').getBoundingClientRect().width
+          : (key === 'row-metrics'
+              ? document.querySelector('.chart-section').getBoundingClientRect().height
+              : document.querySelector('.market-section').getBoundingClientRect().height);
+        startValue = computedRect;
+        target.style.setProperty('--' + key, startValue + 'px');
+        document.body.classList.add('resizing');
+        handle.classList.add('dragging');
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp, { once: true });
+      });
+
+      // Keyboard fallback: arrow keys nudge ±8 px per press (±32 with Shift).
+      handle.addEventListener('keydown', e => {
+        const step = e.shiftKey ? 32 : 8;
+        const nudgeAxis = axis === 'x' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
+        if (!nudgeAxis.includes(e.key)) return;
+        e.preventDefault();
+        const t = LAYOUT_TARGET[key]();
+        if (!t) return;
+        const current = parseFloat(getComputedStyle(t).getPropertyValue('--' + key))
+                      || (axis === 'x' ? 300 : key === 'row-metrics' ? 220 : 360);
+        const direction = (axis === 'x' ? (e.key === 'ArrowLeft' ? 1 : -1) : (e.key === 'ArrowUp' ? 1 : -1));
+        const next = clampLayout(key, current + direction * step);
+        t.style.setProperty('--' + key, next + 'px');
+        const state = readLayout();
+        state[key] = next;
+        writeLayout(state);
+        notifyPanesResized();
+      });
+    });
+
+    document.getElementById('reset-layout-btn')?.addEventListener('click', resetLayout);
+  }
+
+  // Notify Chart.js and svg-pan-zoom that their containers changed size.
+  // Called after a divider drag ends (pointerup) and on viewport resize.
+  function notifyPanesResized() {
+    try { chart   && chart.resize();   } catch {}
+    try { msChart && msChart.resize(); } catch {}
+    try { panZoom && panZoom.resize(); } catch {}
+  }
+
+  // Continuous reflow while dividers are dragged — debounced via rAF.
+  let paneResizeQueued = false;
+  function observeAutoReflow() {
+    const queue = () => {
+      if (paneResizeQueued) return;
+      paneResizeQueued = true;
+      requestAnimationFrame(() => {
+        paneResizeQueued = false;
+        notifyPanesResized();
+      });
+    };
+    const ro = new ResizeObserver(queue);
+    document.querySelectorAll('.diagram-wrap, .chart-wrap, .market-chart-wrap')
+      .forEach(el => ro.observe(el));
+    window.addEventListener('resize', queue);
+  }
+
   // ── Start ─────────────────────────────────────────────────────────────────
+  applyStoredLayout();
+  bindLayoutHandles();
+  observeAutoReflow();
   bindNavControls();
   init();
   </script>

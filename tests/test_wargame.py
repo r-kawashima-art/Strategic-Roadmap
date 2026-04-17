@@ -219,5 +219,78 @@ class IndustryTrendTests(unittest.TestCase):
         )
 
 
+class MarketShareProjectionTests(unittest.TestCase):
+    """FR-6 / Phase-5 narrative checks on the per-competitor market-share
+    projection emitted by `Simulator.project_market_shares()`."""
+
+    def setUp(self) -> None:
+        self.sim = fresh_simulator()
+        # Use the optimistic path — the narrative only holds under conditions
+        # that reward high-AI-bias / high-resilience profiles.
+        self.optimistic = {
+            "tp-001": "tp-001-a",   # Embrace NDC
+            "tp-002": "tp-002-a",   # Build Proprietary AI
+            "tp-003": "tp-003-b",   # Become Aggregator Platform
+        }
+        self.result = self.sim.run(self.optimistic)
+        self.projection = self.sim.project_market_shares(self.result)
+
+    def test_projection_has_every_competitor_plus_other(self) -> None:
+        names = {c.name for c in self.sim.scenario.competitors}
+        self.assertTrue(names.issubset(self.projection.keys()),
+                        f"projection missing competitors: {names - set(self.projection.keys())}")
+        self.assertIn("Other", self.projection,
+                      "'Other' bucket must be present so tracked + untracked sums to 1.0")
+
+    def test_every_share_is_in_unit_interval(self) -> None:
+        for name, series in self.projection.items():
+            for pt in series:
+                self.assertGreaterEqual(pt["share"], 0.0,
+                                        f"{name}@{pt['year']} share < 0: {pt['share']}")
+                self.assertLessEqual(pt["share"], 1.0,
+                                     f"{name}@{pt['year']} share > 1: {pt['share']}")
+
+    def test_shares_sum_to_one_at_every_year(self) -> None:
+        years = [pt["year"] for pt in next(iter(self.projection.values()))]
+        for idx, year in enumerate(years):
+            total = sum(series[idx]["share"] for series in self.projection.values())
+            self.assertAlmostEqual(
+                total, 1.0, places=3,
+                msg=f"year {year}: tracked + Other = {total}, expected 1.0 ± 0.001",
+            )
+
+    def test_strong_profile_ends_ahead_of_weak_profile(self) -> None:
+        """Narrative consistency: at the end of the optimistic simulation, a
+        Differentiator (high AI bias + high direct-booking resilience) should
+        end with a *higher fit-weighted market share* than a Cost Leader
+        (low AI bias + low resilience).
+
+        We check this at the simulation level (pre-projection-normalization)
+        because every competitor is seeded from the same aggregate baseline
+        in `_init_competitor_states`. That makes absolute market_share at the
+        final step a clean, fit-weighted ranking signal — whereas the
+        post-normalization projection mixes in the initial-share base, which
+        artificially favours small incumbents on relative-growth metrics.
+        """
+        scenario = self.sim.scenario
+        profiles = {p.name: p for p in scenario.strategic_profiles}
+        strong = next(c for c in scenario.competitors
+                      if profiles[c.default_profile].ai_adoption_bias >= 0.8
+                      and profiles[c.default_profile].direct_booking_resilience >= 0.6)
+        weak = next(c for c in scenario.competitors
+                    if profiles[c.default_profile].ai_adoption_bias <= 0.4
+                    and profiles[c.default_profile].direct_booking_resilience <= 0.3)
+
+        final_states = {cs.name: cs for cs in self.result.steps[-1].competitor_states}
+        strong_ms = final_states[strong.name].metrics.market_share
+        weak_ms   = final_states[weak.name].metrics.market_share
+
+        self.assertGreater(
+            strong_ms, weak_ms,
+            f"Narrative broken: {strong.name} final ms={strong_ms:.3f} should exceed "
+            f"{weak.name} ms={weak_ms:.3f} under the optimistic path",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
