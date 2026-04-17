@@ -3,7 +3,7 @@
 ## 1. User Story
 
 **As a** Strategy Planner at an Online Traveling Agency,
-**I want to** visualize divergent future scenarios based on AI adoption and market dynamics,
+**I want to** visualize divergent future scenarios based on AI adoption and market dynamics with interactive conversation with the Scenario system,
 **So that** I can identify "Turning Points" where specific decisions lead to corporate success or failure.
 
 ## 2. Context & Objectives
@@ -16,6 +16,7 @@ The travel industry is facing massive disruption via AI (Generative AI, NDC, and
 - **FR-2: Turning Point Logic**: Identify specific decision nodes (e.g., "Implement NDC Standard By 2025" or "Launch AI Concierge") and their impact on market share.
 - **FR-3: Flowchart Visualization**: Render the roadmap as an interactive scenario-line-flowchart (Mermaid or D3.js).
 - **FR-4: Financial and Technological Linkage**: Correlate scenarios with key metrics (Revenue Growth, Market Share, and Technology Adoption and Strategic Positioning).
+- **FR-5: Interactive Future Prediction**: Allow users to ask questions about the future scenarios and get answers based on the data and revise the scenarios based on user inputs.
 
 ## 4. Technical Constraints
 
