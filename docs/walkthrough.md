@@ -110,10 +110,11 @@ The engine produces logically valid JSON branches. The top-ranked generated path
 
 ### What was built
 
-A self-contained single-file dashboard (~800 lines) with no build step required. It loads two CDN libraries:
+A self-contained single-file dashboard (~1000 lines) with no build step required. It loads three CDN libraries:
 
 - **Mermaid.js v10** — renders the decision tree as a flowchart SVG.
 - **Chart.js v4** — renders the metrics timeline as a dual-axis area chart.
+- **svg-pan-zoom v3.6.1** — wraps the rendered flowchart SVG in a pan/zoom viewport (added in the FR-3 navigability pass; see §3.3).
 
 #### Layout
 
@@ -122,9 +123,10 @@ A self-contained single-file dashboard (~800 lines) with no build step required.
 │ Header: title + scenario selector dropdown   │
 ├──────────────────────────────┬───────────────┤
 │ Strategic Decision Tree      │ Detail Panel  │
-│ (Mermaid.js flowchart)       │ (turning-pt   │
-│                              │  details on   │
-│                              │  hover/click) │
+│ (Mermaid.js + svg-pan-zoom)  │ (turning-pt   │
+│   ┌─────────────────────┐    │  details on   │
+│   │ [−] [+] 100%  ⤢  ◎  │ ←  toolbar        │
+│   └─────────────────────┘    │  hover/click) │
 ├──────────────────────────────┴───────────────┤
 │ Metrics Timeline (Chart.js)                  │
 │ [Revenue Index] [Market Share] [Tech Adopt.] │
@@ -155,6 +157,20 @@ Three events are attached to each matched element:
 | `mouseleave` | Hides the tooltip; clears the detail panel if unpinned |
 | `click` | Pins/unpins the detail panel to that node |
 
+#### Navigability (FR-3) — pan / zoom / focus
+
+Added in the FR-3 update. As the diagram grows (more turning points, more competitors, Phase 5/6 revisions), the viewport needs to scroll and magnify. Implementation:
+
+- **`svg-pan-zoom` integration** — `initPanZoom()` runs *after* every Mermaid render. The previous instance (if any) is `.destroy()`-ed before the new SVG is inserted, and the `<svg>` element has its Mermaid-emitted inline width stripped (`removeAttribute('style')`) so the library can own sizing. Zoom is clamped to `[0.25×, 4×]`, double-click-zoom is disabled (reserved for Focus mode), and `preventMouseEventsDefault` stops page-level scroll during trackpad gestures.
+- **Toolbar** — floating at the top-right of the flowchart pane: `−`, `+`, a live zoom-% readout (`aria-live="polite"`), `⤢` Reset, `◎` Focus. The Focus button stays disabled until a node is hovered.
+- **Keyboard bindings** — scoped to `#diagram-container` (`role="application"`, `tabindex="0"`): `←↑↓→` pan by 40 px, `Shift+Arrow` by 200 px, `+`/`=` zoom in, `-`/`_` zoom out, `0` fits, `F` focuses the hovered node, `Esc` resets. Every hotkey calls `preventDefault()` to stop browser-level conflicts.
+- **Touch** — single-finger drag pans, two-finger pinch zooms (handled by `svg-pan-zoom`). `touch-action: none` on the container prevents the browser from hijacking gestures for page scroll.
+- **Focus mode** — `focusNode(el)` uses `zoomAtPoint` to scale to 150 % around the node's current screen position, then `panBy` to centre it. Double-clicking a turning-point hexagon or pressing `F` triggers it. A short CSS transition on `.svg-pan-zoom_viewport.animate` makes the jump smooth; the `.animate` class is only added when `prefers-reduced-motion: no-preference`, satisfying the reduced-motion acceptance item.
+- **State preservation across scenario switches** — `onScenarioChange` now re-renders the flowchart too (not just the chart). It passes `preserveView: userZoomed` to `renderFlowchart()`: if the user has manually zoomed, pan/zoom state is captured and restored; otherwise the new diagram re-fits. The `userZoomed` flag is flipped on any programmatic or user-initiated zoom via `onZoom`, and cleared on `Reset`.
+- **Hover handler rebinding** — `attachSvgHandlers()` now runs *after* `initPanZoom()` so it binds to the inner `<g.svg-pan-zoom_viewport>` that the library injects. This is critical: without the re-bind order, hover/click stop working the moment a pan or zoom is applied.
+
+Non-pointer fallback: the keyboard arrow keys serve as the full-coverage alternative to gesture-based pan, so every part of the diagram remains reachable without a mouse or trackpad.
+
 #### Detail panel
 
 Shows structured information for whichever node is active:
@@ -177,7 +193,7 @@ Three toggle buttons above the chart independently enable/disable each metric; a
 
 #### Scenario selector
 
-The dropdown is populated from all scenarios in `scenarios.json`. Switching it re-renders only the timeline chart — the decision tree always reflects the base scenario's full path space.
+The dropdown is populated from all scenarios in `scenarios.json`. Switching it re-renders both the decision-tree flowchart (preserving pan/zoom state only if the user had manually zoomed — see §Navigability) and the metrics timeline chart, so the entire dashboard reflects the chosen scenario.
 
 #### Data loading
 
@@ -185,7 +201,7 @@ On startup `init()` attempts `fetch('../../data/scenarios.json')`. This succeeds
 
 ### Milestone M3 — UI Prototype ✅
 
-The Mermaid diagram renders in the browser, hover effects expose turning-point details, and the Chart.js timeline shows the projected metrics for any selected scenario path.
+The Mermaid diagram renders in the browser, hover effects expose turning-point details, the Chart.js timeline shows projected metrics for any selected scenario path, and the flowchart is fully navigable at any density — pan, zoom, fit, focus, and keyboard-only operation all supported (FR-3).
 
 ---
 
@@ -266,6 +282,7 @@ python3 -m unittest tests.test_turning_points -v
 |---|---|
 | Strategy logic too simple | `FitEngine` encodes driver-specific weights from PESTEL/Porter; `MatrixEngine` evolves competitor positions along all three 2x2+S axes per turning point |
 | Hard to maintain Mermaid syntax | `buildDef()` in `index.html` generates all Mermaid syntax programmatically from `scenarios.json`; raw Mermaid is never hand-edited |
+| Flowchart unreadable as nodes accumulate (FR-3) | `svg-pan-zoom` wraps every rendered Mermaid SVG, with toolbar + keyboard + touch controls (see Phase 3 §Navigability). Default view is fit-to-screen; zoom is clamped to [0.25×, 4×] so users can't lose the diagram. |
 | Missing OTA current data | Kiwi.com and eDreams ODIGEO are used as baseline templates; `CompetitorProfile` is designed to accept additional entrants without schema changes |
 | Narrative drift over time (Phase 4) | `tests/test_wargame.py` codifies NDC / GenAI / direct-booking narratives as executable assertions; `tests/run_verification.py` regenerates a reviewer-facing report on demand so stakeholders can re-validate turning-point clarity without reading code |
 

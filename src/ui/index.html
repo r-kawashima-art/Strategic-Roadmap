@@ -6,6 +6,7 @@
   <title>OTA Strategic Roadmap Visualizer</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
   <style>
     /* ── Design tokens ───────────────────────────────────────────────────── */
     :root {
@@ -79,10 +80,11 @@
     /* ── Flowchart pane ──────────────────────────────────────────────────── */
     .flowchart-pane {
       padding: 1.25rem 1.5rem;
-      overflow: auto;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
+      min-height: 0;
     }
 
     .pane-title {
@@ -105,13 +107,105 @@
       width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
     }
 
-    #diagram-container {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 200px;
+    /* ── Pan/zoom viewport (FR-3 navigability) ──────────────────────────── */
+    .diagram-wrap {
+      position: relative;
+      flex: 1 1 0;
+      min-height: 320px;
+      background: var(--bg);
+      border-radius: 6px;
+      border: 1px solid var(--surface2);
+      overflow: hidden;
     }
-    #diagram-container svg { max-width: 100%; height: auto; }
+    #diagram-container {
+      width: 100%;
+      height: 100%;
+      outline: none;
+      touch-action: none;        /* let svg-pan-zoom own gestures */
+      cursor: grab;
+    }
+    #diagram-container.panning  { cursor: grabbing; }
+    #diagram-container:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    #diagram-container svg {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      display: block;
+    }
+    /* Animate viewport transform only when the user triggers a jump
+       (zoom/focus/reset). Pan drags clear the transition for smoothness. */
+    @media (prefers-reduced-motion: no-preference) {
+      .svg-pan-zoom_viewport.animate {
+        transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+      }
+    }
+
+    /* ── Pan/zoom toolbar ───────────────────────────────────────────────── */
+    .pz-toolbar {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+      backdrop-filter: blur(6px);
+      z-index: 2;
+    }
+    .pz-btn {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      border-radius: 5px;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .pz-btn:hover     { background: var(--surface2); }
+    .pz-btn:disabled  { color: var(--border); cursor: not-allowed; }
+    .pz-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+    .pz-zoom {
+      font-size: 0.7rem;
+      color: var(--muted);
+      min-width: 42px;
+      text-align: center;
+      padding: 0 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .pz-hint {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      font-size: 0.65rem;
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--surface2);
+      padding: 3px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .diagram-wrap:hover .pz-hint,
+    #diagram-container:focus-within + .pz-hint,
+    #diagram-container:focus-visible ~ .pz-hint {
+      opacity: 1;
+    }
 
     .loading {
       display: flex;
@@ -311,8 +405,23 @@
           <div class="legend-dot" style="background:#334155"></div>Historical
         </div>
       </div>
-      <div id="diagram-container">
-        <div class="loading">Rendering decision tree…</div>
+      <div class="diagram-wrap">
+        <div
+          id="diagram-container"
+          role="application"
+          tabindex="0"
+          aria-label="Strategic decision flowchart. Use arrow keys to pan, plus and minus to zoom, zero to fit, F to focus on the hovered node."
+        >
+          <div class="loading">Rendering decision tree…</div>
+        </div>
+        <div class="pz-toolbar" role="toolbar" aria-label="Flowchart controls">
+          <button class="pz-btn" id="pz-out"   aria-label="Zoom out (−)"              title="Zoom out (−)">−</button>
+          <button class="pz-btn" id="pz-in"    aria-label="Zoom in (+)"               title="Zoom in (+)">+</button>
+          <span   class="pz-zoom" id="pz-zoom" aria-live="polite">100%</span>
+          <button class="pz-btn" id="pz-reset" aria-label="Fit diagram to viewport (0)" title="Fit to viewport (0)">⤢</button>
+          <button class="pz-btn" id="pz-focus" aria-label="Focus on hovered node (F)" title="Focus hovered node (F)" disabled>◎</button>
+        </div>
+        <div class="pz-hint" aria-hidden="true">Drag to pan · wheel / +/− to zoom · 0 to fit · F to focus</div>
       </div>
     </div>
 
@@ -366,6 +475,18 @@
   // Maps mermaid-svg node id → { type, data }
   const nodeMap = {};
 
+  // ── Pan/zoom (FR-3) ───────────────────────────────────────────────────────
+  let panZoom         = null;   // svg-pan-zoom instance for the current diagram
+  let userZoomed      = false;  // true once the user manually zooms; drives scenario-switch refit
+  let hoveredEl       = null;   // tracks the <g.node> under the cursor for Focus (F)
+  const ZOOM_MIN      = 0.25;
+  const ZOOM_MAX      = 4.0;
+  const PAN_STEP      = 40;
+  const PAN_STEP_BIG  = 200;
+  const FOCUS_ZOOM    = 1.5;
+  const prefersReducedMotion = () =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // ── Boot ──────────────────────────────────────────────────────────────────
   mermaid.initialize({
     startOnLoad: false,
@@ -416,6 +537,11 @@
 
   function onScenarioChange() {
     activeScenIdx = parseInt(document.getElementById('scen-sel').value, 10);
+    const scen = scenarios[activeScenIdx] || baseScenario;
+    // Re-render the flowchart for the new scenario. Preserve pan/zoom state
+    // only if the user has manually zoomed — otherwise re-fit so the new
+    // diagram is fully visible (FR-3 §3.4 acceptance).
+    renderFlowchart(scen, { preserveView: userZoomed });
     renderChart();
   }
 
@@ -488,15 +614,37 @@
     return str.replace(/"/g, '&quot;').replace(/[<>]/g, '');
   }
 
-  async function renderFlowchart(scenario) {
+  async function renderFlowchart(scenario, { preserveView = false } = {}) {
     const container = document.getElementById('diagram-container');
+    const priorState = preserveView && panZoom ? capturePanZoom() : null;
+
+    // Tear down any previous pan/zoom instance before replacing the SVG
+    if (panZoom) {
+      try { panZoom.destroy(); } catch (_) { /* no-op */ }
+      panZoom = null;
+    }
+
     container.innerHTML = '<div class="loading">Rendering decision tree…</div>';
 
     try {
       const def = buildDef(scenario);
       const { svg } = await mermaid.render('ota-roadmap', def);
       container.innerHTML = svg;
+
+      const svgEl = container.querySelector('svg');
+      if (svgEl) {
+        // Mermaid emits a fixed width on the <svg>; strip so the pan/zoom
+        // container can own sizing and we don't double-scale.
+        svgEl.removeAttribute('style');
+        svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      }
+
+      initPanZoom();
+      // Hover handlers must be (re-)bound AFTER pan/zoom wraps the SVG so
+      // they fire on the transformed <g.svg-pan-zoom_viewport>.
       attachSvgHandlers();
+
+      if (priorState) restorePanZoom(priorState);
     } catch (err) {
       console.error('Mermaid render error:', err);
       container.innerHTML = `
@@ -509,12 +657,156 @@
     }
   }
 
+  // ── Pan/zoom integration ──────────────────────────────────────────────────
+  function initPanZoom() {
+    const svgEl = document.querySelector('#diagram-container svg');
+    if (!svgEl || typeof svgPanZoom !== 'function') return;
+
+    panZoom = svgPanZoom(svgEl, {
+      zoomEnabled:        true,
+      panEnabled:         true,
+      controlIconsEnabled:false,         // we render our own toolbar
+      dblClickZoomEnabled:false,         // double-click is reserved for Focus
+      mouseWheelZoomEnabled: true,
+      preventMouseEventsDefault: true,
+      fit:                true,
+      center:             true,
+      minZoom:            ZOOM_MIN,
+      maxZoom:            ZOOM_MAX,
+      contain:            false,
+      onZoom:             () => {
+        userZoomed = true;
+        updateZoomReadout();
+      },
+      onPan: () => { /* no state flip — pan without zoom should still re-fit on scenario change */ },
+    });
+    updateZoomReadout();
+  }
+
+  function updateZoomReadout() {
+    const out = document.getElementById('pz-zoom');
+    if (!out || !panZoom) return;
+    out.textContent = Math.round(panZoom.getZoom() * 100) + '%';
+  }
+
+  function capturePanZoom() {
+    if (!panZoom) return null;
+    return { zoom: panZoom.getZoom(), pan: panZoom.getPan() };
+  }
+
+  function restorePanZoom(state) {
+    if (!panZoom || !state) return;
+    panZoom.zoom(state.zoom);
+    panZoom.pan(state.pan);
+    updateZoomReadout();
+  }
+
+  function withAnimatedViewport(fn) {
+    const vp = document.querySelector('.svg-pan-zoom_viewport');
+    if (vp && !prefersReducedMotion()) {
+      vp.classList.add('animate');
+      setTimeout(() => vp.classList.remove('animate'), 260);
+    }
+    fn();
+  }
+
+  function zoomBy(factor) {
+    if (!panZoom) return;
+    const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, panZoom.getZoom() * factor));
+    withAnimatedViewport(() => panZoom.zoom(next));
+    userZoomed = true;
+  }
+
+  function resetView() {
+    if (!panZoom) return;
+    withAnimatedViewport(() => {
+      panZoom.resetZoom();
+      panZoom.resetPan();
+      panZoom.fit();
+      panZoom.center();
+    });
+    userZoomed = false;
+    updateZoomReadout();
+  }
+
+  function panBy(dx, dy) {
+    if (!panZoom) return;
+    panZoom.panBy({ x: dx, y: dy });
+  }
+
+  function focusNode(nodeEl) {
+    if (!panZoom || !nodeEl) return;
+    const wrap = document.querySelector('.diagram-wrap');
+    if (!wrap) return;
+    const wrapRect = wrap.getBoundingClientRect();
+
+    withAnimatedViewport(() => {
+      // 1. Scale to FOCUS_ZOOM around the node's current screen position so
+      //    the node stays under the cursor while we zoom in.
+      const r1 = nodeEl.getBoundingClientRect();
+      const cx1 = r1.left + r1.width / 2 - wrapRect.left;
+      const cy1 = r1.top  + r1.height / 2 - wrapRect.top;
+      const relativeScale = FOCUS_ZOOM / panZoom.getZoom();
+      panZoom.zoomAtPoint(FOCUS_ZOOM, { x: cx1, y: cy1 });
+
+      // 2. Pan the (now-scaled) node to the viewport centre.
+      const r2 = nodeEl.getBoundingClientRect();
+      const cx2 = r2.left + r2.width / 2 - wrapRect.left;
+      const cy2 = r2.top  + r2.height / 2 - wrapRect.top;
+      panZoom.panBy({
+        x: wrapRect.width  / 2 - cx2,
+        y: wrapRect.height / 2 - cy2,
+      });
+    });
+    userZoomed = true;
+    updateZoomReadout();
+  }
+
+  // Toolbar + keyboard bindings (wired once, after DOM parse)
+  function bindNavControls() {
+    const $in    = document.getElementById('pz-in');
+    const $out   = document.getElementById('pz-out');
+    const $reset = document.getElementById('pz-reset');
+    const $focus = document.getElementById('pz-focus');
+    const $cont  = document.getElementById('diagram-container');
+
+    if ($in)    $in.addEventListener('click',    () => zoomBy(1.25));
+    if ($out)   $out.addEventListener('click',   () => zoomBy(0.8));
+    if ($reset) $reset.addEventListener('click', () => resetView());
+    if ($focus) $focus.addEventListener('click', () => focusNode(hoveredEl));
+
+    if ($cont) {
+      $cont.addEventListener('keydown', e => {
+        const big = e.shiftKey;
+        switch (e.key) {
+          case 'ArrowLeft':  panBy( (big ? PAN_STEP_BIG : PAN_STEP),  0); e.preventDefault(); break;
+          case 'ArrowRight': panBy(-(big ? PAN_STEP_BIG : PAN_STEP),  0); e.preventDefault(); break;
+          case 'ArrowUp':    panBy(0,  (big ? PAN_STEP_BIG : PAN_STEP));  e.preventDefault(); break;
+          case 'ArrowDown':  panBy(0, -(big ? PAN_STEP_BIG : PAN_STEP));  e.preventDefault(); break;
+          case '+':
+          case '=':          zoomBy(1.25); e.preventDefault(); break;
+          case '-':
+          case '_':          zoomBy(0.8);  e.preventDefault(); break;
+          case '0':          resetView();  e.preventDefault(); break;
+          case 'f':
+          case 'F':          focusNode(hoveredEl); e.preventDefault(); break;
+          case 'Escape':     resetView();  e.preventDefault(); break;
+        }
+      });
+
+      $cont.addEventListener('mousedown', () => $cont.classList.add('panning'));
+      window.addEventListener('mouseup',  () => $cont.classList.remove('panning'));
+    }
+  }
+
   // ── SVG interaction ───────────────────────────────────────────────────────
   const tooltip = document.getElementById('tooltip');
 
   function attachSvgHandlers() {
     const svg = document.querySelector('#diagram-container svg');
     if (!svg) return;
+
+    const $focusBtn = document.getElementById('pz-focus');
 
     svg.querySelectorAll('g.node').forEach(el => {
       // Mermaid 10 sets id="flowchart-NODEID-N"
@@ -526,11 +818,17 @@
       el.style.cursor = 'pointer';
 
       el.addEventListener('mouseenter', e => {
+        hoveredEl = el;
+        if ($focusBtn) $focusBtn.disabled = false;
         showTooltip(e, info);
         if (!pinnedId) showDetail(info, nodeId);
       });
       el.addEventListener('mousemove', positionTooltip);
       el.addEventListener('mouseleave', () => {
+        if (hoveredEl === el) {
+          hoveredEl = null;
+          if ($focusBtn) $focusBtn.disabled = true;
+        }
         hideTooltip();
         if (!pinnedId) clearDetail();
       });
@@ -543,6 +841,13 @@
           showDetail(info, nodeId);
         }
       });
+      // Double-click on a turning point → Focus mode
+      if (info.type === 'turning_point') {
+        el.addEventListener('dblclick', e => {
+          e.stopPropagation();
+          focusNode(el);
+        });
+      }
     });
   }
 
@@ -787,6 +1092,7 @@
   }
 
   // ── Start ─────────────────────────────────────────────────────────────────
+  bindNavControls();
   init();
   </script>
 </body>
