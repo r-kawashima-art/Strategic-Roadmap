@@ -159,7 +159,7 @@ Today's layout is a fixed 3-zone grid: `(flowchart pane | detail panel)` over `(
 - [ ] Below 1024 px the layout stacks gracefully; below 640 px resize handles are disabled.
 - [ ] Chart.js and svg-pan-zoom resize correctly when any divider is dragged — no cropping, no empty bands, no stale SVG viewport.
 
-### Phase 8: Remove Metrics Timeline UI Division (Scope Cut)
+### Phase 7: Remove Metrics Timeline UI Division (Scope Cut)
 
 The user story's new *Not-Todos* list explicitly opts the **Metrics Timeline** out of the UI:
 
@@ -184,9 +184,9 @@ This phase retracts the Metrics Timeline that was introduced in Phase 3 (and inc
 
 - Running `python3 src/engine/simulator.py` still emits `market_share_projection` for every scenario — the data layer is untouched. A clean reload after the cut should show zero network 404s and zero console errors about undefined handlers.
 - Users carrying a stored layout under `ota-roadmap-layout-v1` with an orphaned `row-metrics` key see the rest of their persisted sizes honoured; the obsolete key is simply dropped on next write. No forced reset required.
-- Update [docs/walkthrough.md](../docs/walkthrough.md): delete the *Metrics timeline chart* sub-section under Phase 3 and shrink the layout ASCII diagram to *header → main-split → market-share*. Note the scope cut in a new Phase 8 subsection for traceability.
+- Update [docs/walkthrough.md](../docs/walkthrough.md): delete the *Metrics timeline chart* sub-section under Phase 3 and shrink the layout ASCII diagram to *header → main-split → market-share*. Note the scope cut in a new Phase 7 subsection for traceability.
 
-#### 7.3 Acceptance for Phase 8
+#### 7.3 Acceptance for Phase 7
 
 - [ ] `<canvas id="timeline-chart">` is no longer present in the rendered DOM.
 - [ ] No CSS rules reference `.chart-section`, `.metric-toggles`, or `.chart-wrap`.

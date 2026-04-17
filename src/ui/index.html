@@ -34,11 +34,11 @@
       height: 100vh;
       overflow: hidden;                /* each pane scrolls internally */
       display: grid;
-      /* Rows: header · main-split · h-handle · metrics · h-handle · market
-         --row-* are bound to localStorage on layout drag (Phase 6 §6.1). */
-      --row-metrics: 220px;
-      --row-market:  360px;
-      grid-template-rows: auto minmax(120px, 1fr) var(--divider-size, 6px) var(--row-metrics) var(--divider-size, 6px) var(--row-market);
+      /* Rows: header · main-split · h-handle · market
+         --row-market is bound to localStorage on layout drag (Phase 6 §6.1).
+         Metrics Timeline row was removed in Phase 7 per user-story Not-Todos. */
+      --row-market: 360px;
+      grid-template-rows: auto minmax(120px, 1fr) var(--divider-size, 6px) var(--row-market);
     }
 
     /* ── Header ──────────────────────────────────────────────────────────── */
@@ -367,40 +367,14 @@
     .delta-chip.zer { background: rgba(148,163,184,0.1); color: var(--muted); }
 
     /* ── Timeline chart ──────────────────────────────────────────────────── */
-    .chart-section {
-      padding: 1rem 1.5rem 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      min-height: 0;
-      overflow: hidden;
-    }
-
+    /* Header strip shared by the Market Share panel (the Metrics Timeline
+       that used to share it was removed in Phase 7). */
     .chart-header {
       display: flex;
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
     }
-
-    .metric-toggles { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-    .metric-btn {
-      padding: 0.25rem 0.65rem;
-      border-radius: 99px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.72rem;
-      cursor: pointer;
-      transition: all 0.12s;
-    }
-    .metric-btn.on {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-
-    .chart-wrap { flex: 1 1 0; min-height: 120px; position: relative; }
 
     /* ── Market Share panel (FR-6) ──────────────────────────────────────── */
     .market-section {
@@ -485,13 +459,13 @@
       }
       .resize-handle-col { display: none; }
       .detail-pane { border-left: none; border-top: 1px solid var(--border); }
-      .chart-section, .market-section { min-height: 220px; }
+      .market-section { min-height: 220px; }
     }
     @media (max-width: 640px) {
       /* Below mobile width, drop all resize handles — screen is too narrow
          to partition meaningfully. */
       .resize-handle { display: none; }
-      body { grid-template-rows: auto auto auto auto; }
+      body { grid-template-rows: auto auto auto; }
     }
   </style>
 </head>
@@ -570,33 +544,11 @@
     </div>
   </div>
 
-  <!-- Row resize handle (main-split ↔ metrics timeline) -->
-  <div class="resize-handle resize-handle-row"
-       data-resize="row-metrics" data-axis="y"
-       role="separator" aria-orientation="horizontal"
-       aria-label="Drag to resize the metrics timeline"
-       tabindex="0"></div>
-
-  <!-- ── Metrics Timeline ───────────────────────────────────────────────── -->
-  <div class="chart-section">
-    <div class="chart-header">
-      <div class="pane-title" style="margin:0">Metrics Timeline</div>
-      <div class="metric-toggles">
-        <button class="metric-btn on" data-m="revenue"      onclick="toggleMetric(this)">Revenue Index</button>
-        <button class="metric-btn on" data-m="market_share" onclick="toggleMetric(this)">Market Share</button>
-        <button class="metric-btn on" data-m="tech"         onclick="toggleMetric(this)">Tech Adoption</button>
-      </div>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="timeline-chart"></canvas>
-    </div>
-  </div>
-
-  <!-- Row resize handle (metrics timeline ↔ market share) -->
+  <!-- Row resize handle (main-split ↔ market share) -->
   <div class="resize-handle resize-handle-row"
        data-resize="row-market" data-axis="y"
        role="separator" aria-orientation="horizontal"
-       aria-label="Drag to resize the market share panel"
+       aria-label="Drag to resize the market share panel vs. the main split"
        tabindex="0"></div>
 
   <!-- ── Market Share Comparison (FR-6) ─────────────────────────────────── -->
@@ -641,8 +593,6 @@
   let baseScenario     = null;
   let activeScenIdx    = 0;
   let pinnedId         = null;  // mermaid node id pinned by click
-  let chart            = null;
-  const activeMetrics  = new Set(['revenue', 'market_share', 'tech']);
 
   // Maps mermaid-svg node id → { type, data }
   const nodeMap = {};
@@ -693,7 +643,6 @@
     baseScenario = scenarios.find(s => s.id === 'scenario-001') || scenarios[0];
     buildSelector();
     await renderFlowchart(baseScenario);
-    renderChart();
     renderMarketShare();
   }
 
@@ -715,7 +664,6 @@
     // only if the user has manually zoomed — otherwise re-fit so the new
     // diagram is fully visible (FR-3 §3.4 acceptance).
     renderFlowchart(scen, { preserveView: userZoomed });
-    renderChart();
     renderMarketShare();
   }
 
@@ -1175,13 +1123,10 @@
   }
 
   // ── Chart.js ──────────────────────────────────────────────────────────────
-  const COLORS = {
-    revenue:      { line: '#3b82f6', fill: 'rgba(59,130,246,0.12)' },
-    market_share: { line: '#22c55e', fill: 'rgba(34,197,94,0.10)'  },
-    tech:         { line: '#a855f7', fill: 'rgba(168,85,247,0.10)' },
-  };
-
-  // Vertical-line plugin marks turning-point years on the chart
+  // Vertical-line plugin marks turning-point years on any registered chart.
+  // The Metrics Timeline that originally drove this plugin was removed in
+  // Phase 7; the Market Share Comparison chart still relies on it to render
+  // the 2025 / 2028 / 2032 reference lines.
   const turningLinePlugin = {
     id: 'turningLines',
     afterDraw(c) {
@@ -1204,98 +1149,6 @@
     },
   };
   Chart.register(turningLinePlugin);
-
-  function renderChart() {
-    const scen = scenarios[activeScenIdx] || baseScenario;
-    const labels = scen.timeline.map(t => t.year);
-    const datasets = [];
-
-    if (activeMetrics.has('revenue')) {
-      datasets.push({
-        label: 'Revenue Index (×)',
-        data:  scen.timeline.map(t => t.metrics.revenue_index),
-        borderColor:     COLORS.revenue.line,
-        backgroundColor: COLORS.revenue.fill,
-        fill: true, tension: 0.4,
-        pointRadius:      scen.timeline.map(t => t.label ? 5 : 2),
-        pointHoverRadius: 7,
-        yAxisID: 'yL',
-      });
-    }
-    if (activeMetrics.has('market_share')) {
-      datasets.push({
-        label: 'Market Share (%)',
-        data:  scen.timeline.map(t => +(t.metrics.market_share * 100).toFixed(1)),
-        borderColor:     COLORS.market_share.line,
-        backgroundColor: COLORS.market_share.fill,
-        fill: true, tension: 0.4,
-        pointRadius:      scen.timeline.map(t => t.label ? 5 : 2),
-        pointHoverRadius: 7,
-        yAxisID: 'yR',
-      });
-    }
-    if (activeMetrics.has('tech')) {
-      datasets.push({
-        label: 'Tech Adoption (%)',
-        data:  scen.timeline.map(t => +(t.metrics.tech_adoption_velocity * 100).toFixed(1)),
-        borderColor:     COLORS.tech.line,
-        backgroundColor: COLORS.tech.fill,
-        fill: true, tension: 0.4,
-        pointRadius:      scen.timeline.map(t => t.label ? 5 : 2),
-        pointHoverRadius: 7,
-        yAxisID: 'yR',
-      });
-    }
-
-    const ctx = document.getElementById('timeline-chart').getContext('2d');
-    if (chart) chart.destroy();
-
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: {
-            labels: { color: '#94a3b8', font: { size: 11 }, padding: 14 },
-          },
-          tooltip: {
-            backgroundColor: '#1e293b',
-            borderColor:     '#475569',
-            borderWidth: 1,
-            titleColor: '#f1f5f9',
-            bodyColor:  '#94a3b8',
-            callbacks: {
-              title: items => {
-                const dp = scen.timeline[items[0].dataIndex];
-                return dp.label ? `${dp.year}  —  ${dp.label}` : String(dp.year);
-              },
-            },
-          },
-        },
-        scales: {
-          x: {
-            grid:  { color: '#1e293b' },
-            ticks: { color: '#64748b', font: { size: 10 } },
-          },
-          yL: {
-            position: 'left',
-            grid:  { color: '#1e293b' },
-            ticks: { color: '#64748b', font: { size: 10 } },
-            title: { display: true, text: 'Revenue Index (×)', color: '#64748b', font: { size: 10 } },
-          },
-          yR: {
-            position: 'right',
-            grid: { drawOnChartArea: false },
-            ticks: { color: '#64748b', font: { size: 10 }, callback: v => v + '%' },
-            title: { display: true, text: '%', color: '#64748b', font: { size: 10 } },
-          },
-        },
-      },
-    });
-  }
 
   // ── Market Share panel (FR-6) ─────────────────────────────────────────────
   // Stable colour palette. Keys are competitor names from scenarios.json;
@@ -1438,15 +1291,6 @@
     tbody.innerHTML = rows;
   }
 
-  function toggleMetric(btn) {
-    const m = btn.dataset.m;
-    if (activeMetrics.has(m)) {
-      if (activeMetrics.size > 1) { activeMetrics.delete(m); btn.classList.remove('on'); }
-    } else {
-      activeMetrics.add(m); btn.classList.add('on');
-    }
-    renderChart();
-  }
 
   // ── Adjustable Layout (Phase 6 §6.1) ──────────────────────────────────────
   // Drag handles update CSS custom properties on <body> / .main-split which
@@ -1455,20 +1299,18 @@
   // next page load.
   const LAYOUT_VERSION = 'v1';
   const LAYOUT_KEY     = 'ota-roadmap-layout-' + LAYOUT_VERSION;
+  // Phase 7 scope cut removed the 'row-metrics' entry that used to sit here.
   const LAYOUT_MIN = {
-    'col-detail':   240,
-    'row-metrics':  140,
-    'row-market':   200,
+    'col-detail':  240,
+    'row-market':  200,
   };
   const LAYOUT_MAX = {
-    'col-detail':  () => Math.max(260, window.innerWidth  * 0.6),
-    'row-metrics': () => Math.max(180, window.innerHeight * 0.6),
-    'row-market':  () => Math.max(220, window.innerHeight * 0.6),
+    'col-detail': () => Math.max(260, window.innerWidth  * 0.6),
+    'row-market': () => Math.max(220, window.innerHeight * 0.6),
   };
   const LAYOUT_TARGET = {
-    'col-detail':   () => document.querySelector('.main-split'),
-    'row-metrics':  () => document.body,
-    'row-market':   () => document.body,
+    'col-detail': () => document.querySelector('.main-split'),
+    'row-market': () => document.body,
   };
 
   function clampLayout(key, value) {
@@ -1478,8 +1320,19 @@
   }
 
   function readLayout() {
-    try { return JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}'); }
-    catch { return {}; }
+    // Filter to known keys only, so legacy entries (e.g. 'row-metrics' from
+    // pre-Phase-7 releases) are silently dropped on read and never written
+    // back to localStorage on the next save.
+    try {
+      const raw = JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}');
+      const filtered = {};
+      for (const key of Object.keys(LAYOUT_MIN)) {
+        if (key in raw) filtered[key] = raw[key];
+      }
+      return filtered;
+    } catch {
+      return {};
+    }
   }
 
   function writeLayout(state) {
@@ -1497,7 +1350,6 @@
   function resetLayout() {
     try { localStorage.removeItem(LAYOUT_KEY); } catch {}
     document.querySelector('.main-split')?.style.removeProperty('--col-detail');
-    document.body.style.removeProperty('--row-metrics');
     document.body.style.removeProperty('--row-market');
     notifyPanesResized();
   }
@@ -1543,9 +1395,7 @@
         // what the user actually sees, not a stale stored value.
         const computedRect = axis === 'x'
           ? document.querySelector('.detail-pane').getBoundingClientRect().width
-          : (key === 'row-metrics'
-              ? document.querySelector('.chart-section').getBoundingClientRect().height
-              : document.querySelector('.market-section').getBoundingClientRect().height);
+          : document.querySelector('.market-section').getBoundingClientRect().height;
         startValue = computedRect;
         target.style.setProperty('--' + key, startValue + 'px');
         document.body.classList.add('resizing');
@@ -1563,7 +1413,7 @@
         const t = LAYOUT_TARGET[key]();
         if (!t) return;
         const current = parseFloat(getComputedStyle(t).getPropertyValue('--' + key))
-                      || (axis === 'x' ? 300 : key === 'row-metrics' ? 220 : 360);
+                      || (axis === 'x' ? 300 : 360);
         const direction = (axis === 'x' ? (e.key === 'ArrowLeft' ? 1 : -1) : (e.key === 'ArrowUp' ? 1 : -1));
         const next = clampLayout(key, current + direction * step);
         t.style.setProperty('--' + key, next + 'px');
@@ -1580,7 +1430,6 @@
   // Notify Chart.js and svg-pan-zoom that their containers changed size.
   // Called after a divider drag ends (pointerup) and on viewport resize.
   function notifyPanesResized() {
-    try { chart   && chart.resize();   } catch {}
     try { msChart && msChart.resize(); } catch {}
     try { panZoom && panZoom.resize(); } catch {}
   }
@@ -1597,7 +1446,7 @@
       });
     };
     const ro = new ResizeObserver(queue);
-    document.querySelectorAll('.diagram-wrap, .chart-wrap, .market-chart-wrap')
+    document.querySelectorAll('.diagram-wrap, .market-chart-wrap')
       .forEach(el => ro.observe(el));
     window.addEventListener('resize', queue);
   }

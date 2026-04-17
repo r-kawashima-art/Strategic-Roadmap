@@ -1,7 +1,7 @@
 # Project Walkthrough: Strategic Roadmap OTA Visualizer
 
 **Date:** 2026-04-17
-**Status:** Phases 1–6 complete · Phase 7 (FR-5 conversational layer) not started
+**Status:** Phases 1–7 complete · Phase 8 (FR-5 conversational layer) not started
 
 ---
 
@@ -113,14 +113,14 @@ The engine produces logically valid JSON branches. The top-ranked generated path
 A self-contained single-file dashboard (~1000 lines) with no build step required. It loads three CDN libraries:
 
 - **Mermaid.js v10** — renders the decision tree as a flowchart SVG.
-- **Chart.js v4** — renders the metrics timeline as a dual-axis area chart.
+- **Chart.js v4** — renders the Market Share Comparison multi-series line chart. (Originally also rendered a Metrics Timeline dual-axis area chart; that division was removed in Phase 7 per the user-story *Not-Todos*.)
 - **svg-pan-zoom v3.6.1** — wraps the rendered flowchart SVG in a pan/zoom viewport (added in the FR-3 navigability pass; see §3.3).
 
 #### Layout
 
 ```
 ┌──────────────────────────────────────────────┐
-│ Header: title + scenario selector dropdown   │
+│ Header: title + scenario selector + Reset    │
 ├──────────────────────────────┬───────────────┤
 │ Strategic Decision Tree      │ Detail Panel  │
 │ (Mermaid.js + svg-pan-zoom)  │ (turning-pt   │
@@ -128,10 +128,12 @@ A self-contained single-file dashboard (~1000 lines) with no build step required
 │   │ [−] [+] 100%  ⤢  ◎  │ ←  toolbar        │
 │   └─────────────────────┘    │  hover/click) │
 ├──────────────────────────────┴───────────────┤
-│ Metrics Timeline (Chart.js)                  │
-│ [Revenue Index] [Market Share] [Tech Adopt.] │
+│ Market Share Comparison (Chart.js)           │
+│ Booking / Expedia / Trip.com / Agoda / …     │
 └──────────────────────────────────────────────┘
 ```
+
+The Metrics Timeline division that originally sat between the main split and the Market Share panel was removed in Phase 7 — see the §Phase 7 section below.
 
 #### Mermaid decision tree
 
@@ -179,21 +181,9 @@ Shows structured information for whichever node is active:
 - **Historical milestones** — year, label, and the three KPI values at that point.
 - **Outcome nodes** — 2040 label, outcome description, and metric delta chips.
 
-#### Metrics timeline chart
-
-A dual-axis area chart with smooth curves (`tension: 0.4`):
-
-- **Left axis** — Revenue Index (absolute multiplier vs. 1990 baseline).
-- **Right axis** — Market Share % and Tech Adoption %.
-- Data points with milestone labels render with a larger radius (5 px); unlabelled points use 2 px.
-- A custom `turningLinePlugin` draws dashed purple vertical reference lines at turning-point years (2025, 2028, 2032).
-- Tooltips show the milestone label when the cursor aligns with a labelled year.
-
-Three toggle buttons above the chart independently enable/disable each metric; at least one must always remain active.
-
 #### Scenario selector
 
-The dropdown is populated from all scenarios in `scenarios.json`. Switching it re-renders both the decision-tree flowchart (preserving pan/zoom state only if the user had manually zoomed — see §Navigability) and the metrics timeline chart, so the entire dashboard reflects the chosen scenario.
+The dropdown is populated from all scenarios in `scenarios.json`. Switching it re-renders the decision-tree flowchart (preserving pan/zoom state only if the user had manually zoomed — see §Navigability) and the Market Share Comparison chart, so the dashboard reflects the chosen scenario end-to-end.
 
 #### Data loading
 
@@ -201,7 +191,7 @@ On startup `init()` attempts `fetch('../../data/scenarios.json')`. This succeeds
 
 ### Milestone M3 — UI Prototype ✅
 
-The Mermaid diagram renders in the browser, hover effects expose turning-point details, the Chart.js timeline shows projected metrics for any selected scenario path, and the flowchart is fully navigable at any density — pan, zoom, fit, focus, and keyboard-only operation all supported (FR-3).
+The Mermaid diagram renders in the browser, hover effects expose turning-point details, and the flowchart is fully navigable at any density — pan, zoom, fit, focus, and keyboard-only operation all supported (FR-3). (The Metrics Timeline chart that originally accompanied the prototype has since been removed in Phase 7.)
 
 ---
 
@@ -345,6 +335,40 @@ The turning-point chips show the *highest-probability* branch's delta as a "prim
 
 ---
 
+## Phase 7 — Remove Metrics Timeline UI Division (Scope Cut)
+
+**File:** [src/ui/index.html](../src/ui/index.html)
+
+### What was built (removed)
+
+A purely subtractive refactor executed against `src/ui/index.html` after the user story added a *Not-Todos* entry: *"Do NOT make a UI division of Metrics Timeline."* Phase 7 retracts the dual-axis metrics chart that Phase 3 originally shipped, simplifying the dashboard to header + flowchart/detail split + Market Share Comparison.
+
+### Deletions
+
+- **HTML** — removed the `<div class="chart-section">` block (three metric toggle buttons + `<canvas id="timeline-chart">`) and the `data-resize="row-metrics"` resize handle that preceded it.
+- **CSS** — removed the rule blocks for `.chart-section`, `.metric-toggles`, `.metric-btn`, `.metric-btn.on`, and `.chart-wrap`; dropped the `--row-metrics` custom property and shortened `body { grid-template-rows: … }` to `auto · main · handle · market`; cleaned the `.chart-section` reference out of the `@media (max-width: 1024px)` rule.
+- **JavaScript** — deleted `COLORS`, `renderChart()`, the module-level `chart` variable, the `activeMetrics` `Set`, and `toggleMetric()`; removed every `renderChart()` / `chart.resize()` call site (in `init()`, `onScenarioChange()`, and `notifyPanesResized()`); removed `.chart-wrap` from the `ResizeObserver.observe()` target list.
+- **Layout state** — removed the `row-metrics` key from `LAYOUT_MIN`, `LAYOUT_MAX`, and `LAYOUT_TARGET`; simplified `resetLayout()` to stop removing `--row-metrics`; stripped the `key === 'row-metrics'` branches from the drag + keyboard-nudge fallbacks.
+
+### Kept intentionally
+
+- `turningLinePlugin` and its `Chart.register(turningLinePlugin)` registration — the Market Share Comparison chart (Phase 5) still depends on it for the 2025 / 2028 / 2032 vertical reference lines. Removing the plugin would silently break that panel.
+- The `.chart-header` CSS rule — even though the plan listed it for deletion, the Market Share panel's header also uses this selector. Deleting would have broken that layout. Left a brief comment above the rule noting the Phase 7 rationale. *This is a deliberate deviation from the plan's §7.1 deletion list.*
+
+### Migration hygiene
+
+`readLayout()` now filters to known keys (`col-detail`, `row-market`), so a legacy `row-metrics` entry carried forward from a user's pre-Phase-7 `ota-roadmap-layout-v1` `localStorage` payload is silently dropped on read and never rewritten. No forced layout reset is needed. Phase 6's drag-handle count therefore drops from three to two (flowchart ↔ detail + main-split ↔ market) — the `--row-metrics` variable and its handle are both gone.
+
+### Milestone M9 — Scope Cut ✅
+
+Dashboard now renders exactly the divisions listed in `user_story.md` after the Not-Todos update. Backend tests still pass (`python3 -m tests.run_verification` → 29/29) since Phase 7 is UI-only, and the served page shows zero residual tokens for `timeline-chart`, `chart-section`, `toggleMetric`, `renderChart`, or `activeMetrics`. Browser-side acceptance (console cleanliness on page load and layout drag, market-share chart still carrying the turning-point markers) still needs manual confirmation.
+
+### File-size delta
+
+`src/ui/index.html` shrank from ~68 KB to ~63 KB — a ~7 % cut without touching the schema, simulator, or test layer.
+
+---
+
 ## Risk Mitigation — As Executed
 
 | Risk (from plan) | Mitigation applied |
@@ -390,7 +414,7 @@ Open `src/ui/index.html` in any browser. The embedded `FALLBACK` constant mirror
 | [data/scenarios_generated.json](../data/scenarios_generated.json) | All 18 generated scenario variants, ranked by composite score |
 | [src/engine/schema.py](../src/engine/schema.py) | Typed data model — dataclasses, enums, JSON serialization |
 | [src/engine/simulator.py](../src/engine/simulator.py) | FitEngine, MatrixEngine, Simulator, backtest, scenario generation |
-| [src/ui/index.html](../src/ui/index.html) | Self-contained dashboard — Mermaid flowchart + Chart.js timeline |
+| [src/ui/index.html](../src/ui/index.html) | Self-contained dashboard — Mermaid flowchart + Market Share Comparison chart |
 | [tests/test_wargame.py](../tests/test_wargame.py) | Phase 4 — 12 war-gaming narrative & trend tests |
 | [tests/test_turning_points.py](../tests/test_turning_points.py) | Phase 4 — 11 turning-point clarity & structural tests |
 | [tests/run_verification.py](../tests/run_verification.py) | Phase 4 — runner that executes both suites and generates the report |
