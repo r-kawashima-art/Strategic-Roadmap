@@ -1,7 +1,7 @@
 # Project Walkthrough: Strategic Roadmap OTA Visualizer
 
 **Date:** 2026-04-17
-**Status:** Phases 1–3 complete · Phase 4 in progress
+**Status:** Phases 1–4 complete · Phase 5 not started
 
 ---
 
@@ -191,19 +191,72 @@ The Mermaid diagram renders in the browser, hover effects expose turning-point d
 
 ## Phase 4 — Verification & Feedback
 
-**Status:** In progress.
+**Files:** [tests/](../tests/) · [specs/verification_report.md](../specs/verification_report.md)
 
-### What is ready for war-gaming
+### What was built
 
-The `Simulator.backtest()` method provides the formal verification mechanism called for in the plan. On the "AI Leapfrog" base scenario it confirms that the engine's highest-probability projections align with the 1990–2025 historical baseline with low MAE, validating the PESTEL/Five Forces logic encoded in `FitEngine`.
+A two-part verification harness that operationalizes both Phase-4 deliverables from the plan ("war-gaming tests" and "user review of turning-point clarity") as runnable artifacts.
 
-The UI's scenario-comparison capability (switching between the 18 generated paths in the dropdown) enables informal war-gaming: a strategy team can walk through each path, observe how the decision tree and metrics diverge, and challenge whether the probability weights and metric deltas reflect real industry dynamics.
+#### War-gaming test suite
 
-### Remaining work
+**File:** [tests/test_wargame.py](../tests/test_wargame.py) — 12 tests across four fixtures that each encode a piece of industry-analyst narrative and assert the engine honors it.
 
-- Gather structured feedback on the clarity of turning-point descriptions from strategy stakeholders.
-- Adjust `FitEngine.DRIVER_WEIGHTS` and branch `probability` values based on war-gaming outcomes.
-- Consider adding the remaining OTA competitors from the user story (Etraveli Group, Trip.com, Hopper) as `CompetitorProfile` entries in `schema.py`.
+| Fixture | What it verifies |
+|---|---|
+| `NarrativeFitTests` | NDC adoption favours efficiency-led stances; GenAI breakthroughs reward innovation-led + high-AI-bias profiles; `FitEngine` scores stay in [0, 1] across all drivers and profile extremes. |
+| `BranchDominanceTests` | "Build Proprietary AI" beats "Wait and See" on 2040 tech adoption; "Embrace NDC" beats "Resist NDC" on revenue; "Consolidate or Exit" is strictly the worst revenue outcome at tp-003. |
+| `HistoricalBacktestTests` | `Simulator.backtest(2025)` MAE stays inside tolerance (≤ 0.05 rev / 0.02 ms / 0.05 tav) and covers at least 8 historical data points. |
+| `IndustryTrendTests` | Baseline tech-adoption velocity is monotonically non-decreasing; all 18 generated scenarios keep market share and tech adoption in [0, 1]; branch probabilities sum to 1.0 per node; low-resilience competitors drift higher on the direct-booking axis than high-resilience ones. |
+
+When any test fails, it means either the engine has drifted from its intended narrative or the narrative itself needs updating — both warrant a strategy conversation, which is exactly the feedback loop Phase 4 is meant to surface.
+
+#### Turning-points clarity suite
+
+**File:** [tests/test_turning_points.py](../tests/test_turning_points.py) — 11 structural tests that act as the machine-checkable proxy for the user-story acceptance criterion *"Each branch must have labeled Turning Points explaining the why of the divergence."*
+
+The suite enforces that every node has non-empty core fields, a description long enough to review (≥ 40 chars), ≥ 2 branches with unique labels and globally-unique ids, a meaningful (non-zero) metric delta on every branch, valid probabilities, resolvable `next_node_id` references, and — importantly — that every `external_driver` is actually handled by `FitEngine.DRIVER_WEIGHTS` so no turning point silently falls through to defaults. Nodes must also be in chronological order so the Mermaid flowchart reads left-to-right.
+
+#### Verification runner and generated report
+
+**Files:** [tests/run_verification.py](../tests/run_verification.py) → [specs/verification_report.md](../specs/verification_report.md)
+
+A single-command runner (`python3 -m tests.run_verification`) executes both suites and emits a self-contained markdown report for the strategy reviewer. The report contains:
+
+1. **Overall PASS/FAIL banner** plus per-suite counts and expandable full logs.
+2. **Historical backtest section** — current MAE is `0.0023` (revenue), `0.0009` (market share), `0.0045` (tech adoption) across 11 baseline points.
+3. **Narrative spot-checks** — three canonical paths (optimistic, middle, pessimistic) materialized to their 2040 endpoint metrics so reviewers can sanity-check ordering without running Python.
+4. **Turning Points — Clarity Review** — every node dumped with its external driver, description, and a full branch table (id, label, probability, all three metric deltas, rationale) so non-engineers can eyeball the "why" of each divergence.
+5. **Reviewer Checklist** — six structured items covering driver plausibility, label realism, rationale quality, probability defensibility, metric delta sign/magnitude, and endpoint ordering.
+
+### Verification results
+
+All **23 tests pass** on the current "AI Leapfrog" base scenario. The historical backtest continues to confirm the engine reproduces 1990–2025 with tight error bounds, and the war-gaming suite demonstrates that the `FitEngine` driver weights and branch deltas encode the intended NDC / GenAI / direct-booking narratives consistently.
+
+### One finding worth reviewer attention
+
+The narrative spot-check surfaces a tuning signal: the optimistic and pessimistic paths end 2040 only `~0.5` apart on `revenue_index` (28.97 vs 28.43) despite dramatic differences on market share (46% vs 5%). This is because `Simulator._project_timeline` blends cumulative deltas against a dominant baseline timeline, which dampens revenue divergence at the tail. If strategy stakeholders expect the paths to diverge more on revenue specifically, the blending logic in [src/engine/simulator.py](../src/engine/simulator.py) is the point of adjustment — not the turning-point deltas.
+
+### Milestone M4 — Dashboard Complete ✅
+
+With Phases 1–3 shipped and Phase 4 verification green, the integrated dashboard is ready for strategic planning use. Phase 5 (conversational layer) can now be layered on top of a verified engine and scenario set.
+
+### How to run verification
+
+```bash
+# From project root
+python3 -m tests.run_verification
+# → prints per-suite PASS/FAIL, writes specs/verification_report.md
+
+# Or run individual suites directly
+python3 -m unittest tests.test_wargame -v
+python3 -m unittest tests.test_turning_points -v
+```
+
+### Follow-ups deferred from the original plan
+
+- Gather structured strategy-stakeholder feedback against the generated `verification_report.md` reviewer checklist.
+- If any checklist item comes back unchecked, adjust `FitEngine.DRIVER_WEIGHTS`, branch `probability`, or branch `metric_delta` in `schema.py` and re-run the verification suite.
+- Consider adding the remaining OTA competitors from the user story (Etraveli Group, Trip.com, Hopper) as `CompetitorProfile` entries — the clarity suite will automatically extend its checks to cover them.
 
 ---
 
@@ -214,6 +267,7 @@ The UI's scenario-comparison capability (switching between the 18 generated path
 | Strategy logic too simple | `FitEngine` encodes driver-specific weights from PESTEL/Porter; `MatrixEngine` evolves competitor positions along all three 2x2+S axes per turning point |
 | Hard to maintain Mermaid syntax | `buildDef()` in `index.html` generates all Mermaid syntax programmatically from `scenarios.json`; raw Mermaid is never hand-edited |
 | Missing OTA current data | Kiwi.com and eDreams ODIGEO are used as baseline templates; `CompetitorProfile` is designed to accept additional entrants without schema changes |
+| Narrative drift over time (Phase 4) | `tests/test_wargame.py` codifies NDC / GenAI / direct-booking narratives as executable assertions; `tests/run_verification.py` regenerates a reviewer-facing report on demand so stakeholders can re-validate turning-point clarity without reading code |
 
 ---
 
@@ -251,6 +305,10 @@ Open `src/ui/index.html` in any browser. The embedded `FALLBACK` constant mirror
 | [src/engine/schema.py](../src/engine/schema.py) | Typed data model — dataclasses, enums, JSON serialization |
 | [src/engine/simulator.py](../src/engine/simulator.py) | FitEngine, MatrixEngine, Simulator, backtest, scenario generation |
 | [src/ui/index.html](../src/ui/index.html) | Self-contained dashboard — Mermaid flowchart + Chart.js timeline |
+| [tests/test_wargame.py](../tests/test_wargame.py) | Phase 4 — 12 war-gaming narrative & trend tests |
+| [tests/test_turning_points.py](../tests/test_turning_points.py) | Phase 4 — 11 turning-point clarity & structural tests |
+| [tests/run_verification.py](../tests/run_verification.py) | Phase 4 — runner that executes both suites and generates the report |
 | [specs/implementation_plan.md](../specs/implementation_plan.md) | Original implementation plan |
 | [specs/user_story.md](../specs/user_story.md) | User story and acceptance criteria |
+| [specs/verification_report.md](../specs/verification_report.md) | Phase 4 — generated verification & reviewer-checklist report |
 | [reference/scenario-analysis.md](../reference/scenario-analysis.md) | Background: Porter's Five Forces, PESTEL, algorithms, data sources |
