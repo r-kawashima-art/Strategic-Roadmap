@@ -6,8 +6,9 @@ For the full design, see [docs/walkthrough.md](docs/walkthrough.md).
 
 ## Prerequisites
 
-- Python 3.9+ (standard library only — no `pip install` required)
+- Python 3.9+
 - A modern browser (Chrome, Firefox, Safari, Edge)
+- **For the conversational layer (Phase 8 / FR-5) only:** a small set of Python packages (`fastapi`, `uvicorn`, `anthropic`, `pydantic`) and an Anthropic API key. Phases 1–7 run on the standard library alone.
 
 ## How to run
 
@@ -61,14 +62,52 @@ python3 -m unittest tests.test_wargame -v
 python3 -m unittest tests.test_turning_points -v
 ```
 
+### 4. Conversational layer (Phase 8 / FR-5) — optional
+
+The chat panel inside the dashboard talks to a small FastAPI backend that fronts the Claude API. It lets you (a) ask scenario-grounded questions with streaming responses, and (b) translate natural-language revisions into a structured diff that is applied to `data/scenarios.json` after you confirm.
+
+**Install the backend dependencies** (one-time — a venv is recommended):
+
+```bash
+# From project root
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+**Export credentials** and start the API server:
+
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."   # your Anthropic API key — server-side only
+export ROADMAP_API_KEY="pick-a-token"    # bearer token that the UI will send back
+.venv/bin/python -m uvicorn src.api.server:app --port 8787 --reload
+```
+
+Then in a second terminal, launch the dashboard as in step 2, open the UI, click **💬 Chat** in the header, paste your `ROADMAP_API_KEY` into ⚙ API settings, and start talking to the scenario.
+
+**Endpoints**
+
+| Method | Path         | Purpose |
+|---|---|---|
+| `GET`  | `/healthz`   | Liveness probe (no auth) |
+| `GET`  | `/scenarios` | Returns `data/scenarios.json` (bearer) |
+| `POST` | `/chat`      | Streams Claude's scenario-grounded answer as SSE (bearer; model: `claude-sonnet-4-6`) |
+| `POST` | `/revise`    | Translates NL → structured diff via Claude tool use, validates, applies, persists (bearer; model: `claude-opus-4-7`) |
+
+**Known scope trim**: `/revise` persists the edit to `scenarios.json` but does **not** re-run the 18-variant generator. The generated paths in `data/scenarios_generated.json` will drift out of sync until you re-run `python3 src/engine/simulator.py` manually. Auto-regeneration would require a dict→`Scenario` dataclass hydration path the codebase does not yet have — out of scope for Phase 8.
+
+**Security posture:** the Claude API key stays on the server. The browser only ever holds the `ROADMAP_API_KEY` bearer token (single-token demo auth — narrow CORS and swap in a real auth system before any deployment beyond localhost).
+
 ## Project layout
 
 ```text
 data/                         Structured scenario data (JSON)
 src/engine/schema.py          Typed data model (dataclasses)
 src/engine/simulator.py       FitEngine, MatrixEngine, Simulator, backtest, scenario generation
-src/ui/index.html             Self-contained dashboard — Mermaid flowchart + Chart.js timeline
+src/ui/index.html             Self-contained dashboard — Mermaid flowchart + market-share chart + chat panel
+src/api/server.py             Phase 8 — FastAPI backend (/chat streaming, /revise tool-use)
+src/api/scenario_patch.py     Phase 8 — diff validation + application to scenarios.json
 tests/                        Phase 4 war-gaming & clarity tests + verification runner
 specs/                        Implementation plan, user story, verification report
 docs/walkthrough.md           Full project walkthrough
+requirements.txt              Phase 8 dependencies (fastapi, uvicorn, anthropic, pydantic)
 ```

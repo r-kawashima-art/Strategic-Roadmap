@@ -126,6 +126,228 @@
     }
     .reset-layout-btn:hover { color: var(--text); border-color: var(--accent); }
 
+    /* ── Chat panel (Phase 8 / FR-5) ─────────────────────────────────────── */
+    .chat-toggle-btn {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .chat-toggle-btn:hover { filter: brightness(1.1); }
+    .chat-toggle-btn.open { background: var(--surface2); border-color: var(--border); color: var(--muted); }
+
+    .chat-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(420px, 95vw);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -8px 0 24px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+      transform: translateX(100%);
+      transition: transform 0.22s cubic-bezier(.2,.8,.2,1);
+    }
+    .chat-panel.open { transform: translateX(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .chat-panel { transition: none; }
+    }
+
+    .chat-header {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .chat-title { font-size: 0.9rem; font-weight: 700; color: var(--accent); flex: 1; }
+    .chat-close {
+      background: transparent; border: none; color: var(--muted);
+      font-size: 1.3rem; cursor: pointer; padding: 0 0.3rem;
+    }
+    .chat-close:hover { color: var(--text); }
+
+    .chat-mode-tabs { display: flex; gap: 4px; padding: 0.5rem 1rem 0; }
+    .chat-mode-tab {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 0.35rem 0;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .chat-mode-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .chat-context {
+      padding: 0.4rem 1rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+      border-bottom: 1px solid var(--surface2);
+      background: var(--bg);
+    }
+    .chat-context b { color: var(--text); font-weight: 600; }
+
+    .chat-thread {
+      flex: 1 1 0;
+      overflow-y: auto;
+      padding: 0.8rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    .chat-bubble {
+      padding: 0.55rem 0.8rem;
+      border-radius: 10px;
+      max-width: 85%;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .chat-bubble.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: #fff;
+    }
+    .chat-bubble.assistant {
+      align-self: flex-start;
+      background: var(--bg);
+      border: 1px solid var(--surface2);
+      color: var(--text);
+    }
+    .chat-bubble.system {
+      align-self: center;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.7rem;
+      font-style: italic;
+      max-width: 100%;
+    }
+    .chat-bubble.error {
+      align-self: flex-start;
+      background: rgba(220,38,38,0.12);
+      border: 1px solid rgba(220,38,38,0.3);
+      color: #fca5a5;
+    }
+
+    .chat-revision-card {
+      align-self: stretch;
+      background: rgba(124,58,237,0.08);
+      border: 1px solid rgba(124,58,237,0.35);
+      border-radius: 8px;
+      padding: 0.7rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .chat-revision-card h4 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #c4b5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .chat-revision-summary { font-size: 0.78rem; color: var(--text); }
+    .chat-revision-ops {
+      font-size: 0.68rem;
+      color: var(--muted);
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 0.4rem 0.55rem;
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      max-height: 140px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .chat-revision-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .chat-revision-actions button {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+    }
+    .chat-revision-actions .confirm { background: var(--turning); border-color: var(--turning); color: #fff; }
+    .chat-revision-actions .confirm:hover { filter: brightness(1.1); }
+    .chat-revision-actions .cancel { color: var(--muted); }
+    .chat-revision-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .chat-input-wrap {
+      padding: 0.7rem 1rem 0.9rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .chat-input {
+      width: 100%;
+      min-height: 46px;
+      max-height: 160px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+    .chat-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+    .chat-input-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .chat-hint { flex: 1; font-size: 0.65rem; color: var(--muted); }
+    .chat-send {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .chat-send:disabled { background: var(--surface2); border-color: var(--border); cursor: not-allowed; }
+    .chat-send:hover:not(:disabled) { filter: brightness(1.1); }
+
+    .chat-settings {
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid var(--surface2);
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .chat-settings.open { display: flex; }
+    .chat-settings label { font-size: 0.65rem; color: var(--muted); }
+    .chat-settings input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.3rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    .chat-settings-toggle {
+      background: transparent; border: none; color: var(--muted);
+      font-size: 0.68rem; cursor: pointer; text-align: left;
+      padding: 0.2rem 0;
+    }
+    .chat-settings-toggle:hover { color: var(--text); }
+
     /* ── Flowchart pane ──────────────────────────────────────────────────── */
     .flowchart-pane {
       padding: 1.25rem 1.5rem;
@@ -482,8 +704,41 @@
       <select id="scen-sel" onchange="onScenarioChange()"></select>
       <button class="reset-layout-btn" id="reset-layout-btn" type="button"
               aria-label="Reset dashboard layout to defaults">Reset layout</button>
+      <button class="chat-toggle-btn" id="chat-toggle-btn" type="button"
+              aria-label="Open chat panel">💬 Chat</button>
     </div>
   </header>
+
+  <!-- ── Chat panel (Phase 8 / FR-5) ─────────────────────────────────────── -->
+  <aside class="chat-panel" id="chat-panel" role="complementary"
+         aria-label="Scenario chat and revision panel" aria-hidden="true">
+    <div class="chat-header">
+      <div class="chat-title">Scenario Chat</div>
+      <button class="chat-close" id="chat-close" aria-label="Close chat panel">×</button>
+    </div>
+    <div class="chat-mode-tabs" role="tablist">
+      <button class="chat-mode-tab active" id="mode-chat"   role="tab" data-mode="chat">Ask</button>
+      <button class="chat-mode-tab"        id="mode-revise" role="tab" data-mode="revise">Revise</button>
+    </div>
+    <div class="chat-context" id="chat-context">Active scenario: <b id="chat-context-name">—</b></div>
+    <button class="chat-settings-toggle" id="chat-settings-toggle" type="button">⚙ API settings</button>
+    <div class="chat-settings" id="chat-settings">
+      <label for="chat-api-base">API base URL</label>
+      <input id="chat-api-base" type="text" placeholder="http://localhost:8787" />
+      <label for="chat-api-key">Bearer token (<code>ROADMAP_API_KEY</code>)</label>
+      <input id="chat-api-key" type="password" placeholder="Your ROADMAP_API_KEY" autocomplete="off" />
+    </div>
+    <div class="chat-thread" id="chat-thread" aria-live="polite"></div>
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chat-input" rows="2"
+                placeholder="Ask about this scenario…"
+                aria-label="Chat input"></textarea>
+      <div class="chat-input-actions">
+        <span class="chat-hint" id="chat-hint">Enter to send · Shift+Enter for newline</span>
+        <button class="chat-send" id="chat-send" type="button">Send</button>
+      </div>
+    </div>
+  </aside>
 
   <!-- ── Main split ─────────────────────────────────────────────────────── -->
   <div class="main-split">
@@ -665,6 +920,7 @@
     // diagram is fully visible (FR-3 §3.4 acceptance).
     renderFlowchart(scen, { preserveView: userZoomed });
     renderMarketShare();
+    if (typeof updateChatContext === 'function') updateChatContext();
   }
 
   // ── Mermaid diagram ───────────────────────────────────────────────────────
@@ -1451,11 +1707,310 @@
     window.addEventListener('resize', queue);
   }
 
+  // ── Chat panel (Phase 8 / FR-5) ───────────────────────────────────────────
+  const CHAT_STORAGE_KEY = 'ota-roadmap-chat-v1';
+  const chatState = {
+    open: false,
+    mode: 'chat',                  // 'chat' | 'revise'
+    history: [],                    // conversation history for /chat
+    inflight: null,                 // AbortController of active stream
+    settings: loadChatSettings(),
+  };
+
+  function loadChatSettings() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY) || '{}');
+      return {
+        apiBase: raw.apiBase || 'http://localhost:8787',
+        apiKey:  raw.apiKey  || '',
+      };
+    } catch {
+      return { apiBase: 'http://localhost:8787', apiKey: '' };
+    }
+  }
+
+  function saveChatSettings() {
+    try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(chatState.settings)); } catch {}
+  }
+
+  function updateChatContext() {
+    const scen = scenarios[activeScenIdx] || baseScenario;
+    const el = document.getElementById('chat-context-name');
+    if (el) el.textContent = scen?.name ?? '—';
+  }
+
+  function setChatOpen(open) {
+    chatState.open = open;
+    const panel = document.getElementById('chat-panel');
+    const btn = document.getElementById('chat-toggle-btn');
+    if (panel) {
+      panel.classList.toggle('open', open);
+      panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    }
+    if (btn) btn.classList.toggle('open', open);
+    if (open) updateChatContext();
+  }
+
+  function setChatMode(mode) {
+    chatState.mode = mode;
+    document.querySelectorAll('.chat-mode-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.mode === mode);
+    });
+    const input = document.getElementById('chat-input');
+    const hint  = document.getElementById('chat-hint');
+    if (input) {
+      input.placeholder = mode === 'chat'
+        ? 'Ask about this scenario…'
+        : 'Describe the revision you want (e.g. "bump tp-001-a probability to 75%")';
+    }
+    if (hint) {
+      hint.textContent = mode === 'chat'
+        ? 'Enter to send · Shift+Enter for newline'
+        : 'Revise mode — Claude returns a structured diff you approve before it writes';
+    }
+  }
+
+  function chatAppendBubble(role, text, el) {
+    const thread = document.getElementById('chat-thread');
+    if (!thread) return null;
+    if (el) { el.textContent = text; } else {
+      el = document.createElement('div');
+      el.className = `chat-bubble ${role}`;
+      el.textContent = text;
+      thread.appendChild(el);
+    }
+    thread.scrollTop = thread.scrollHeight;
+    return el;
+  }
+
+  function chatAppendSystem(text) {
+    return chatAppendBubble('system', text);
+  }
+
+  function chatAppendError(text) {
+    return chatAppendBubble('error', text);
+  }
+
+  function requireChatCreds() {
+    if (!chatState.settings.apiKey) {
+      chatAppendError('Bearer token not set. Open ⚙ API settings and paste your ROADMAP_API_KEY.');
+      document.getElementById('chat-settings')?.classList.add('open');
+      document.getElementById('chat-api-key')?.focus();
+      return false;
+    }
+    return true;
+  }
+
+  async function chatSendCurrent() {
+    const input = document.getElementById('chat-input');
+    const text = (input?.value || '').trim();
+    if (!text) return;
+    if (!requireChatCreds()) return;
+    input.value = '';
+
+    if (chatState.mode === 'chat') {
+      await chatSendAsk(text);
+    } else {
+      await chatSendRevise(text);
+    }
+  }
+
+  async function chatSendAsk(message) {
+    chatAppendBubble('user', message);
+    chatState.history.push({ role: 'user', content: message });
+    const assistantBubble = chatAppendBubble('assistant', '…');
+    let assistantText = '';
+
+    const scenario_id = (scenarios[activeScenIdx] || baseScenario)?.id || 'scenario-001';
+    const ctrl = new AbortController();
+    chatState.inflight = ctrl;
+    const sendBtn = document.getElementById('chat-send');
+    if (sendBtn) sendBtn.disabled = true;
+
+    try {
+      const resp = await fetch(`${chatState.settings.apiBase}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${chatState.settings.apiKey}`,
+        },
+        body: JSON.stringify({
+          scenario_id,
+          message,
+          history: chatState.history.slice(0, -1), // exclude the just-pushed turn
+        }),
+        signal: ctrl.signal,
+      });
+      if (!resp.ok) {
+        const body = await resp.text();
+        throw new Error(`${resp.status} ${resp.statusText}: ${body}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split('\n\n');
+        buffer = chunks.pop() || '';
+        for (const chunk of chunks) {
+          const line = chunk.split('\n').find(l => l.startsWith('data: '));
+          if (!line) continue;
+          let evt;
+          try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+          if (evt.type === 'delta') {
+            assistantText += evt.text;
+            chatAppendBubble('assistant', assistantText, assistantBubble);
+          } else if (evt.type === 'error') {
+            assistantBubble.remove();
+            chatAppendError(evt.message);
+          }
+        }
+      }
+
+      if (assistantText) {
+        chatState.history.push({ role: 'assistant', content: assistantText });
+      } else {
+        assistantBubble.remove();
+      }
+    } catch (err) {
+      if (assistantBubble.parentNode) assistantBubble.remove();
+      chatAppendError(err.name === 'AbortError' ? 'Request cancelled.' : String(err.message || err));
+    } finally {
+      chatState.inflight = null;
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  }
+
+  async function chatSendRevise(instruction) {
+    chatAppendBubble('user', instruction);
+    const sendBtn = document.getElementById('chat-send');
+    if (sendBtn) sendBtn.disabled = true;
+    const pending = chatAppendSystem('Translating your revision into a structured diff…');
+
+    const scenario_id = (scenarios[activeScenIdx] || baseScenario)?.id || 'scenario-001';
+
+    try {
+      const resp = await fetch(`${chatState.settings.apiBase}/revise`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${chatState.settings.apiKey}`,
+        },
+        body: JSON.stringify({ scenario_id, instruction }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      pending.remove();
+      if (!resp.ok) {
+        throw new Error(data.detail || `${resp.status} ${resp.statusText}`);
+      }
+      renderRevisionCard(data);
+    } catch (err) {
+      if (pending.parentNode) pending.remove();
+      chatAppendError(String(err.message || err));
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  }
+
+  function renderRevisionCard(data) {
+    const thread = document.getElementById('chat-thread');
+    const card = document.createElement('div');
+    card.className = 'chat-revision-card';
+    card.innerHTML = `
+      <h4>Proposed revision</h4>
+      <div class="chat-revision-summary">${escapeHtml(data.summary || '(no summary)')}</div>
+      <div class="chat-revision-ops">${escapeHtml(JSON.stringify(data.operations, null, 2))}</div>
+      <div class="chat-revision-actions">
+        <button type="button" class="cancel">Reject</button>
+        <button type="button" class="confirm">Apply &amp; reload</button>
+      </div>
+    `;
+    thread.appendChild(card);
+    thread.scrollTop = thread.scrollHeight;
+
+    const cancel = card.querySelector('.cancel');
+    const confirm = card.querySelector('.confirm');
+    cancel.addEventListener('click', () => {
+      card.remove();
+      chatAppendSystem('Revision rejected. scenarios.json was NOT modified on the server beyond the preview.');
+    });
+    confirm.addEventListener('click', () => {
+      // The /revise endpoint already persisted the diff. We only need to
+      // refresh in-memory scenarios and re-render the dashboard.
+      cancel.disabled = confirm.disabled = true;
+      if (Array.isArray(data.scenarios) && data.scenarios.length) {
+        scenarios = data.scenarios;
+        baseScenario = scenarios.find(s => s.id === 'scenario-001') || scenarios[0];
+        // Rebuild the scenario dropdown in-place
+        const sel = document.getElementById('scen-sel');
+        if (sel) {
+          sel.innerHTML = '';
+          scenarios.forEach((s, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = s.name.length > 55 ? s.name.slice(0, 52) + '…' : s.name;
+            sel.appendChild(opt);
+          });
+          sel.value = Math.min(activeScenIdx, scenarios.length - 1);
+          activeScenIdx = parseInt(sel.value, 10);
+        }
+        renderFlowchart(scenarios[activeScenIdx], { preserveView: userZoomed });
+        renderMarketShare();
+        updateChatContext();
+      }
+      chatAppendSystem(`Revision applied. ${data.note || ''}`);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+  }
+
+  function bindChatControls() {
+    // Settings inputs — hydrate from storage
+    const base = document.getElementById('chat-api-base');
+    const key  = document.getElementById('chat-api-key');
+    if (base) base.value = chatState.settings.apiBase;
+    if (key)  key.value  = chatState.settings.apiKey;
+    base?.addEventListener('change', () => {
+      chatState.settings.apiBase = base.value.trim();
+      saveChatSettings();
+    });
+    key?.addEventListener('change', () => {
+      chatState.settings.apiKey = key.value.trim();
+      saveChatSettings();
+    });
+
+    document.getElementById('chat-toggle-btn')?.addEventListener('click', () => setChatOpen(!chatState.open));
+    document.getElementById('chat-close')?.addEventListener('click', () => setChatOpen(false));
+    document.getElementById('chat-settings-toggle')?.addEventListener('click', () => {
+      document.getElementById('chat-settings')?.classList.toggle('open');
+    });
+    document.querySelectorAll('.chat-mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => setChatMode(tab.dataset.mode));
+    });
+
+    const input = document.getElementById('chat-input');
+    input?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatSendCurrent();
+      }
+    });
+    document.getElementById('chat-send')?.addEventListener('click', chatSendCurrent);
+  }
+
   // ── Start ─────────────────────────────────────────────────────────────────
   applyStoredLayout();
   bindLayoutHandles();
   observeAutoReflow();
   bindNavControls();
+  bindChatControls();
   init();
   </script>
 </body>
