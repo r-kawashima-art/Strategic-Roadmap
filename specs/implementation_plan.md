@@ -53,6 +53,7 @@ Strategic-Roadmap/
 
 - Conduct "War-gaming" tests to ensure scenario paths are logically consistent with industry trends (NDC, GenAI).
 - User review of the "Turning Points" clarity.
+- The data of OTA should be realistic and based on real data (e.g. market share, revenue, tech adoption rate).
 
 ### Phase 5: Interactive Future Prediction (FR-5)
 

@@ -2,6 +2,7 @@
 
 # My directories
 .agent
+.claude
 
 # dependencies
 /node_modules
