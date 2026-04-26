@@ -8,48 +8,70 @@ For the full design, see [docs/walkthrough.md](docs/walkthrough.md).
 
 - Python 3.9+
 - A modern browser (Chrome, Firefox, Safari, Edge)
-- **For the conversational layer (Phase 8 / FR-5) only:** a small set of Python packages (`fastapi`, `uvicorn`, `anthropic`, `pydantic`) and an Anthropic API key. Phases 1–7 run on the standard library alone.
+- **For the full dashboard with the conversational layer (Phase 9 / FR-5):** a small set of Python packages (`fastapi`, `uvicorn`, `anthropic`, `pydantic`) and an Anthropic API key. Phases 1–7 run on the standard library alone.
 
 ## How to run
 
-All commands below assume you are in the **project root** (`Strategic-Roadmap/`). If you `cd` into a subdirectory for one step, `cd` back to the project root before running the next.
+All commands below assume you are in the **project root** (`Strategic-Roadmap/`).
 
 ### 1. Generate scenario data
 
 ```bash
-# From project root
 (cd src/engine && python3 simulator.py)
 ```
 
-The parentheses run `simulator.py` in a subshell so your working directory stays at the project root when the command finishes. `simulator.py` currently uses a sibling import (`from schema import ...`) that requires it to be executed from inside `src/engine/`, which is why the `cd` is needed.
+The parentheses run `simulator.py` in a subshell so your working directory stays at the project root. `simulator.py` uses a sibling import (`from schema import ...`) that requires it to run from inside `src/engine/`.
 
 This writes:
 
 - `data/scenarios.json` — base "AI Leapfrog" scenario + top-ranked generated path (consumed by the UI)
 - `data/scenarios_generated.json` — all 18 branch-combination variants, ranked by composite score
 
-### 2. Open the dashboard
+### 2. Start the API server and open the dashboard
 
-**Option A — with live data fetch (recommended):**
+The FastAPI server serves both the dashboard UI and the API from the same port, so you only need one process.
+
+**Install dependencies** (one-time — a venv is recommended):
 
 ```bash
-# From project root — this matters!
-python3 -m http.server 8080
-# Then open http://localhost:8080/src/ui/index.html
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 ```
 
-> **If you see a 404 for `/src/ui/index.html`**, the server was started from the wrong directory. `http.server` serves the current working directory as `/`, so it must be run from the project root. Run `pwd` — you should see a path ending in `Strategic-Roadmap`.
+**Set up credentials.** Copy `.env.example` to `.env`, fill in the two values, then source it:
 
-The scenario dropdown will list every scenario in `data/scenarios.json`.
+```bash
+cp .env.example .env
+# Edit .env — set ROADMAP_API_KEY and ANTHROPIC_API_KEY
+source .env
+```
 
-**Option B — open the HTML file directly:**
+These two credentials are not interchangeable:
 
-Open [src/ui/index.html](src/ui/index.html) in any browser. The page falls back to an embedded copy of the base scenario when `fetch()` is blocked by the `file://` protocol, so the dashboard still works without a server — but generated paths won't appear in the dropdown.
+| Credential | Where it comes from | Who sees it |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com/) — externally issued, pay-per-token | Server only; never sent to the browser |
+| `ROADMAP_API_KEY` | **You pick it.** Any random string. Acts as a shared-secret bearer token. | The server env var **and** the browser ⚙ API settings — they must match |
+
+To generate a strong `ROADMAP_API_KEY`:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**Start the server:**
+
+```bash
+.venv/bin/python -m uvicorn src.api.server:app --port 8787 --reload
+```
+
+Open [http://localhost:8787](http://localhost:8787) in your browser. The dashboard loads automatically. Click **💬 Chat** in the header, open ⚙ API settings, and paste your `ROADMAP_API_KEY`. The browser stores it in `localStorage` — you won't be asked again on the same browser.
+
+**Offline fallback (no server):** open [src/ui/index.html](src/ui/index.html) directly as a file. The flowchart and market-share chart work, but the chat panel requires the server.
 
 ### 3. Run Phase 4 verification
 
 ```bash
-# From project root
 python3 -m tests.run_verification
 ```
 
@@ -62,59 +84,29 @@ python3 -m unittest tests.test_wargame -v
 python3 -m unittest tests.test_turning_points -v
 ```
 
-### 4. Conversational layer (Phase 8 / FR-5) — optional
+### 4. Using the conversational layer (Phase 9 / FR-5)
 
-The chat panel inside the dashboard talks to a small FastAPI backend that fronts the Claude API. It lets you (a) ask scenario-grounded questions with streaming responses, and (b) translate natural-language revisions into a structured diff that is applied to `data/scenarios.json` after you confirm.
+Once the server is running and your bearer token is entered in ⚙, the chat panel offers three modes:
 
-**Install the backend dependencies** (one-time — a venv is recommended):
+- **Ask** — ask scenario-grounded questions; Claude answers from the loaded scenario data with streaming responses.
+- **Revise** — describe a change in plain English ("bump tp-001-a probability to 75%"). Claude returns a structured diff, which previews **live in the flowchart** before you commit. Use **Save as new** to persist the revision as a named scenario in the dropdown; **Discard** restores the original.
+- **Expand** — ask a "what if" question to extend the scenario line with a new turning point after the current last node.
 
-```bash
-# From project root
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-```
+#### API endpoints
 
-**Obtain your two credentials.** These are not interchangeable:
+| Method | Path | Auth | Purpose |
+| --- | --- | --- | --- |
+| `GET` | `/healthz` | none | Liveness probe |
+| `GET` | `/` | none | Serves `src/ui/index.html` |
+| `GET` | `/scenarios` | none | Returns all scenarios (base + user-saved) |
+| `POST` | `/chat` | bearer | Streams Claude's scenario-grounded answer as SSE (`claude-sonnet-4-6`) |
+| `POST` | `/revise` | bearer | Translates NL → structured diff via Claude tool use; returns **preview only** — no write (`claude-opus-4-7`) |
+| `POST` | `/scenarios` | bearer | Saves a new named scenario (AI-revised or blank) |
+| `PUT` | `/scenarios/{id}` | bearer | Renames or updates description of a user scenario (403 for base) |
+| `DELETE` | `/scenarios/{id}` | bearer | Deletes a user scenario (403 for base) |
+| `POST` | `/expand` | bearer | Extends the scenario line with a new turning point from a "what if" question |
 
-| Credential             | Where it comes from                                                                                   | Who sees it                                   |
-|---|---|---|
-| `ANTHROPIC_API_KEY`    | [console.anthropic.com](https://console.anthropic.com/) — externally issued, pay-per-token            | Server only; never sent to the browser        |
-| `ROADMAP_API_KEY`      | **You pick it.** Any random string you like. Acts as a shared-secret bearer token on the demo API.    | Both the server env var **and** the browser ⚙ API settings — they must match |
-
-To generate a strong `ROADMAP_API_KEY`, run either:
-
-```bash
-python3 -c "import secrets; print(secrets.token_urlsafe(32))"
-# or:
-openssl rand -hex 32
-```
-
-Copy the output — you'll paste the **same string** into (a) the server's `ROADMAP_API_KEY` env var below and (b) the ⚙ API settings field inside the dashboard chat panel. The browser stores it in `localStorage` so you won't be asked again on that browser.
-
-> **This is demo-grade auth.** It's a single shared token, fine for localhost / internal use. Before any real deployment, replace it with per-user auth and narrow the CORS allowlist in `src/api/server.py`.
-
-**Export credentials** and start the API server:
-
-```bash
-export ANTHROPIC_API_KEY="sk-ant-..."                     # from console.anthropic.com
-export ROADMAP_API_KEY="<paste the random string you generated>"
-.venv/bin/python -m uvicorn src.api.server:app --port 8787 --reload
-```
-
-Then in a second terminal, launch the dashboard as in step 2, open the UI, click **💬 Chat** in the header, paste the same `ROADMAP_API_KEY` into ⚙ API settings, and start talking to the scenario.
-
-**Endpoints**
-
-| Method | Path         | Purpose |
-|---|---|---|
-| `GET`  | `/healthz`   | Liveness probe (no auth) |
-| `GET`  | `/scenarios` | Returns `data/scenarios.json` (bearer) |
-| `POST` | `/chat`      | Streams Claude's scenario-grounded answer as SSE (bearer; model: `claude-sonnet-4-6`) |
-| `POST` | `/revise`    | Translates NL → structured diff via Claude tool use, validates, applies, persists (bearer; model: `claude-opus-4-7`) |
-
-**Known scope trim**: `/revise` persists the edit to `scenarios.json` but does **not** re-run the 18-variant generator. The generated paths in `data/scenarios_generated.json` will drift out of sync until you re-run `python3 src/engine/simulator.py` manually. Auto-regeneration would require a dict→`Scenario` dataclass hydration path the codebase does not yet have — out of scope for Phase 8.
-
-**Security posture:** the Claude API key stays on the server. The browser only ever holds the `ROADMAP_API_KEY` bearer token (single-token demo auth — narrow CORS and swap in a real auth system before any deployment beyond localhost).
+**Security posture:** the Anthropic API key stays on the server. The browser only holds the `ROADMAP_API_KEY` bearer token (single-token demo auth — narrow the CORS allowlist in `src/api/server.py` and replace with per-user auth before any deployment beyond localhost).
 
 ## Project layout
 

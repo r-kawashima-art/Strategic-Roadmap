@@ -33,13 +33,15 @@ import copy
 import json
 import os
 import sys
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, List, Optional
 
 import anthropic
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 # Import `apply_diff` — prefer the package form, fall back for direct-module execution.
@@ -56,12 +58,13 @@ except ImportError:  # pragma: no cover
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 SCENARIOS_PATH = DATA_DIR / "scenarios.json"
+UI_PATH = PROJECT_ROOT / "src" / "ui" / "index.html"
 
 # Model choices come from §8.2 of the plan — do not change without a plan update.
 CHAT_MODEL = "claude-sonnet-4-6"   # latency-sensitive
 REVISE_MODEL = "claude-opus-4-7"   # accuracy-sensitive, lower frequency
 
-ROADMAP_API_KEY = os.environ.get("ROADMAP_API_KEY", "")
+ROADMAP_API_KEY = os.environ.get("ROADMAP_API_KEY", "roadmap-api-key")
 
 # Shared Claude client (async). Constructed on first use so the process can
 # start without ANTHROPIC_API_KEY and surface 503s on Claude-calling routes
@@ -94,7 +97,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -366,9 +369,25 @@ def _load_scenarios() -> List[Dict[str, Any]]:
             ),
         )
     try:
-        return json.loads(SCENARIOS_PATH.read_text())
+        raw = json.loads(SCENARIOS_PATH.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=500, detail=f"scenarios.json is malformed: {exc}")
+
+    # Support both flat list and future {base:[...], user:[...]} layouts.
+    if isinstance(raw, dict):
+        scenarios: List[Dict[str, Any]] = list(raw.get("base", [])) + list(raw.get("user", []))
+    else:
+        scenarios = list(raw)
+
+    # Inject source:"base" for seeded entries so CRUD endpoints can reliably
+    # distinguish them from user-created scenarios without schema migration.
+    for s in scenarios:
+        s.setdefault("source", "base")
+    return scenarios
+
+
+def _save_scenarios(scenarios: List[Dict[str, Any]]) -> None:
+    SCENARIOS_PATH.write_text(json.dumps(scenarios, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def _find_scenario(scenarios: List[Dict[str, Any]], scenario_id: str) -> Dict[str, Any]:
@@ -411,8 +430,17 @@ async def healthz() -> Dict[str, Any]:
     }
 
 
-@app.get("/scenarios", dependencies=[Depends(require_bearer)])
+@app.get("/")
+async def serve_ui() -> FileResponse:
+    """Serve the single-page application so the UI and API share one origin."""
+    if not UI_PATH.exists():
+        raise HTTPException(status_code=404, detail=f"UI file not found at {UI_PATH}")
+    return FileResponse(UI_PATH, media_type="text/html")
+
+
+@app.get("/scenarios")
 async def get_scenarios() -> JSONResponse:
+    """Read-only: no bearer required so the SPA can initialise without credentials."""
     return JSONResponse(_load_scenarios())
 
 
@@ -514,8 +542,9 @@ async def post_revise(req: ReviseRequest) -> Dict[str, Any]:
     if not operations:
         raise HTTPException(status_code=422, detail="Model returned zero operations to apply.")
 
-    # Dry-run on a deep copy before touching disk — a validation failure on
-    # operation N must not leave operations 0..N-1 committed.
+    # Apply diff to a deep copy only — never write to disk here.
+    # The caller (UI) previews the result and calls POST /scenarios to persist
+    # it explicitly as a new named entry (Phase 9 §9.1).
     draft = copy.deepcopy(scenarios)
     try:
         for op in operations:
@@ -524,19 +553,13 @@ async def post_revise(req: ReviseRequest) -> Dict[str, Any]:
     except DiffError as exc:
         raise HTTPException(status_code=422, detail=f"Diff rejected: {exc}")
 
-    # Commit.
-    SCENARIOS_PATH.write_text(json.dumps(draft, indent=2, ensure_ascii=False))
+    preview_scenario = _find_scenario(draft, req.scenario_id)
 
     return {
-        "status": "applied",
+        "status": "preview",
         "summary": summary,
         "operations": operations,
-        "scenarios": draft,
-        "note": (
-            "Diff applied to scenarios.json. The 18 auto-generated path "
-            "variants in scenarios_generated.json are NOT re-computed — "
-            "re-run `python3 src/engine/simulator.py` to refresh them."
-        ),
+        "preview_scenario": preview_scenario,
         "usage": {
             "input_tokens": response.usage.input_tokens,
             "output_tokens": response.usage.output_tokens,
@@ -544,6 +567,84 @@ async def post_revise(req: ReviseRequest) -> Dict[str, Any]:
             "cache_creation_input_tokens": getattr(response.usage, "cache_creation_input_tokens", 0),
         },
     }
+
+
+class SaveScenarioRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    parent_id: Optional[str] = None
+    scenario_data: Dict[str, Any]
+
+
+@app.post("/scenarios", dependencies=[Depends(require_bearer)])
+async def create_scenario(req: SaveScenarioRequest) -> Dict[str, Any]:
+    """Save a user scenario (new or AI-revised) as a named, reusable entry."""
+    scenarios = _load_scenarios()
+
+    # Reject name collisions so the selector stays unambiguous.
+    if any(s.get("name") == req.name for s in scenarios):
+        raise HTTPException(status_code=409, detail=f"Scenario name {req.name!r} already exists.")
+
+    new_id = f"user-{uuid.uuid4().hex[:12]}"
+    now = datetime.now(timezone.utc).isoformat()
+    new_scenario: Dict[str, Any] = {
+        **req.scenario_data,
+        "id": new_id,
+        "name": req.name,
+        "source": "user",
+        "parent_id": req.parent_id,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    scenarios.append(new_scenario)
+    _save_scenarios(scenarios)
+
+    return {
+        "id": new_id,
+        "name": req.name,
+        "source": "user",
+        "parent_id": req.parent_id,
+        "created_at": now,
+    }
+
+
+class UpdateScenarioRequest(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+
+
+@app.put("/scenarios/{scenario_id}", dependencies=[Depends(require_bearer)])
+async def update_scenario(scenario_id: str, req: UpdateScenarioRequest) -> Dict[str, Any]:
+    """Rename or update the description of a user-created scenario."""
+    scenarios = _load_scenarios()
+    target = _find_scenario(scenarios, scenario_id)
+
+    if target.get("source") != "user":
+        raise HTTPException(status_code=403, detail="Base scenarios cannot be modified.")
+
+    if req.name is not None:
+        if any(s.get("name") == req.name and s.get("id") != scenario_id for s in scenarios):
+            raise HTTPException(status_code=409, detail=f"Scenario name {req.name!r} already exists.")
+        target["name"] = req.name
+
+    if req.description is not None:
+        target["description"] = req.description
+
+    target["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _save_scenarios(scenarios)
+    return {"id": scenario_id, "name": target["name"], "updated_at": target["updated_at"]}
+
+
+@app.delete("/scenarios/{scenario_id}", dependencies=[Depends(require_bearer)], status_code=204)
+async def delete_scenario(scenario_id: str) -> None:
+    """Delete a user-created scenario. Returns 403 for base scenarios."""
+    scenarios = _load_scenarios()
+    target = _find_scenario(scenarios, scenario_id)
+
+    if target.get("source") != "user":
+        raise HTTPException(status_code=403, detail="Base scenarios cannot be deleted.")
+
+    _save_scenarios([s for s in scenarios if s.get("id") != scenario_id])
 
 
 @app.post("/expand", dependencies=[Depends(require_bearer)])
@@ -608,7 +709,7 @@ async def post_expand(req: ExpandRequest) -> Dict[str, Any]:
     except DiffError as exc:
         raise HTTPException(status_code=422, detail=f"Expansion rejected: {exc}")
 
-    SCENARIOS_PATH.write_text(json.dumps(draft, indent=2, ensure_ascii=False))
+    SCENARIOS_PATH.write_text(json.dumps(draft, indent=2, ensure_ascii=False), encoding="utf-8")
 
     return {
         "status": "applied",

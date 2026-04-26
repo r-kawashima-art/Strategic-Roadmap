@@ -545,7 +545,7 @@ def save_scenarios(scenarios: List[Scenario], path: Optional[Path] = None) -> Pa
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     data = [asdict(s) for s in scenarios]
-    output_path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+    output_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     return output_path
 
 

@@ -426,6 +426,54 @@
       cursor: not-allowed;
     }
 
+    .chat-save-form {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .chat-save-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.3rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-family: inherit;
+    }
+
+    .chat-save-input:focus {
+      outline: 2px solid var(--turning);
+      outline-offset: -1px;
+    }
+
+    /* Preview-active indicator — appears in the header when a /revise preview
+       is live in the flowchart but has not yet been saved. */
+    #preview-dot {
+      display: none;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.68rem;
+      color: var(--warn);
+      border: 1px solid var(--warn);
+      border-radius: 99px;
+      padding: 0.15rem 0.5rem;
+    }
+
+    #preview-dot.visible {
+      display: flex;
+    }
+
+    #preview-dot::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--warn);
+      flex-shrink: 0;
+    }
+
     .chat-input-wrap {
       padding: 0.7rem 1rem 0.9rem;
       border-top: 1px solid var(--border);
@@ -1021,6 +1069,7 @@
       <select id="scen-sel" onchange="onScenarioChange()"></select>
       <button class="reset-layout-btn" id="reset-layout-btn" type="button"
         aria-label="Reset dashboard layout to defaults">Reset layout</button>
+      <span id="preview-dot" role="status" aria-live="polite">Unsaved preview</span>
       <button class="chat-toggle-btn" id="chat-toggle-btn" type="button" aria-label="Open chat panel">💬 Chat</button>
     </div>
   </header>
@@ -1196,9 +1245,13 @@
     });
 
     async function init() {
+      // When served via the FastAPI server (http/https), fetch from the /scenarios
+      // API so user-saved scenarios are also included in the selector.
+      // When opened directly as file://, fall back to the local JSON path.
+      const isServedViaHttp = window.location.protocol.startsWith('http');
       try {
-        // Works when served via HTTP; fails on file:// (CORS)
-        const res = await fetch('../../data/scenarios.json');
+        const url = isServedViaHttp ? '/scenarios' : '../../data/scenarios.json';
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         scenarios = await res.json();
       } catch {
@@ -1212,14 +1265,36 @@
     }
 
     // ── Scenario selector ─────────────────────────────────────────────────────
+    function scenarioLabel(s) {
+      const icon = s.source === 'user' ? 'User Scenario' : 'Base Scenario';
+      const name = s.name || '(unnamed)';
+      return icon + (name.length > 53 ? name.slice(0, 50) + '…' : name);
+    }
+
     function buildSelector() {
       const sel = document.getElementById('scen-sel');
       scenarios.forEach((s, i) => {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.textContent = s.name.length > 55 ? s.name.slice(0, 52) + '…' : s.name;
+        opt.textContent = scenarioLabel(s);
         sel.appendChild(opt);
       });
+    }
+
+    function rebuildSelector(newScenarios, selectIdx) {
+      scenarios = newScenarios;
+      baseScenario = scenarios.find(s => s.id === 'scenario-001') || scenarios[0];
+      const sel = document.getElementById('scen-sel');
+      if (!sel) return;
+      sel.innerHTML = '';
+      scenarios.forEach((s, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = scenarioLabel(s);
+        sel.appendChild(opt);
+      });
+      activeScenIdx = Math.min(selectIdx ?? activeScenIdx, scenarios.length - 1);
+      sel.value = activeScenIdx;
     }
 
     function onScenarioChange() {
@@ -1269,7 +1344,7 @@
         // FR-4: primary-branch (highest-probability) delta chips on the hexagon
         const primary = node.branches.reduce((a, b) => b.probability > a.probability ? b : a);
         const tpChips = deltaChips(primary.metric_delta);
-        lines.push(`    ${tpId}{{"${node.year}<br/>⚡ ${escMd(node.title)}<br/>${tpChips}"}}`);
+        lines.push(`    ${tpId}{{"${node.year}<br/> ${escMd(node.title)}<br/>${tpChips}"}}`);
         lines.push(`    class ${tpId} tp`);
         nodeMap[tpId] = { type: 'turning_point', data: node };
 
@@ -1291,7 +1366,7 @@
             const endId = `END_${branch.id.replace(/-/g, '_')}`;
             const endClass = branch.metric_delta.revenue_index >= 0 ? 'endP' : 'endN';
             const endKpis = outcomeKpis(scenario, branch);
-            const stance = branch.metric_delta.tech_adoption_velocity > 0.08 ? '⚡ Innovation' : '⚙ Efficiency';
+            const stance = branch.metric_delta.tech_adoption_velocity > 0.08 ? ' Innovation' : '⚙ Efficiency';
             lines.push(`    ${endId}(["2040<br/>${escMd(branch.label)}<br/>${endKpis}<br/>${stance}"])`);
             lines.push(`    class ${endId} ${endClass}`);
             lines.push(`    ${tpId} -->|${edge}| ${endId}`);
@@ -2025,10 +2100,12 @@
     const CHAT_STORAGE_KEY = 'ota-roadmap-chat-v1';
     const chatState = {
       open: false,
-      mode: 'chat',                  // 'chat' | 'revise'
+      mode: 'chat',                  // 'chat' | 'revise' | 'expand'
       history: [],                    // conversation history for /chat
       inflight: null,                 // AbortController of active stream
       settings: loadChatSettings(),
+      previewActive: false,           // true while a /revise preview is live
+      previewSnapshot: null,          // deep-copy of scenario before preview
     };
 
     function loadChatSettings() {
@@ -2050,7 +2127,10 @@
     function updateChatContext() {
       const scen = scenarios[activeScenIdx] || baseScenario;
       const el = document.getElementById('chat-context-name');
-      if (el) el.textContent = scen?.name ?? '—';
+      if (el) {
+        const icon = scen?.source === 'user' ? '🔖' : '🔒';
+        el.textContent = `${icon} ${scen?.name ?? '—'}`;
+      }
     }
 
     function setChatOpen(open) {
@@ -2105,6 +2185,18 @@
 
     function chatAppendError(text) {
       return chatAppendBubble('error', text);
+    }
+
+    function interpretFetchError(err, apiBase) {
+      if (err.name === 'AbortError') return 'Request cancelled.';
+      // TypeError with "Failed to fetch" means the server is not reachable at all.
+      if (err instanceof TypeError && /failed to fetch/i.test(err.message)) {
+        return `Cannot reach the API server at ${apiBase}.\n`
+          + `Start it with:\n  export ROADMAP_API_KEY=your-token\n`
+          + `  export ANTHROPIC_API_KEY=sk-ant-...\n`
+          + `  uvicorn src.api.server:app --port 8787`;
+      }
+      return String(err.message || err);
     }
 
     function requireChatCreds() {
@@ -2195,7 +2287,7 @@
         }
       } catch (err) {
         if (assistantBubble.parentNode) assistantBubble.remove();
-        chatAppendError(err.name === 'AbortError' ? 'Request cancelled.' : String(err.message || err));
+        chatAppendError(interpretFetchError(err, chatState.settings.apiBase));
       } finally {
         chatState.inflight = null;
         if (sendBtn) sendBtn.disabled = false;
@@ -2227,7 +2319,7 @@
         renderRevisionCard(data);
       } catch (err) {
         if (pending.parentNode) pending.remove();
-        chatAppendError(String(err.message || err));
+        chatAppendError(interpretFetchError(err, chatState.settings.apiBase));
       } finally {
         if (sendBtn) sendBtn.disabled = false;
       }
@@ -2258,7 +2350,7 @@
         renderExpansionCard(data);
       } catch (err) {
         if (pending.parentNode) pending.remove();
-        chatAppendError(String(err.message || err));
+        chatAppendError(interpretFetchError(err, chatState.settings.apiBase));
       } finally {
         if (sendBtn) sendBtn.disabled = false;
       }
@@ -2309,20 +2401,7 @@ Rewiring terminal branches: ${escapeHtml(rewireLine)}</div>
       confirm.addEventListener('click', () => {
         cancel.disabled = confirm.disabled = true;
         if (Array.isArray(data.scenarios) && data.scenarios.length) {
-          scenarios = data.scenarios;
-          baseScenario = scenarios.find(s => s.id === 'scenario-001') || scenarios[0];
-          const sel = document.getElementById('scen-sel');
-          if (sel) {
-            sel.innerHTML = '';
-            scenarios.forEach((s, i) => {
-              const opt = document.createElement('option');
-              opt.value = i;
-              opt.textContent = s.name.length > 55 ? s.name.slice(0, 52) + '…' : s.name;
-              sel.appendChild(opt);
-            });
-            sel.value = Math.min(activeScenIdx, scenarios.length - 1);
-            activeScenIdx = parseInt(sel.value, 10);
-          }
+          rebuildSelector(data.scenarios, activeScenIdx);
           renderFlowchart(scenarios[activeScenIdx], { preserveView: userZoomed });
           renderMarketShare();
           updateChatContext();
@@ -2333,51 +2412,110 @@ Rewiring terminal branches: ${escapeHtml(rewireLine)}</div>
 
     function renderRevisionCard(data) {
       const thread = document.getElementById('chat-thread');
+
+      // --- Live preview: swap the current scenario slot with the patched copy
+      // so the flowchart + market-share chart reflect the proposed change
+      // immediately, without persisting anything.
+      const previewScenario = data.preview_scenario;
+      const previewSnapshot = JSON.parse(JSON.stringify(scenarios[activeScenIdx] || baseScenario));
+
+      if (previewScenario) {
+        scenarios[activeScenIdx] = previewScenario;
+        renderFlowchart(previewScenario, { preserveView: userZoomed });
+        renderMarketShare();
+        updateChatContext();
+      }
+
+      chatState.previewActive = true;
+      chatState.previewSnapshot = previewSnapshot;
+      document.getElementById('preview-dot')?.classList.add('visible');
+
+      function clearPreview() {
+        chatState.previewActive = false;
+        chatState.previewSnapshot = null;
+        document.getElementById('preview-dot')?.classList.remove('visible');
+      }
+
+      const defaultName = escapeHtml((previewScenario?.name || previewSnapshot.name || 'Scenario') + ' (revised)');
+
       const card = document.createElement('div');
       card.className = 'chat-revision-card';
       card.innerHTML = `
-      <h4>Proposed revision</h4>
-      <div class="chat-revision-summary">${escapeHtml(data.summary || '(no summary)')}</div>
-      <div class="chat-revision-ops">${escapeHtml(JSON.stringify(data.operations, null, 2))}</div>
-      <div class="chat-revision-actions">
-        <button type="button" class="cancel">Reject</button>
-        <button type="button" class="confirm">Apply &amp; reload</button>
-      </div>
-    `;
+        <h4>Proposed revision — live preview</h4>
+        <div class="chat-revision-summary">${escapeHtml(data.summary || '(no summary)')}</div>
+        <div class="chat-revision-ops">${escapeHtml(JSON.stringify(data.operations, null, 2))}</div>
+        <div class="chat-save-form">
+          <input class="chat-save-input" type="text"
+                 placeholder="New scenario name…"
+                 value="${defaultName}"
+                 aria-label="Name for the saved scenario" />
+          <button type="button" class="confirm save-new">Save as new</button>
+        </div>
+        <div class="chat-revision-actions">
+          <button type="button" class="cancel">Discard preview</button>
+        </div>
+      `;
       thread.appendChild(card);
       thread.scrollTop = thread.scrollHeight;
 
-      const cancel = card.querySelector('.cancel');
-      const confirm = card.querySelector('.confirm');
-      cancel.addEventListener('click', () => {
+      const cancelBtn = card.querySelector('.cancel');
+      const saveBtn = card.querySelector('.save-new');
+      const nameInput = card.querySelector('.chat-save-input');
+
+      cancelBtn.addEventListener('click', () => {
+        // Restore original scenario and re-render.
+        scenarios[activeScenIdx] = previewSnapshot;
+        renderFlowchart(previewSnapshot, { preserveView: userZoomed });
+        renderMarketShare();
+        updateChatContext();
+        clearPreview();
         card.remove();
-        chatAppendSystem('Revision rejected. scenarios.json was NOT modified on the server beyond the preview.');
+        chatAppendSystem('Preview discarded. No changes were saved.');
       });
-      confirm.addEventListener('click', () => {
-        // The /revise endpoint already persisted the diff. We only need to
-        // refresh in-memory scenarios and re-render the dashboard.
-        cancel.disabled = confirm.disabled = true;
-        if (Array.isArray(data.scenarios) && data.scenarios.length) {
-          scenarios = data.scenarios;
-          baseScenario = scenarios.find(s => s.id === 'scenario-001') || scenarios[0];
-          // Rebuild the scenario dropdown in-place
-          const sel = document.getElementById('scen-sel');
-          if (sel) {
-            sel.innerHTML = '';
-            scenarios.forEach((s, i) => {
-              const opt = document.createElement('option');
-              opt.value = i;
-              opt.textContent = s.name.length > 55 ? s.name.slice(0, 52) + '…' : s.name;
-              sel.appendChild(opt);
-            });
-            sel.value = Math.min(activeScenIdx, scenarios.length - 1);
-            activeScenIdx = parseInt(sel.value, 10);
-          }
-          renderFlowchart(scenarios[activeScenIdx], { preserveView: userZoomed });
+
+      saveBtn.addEventListener('click', async () => {
+        const name = nameInput.value.trim();
+        if (!name) { nameInput.focus(); return; }
+
+        saveBtn.disabled = cancelBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+
+        try {
+          const resp = await fetch(`${chatState.settings.apiBase}/scenarios`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${chatState.settings.apiKey}`,
+            },
+            body: JSON.stringify({
+              name,
+              parent_id: previewSnapshot.id || null,
+              scenario_data: previewScenario,
+            }),
+          });
+          const result = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(result.detail || `${resp.status} ${resp.statusText}`);
+
+          // Server assigned a new id and source:"user" — merge into the preview object.
+          const savedScenario = { ...previewScenario, ...result };
+
+          // Restore the original in its slot; append the new saved entry.
+          scenarios[activeScenIdx] = previewSnapshot;
+          scenarios.push(savedScenario);
+
+          // Switch the selector to the newly saved scenario.
+          rebuildSelector(scenarios, scenarios.length - 1);
+          renderFlowchart(savedScenario, { preserveView: userZoomed });
           renderMarketShare();
           updateChatContext();
+          clearPreview();
+          card.remove();
+          chatAppendSystem(`Saved as "${escapeHtml(name)}". Select it any time from the scenario dropdown.`);
+        } catch (err) {
+          saveBtn.textContent = 'Save as new';
+          saveBtn.disabled = cancelBtn.disabled = false;
+          chatAppendError(`Save failed: ${err.message || err}`);
         }
-        chatAppendSystem(`Revision applied. ${data.note || ''}`);
       });
     }
 
