@@ -242,6 +242,61 @@ Extend `src/ui/index.html` with a collapsible chat panel docked to the right sid
 - **Revision confirmation card** — when the backend detects a revision intent, the response includes a structured summary of the proposed change (field, old value, new value). The user confirms or cancels; on confirmation the UI calls `/revise`, which returns a **preview** of the revised scenario. The preview renders live in the flowchart and market-share chart so the planner can evaluate the change before committing. A **"Save as New Scenario"** button and name input field appear below the confirmation card — submitting calls `POST /scenarios` and adds the saved variant to the scenario selector dropdown. Cancelling discards the preview and restores the previous state.
 - **Context indicator** — a badge showing which scenario is active in the chat session, updated when the user switches the scenario selector dropdown. Base scenarios display a lock icon; user-saved variants display a bookmark icon so the planner can distinguish seeded data from personal edits at a glance.
 
+#### 9.4 Revision Connectivity and Visual Diff (Flowchart Integration)
+
+Two gaps exist in the current `/revise` preview flow that make it hard for planners to evaluate proposed changes:
+
+1. **Disconnected nodes** — when Claude returns an `add_node` operation, `scenario_patch.py` appends the new `TurningPointNode` to the scenario's `nodes` list but leaves all existing terminal branches pointing to `null`. The Mermaid renderer therefore draws the new node as a floating island with no incoming arrows, breaking the DAG and making the change unreadable.
+2. **No visual diff** — the preview flowchart renders with the same styling as a normal scenario, so the planner cannot tell at a glance which nodes were modified, added, or had their branch probabilities changed by the revision.
+
+##### 9.4.1 Auto-rewire on `add_node` (`src/api/scenario_patch.py`)
+
+Extend the `apply_diff` handler for the `add_node` operation to replicate the rewiring logic already used by `expand_scenario`:
+
+- After appending the new node to `scenario["nodes"]`, collect every branch across all existing nodes whose `next_node_id` is `null` (currently terminal).
+- Set each terminal branch's `next_node_id` to the new node's `id`.
+- If the `add_node` operation includes an explicit `rewire_from` list of `{node_id, branch_id}` pairs (optional field added to the `apply_scenario_diff` tool schema), honour that list instead of the auto-detect logic. This allows Claude to target specific branches rather than all terminals when the graph already has multiple endpoint paths.
+
+##### 9.4.2 Visual Diff Overlay (`src/ui/index.html`)
+
+When `renderRevisionCard` calls `renderFlowchart(previewScenario, ...)`, pass a second `diffContext` argument containing the sets of changed, added, and unchanged node IDs:
+
+- **Changed nodes** (field values modified by `set_node_field` or `set_branch_field` operations) — render with an amber `stroke` on their Mermaid class definition instead of the default purple, so they stand out from unchanged turning points.
+- **New nodes** (created by `add_node`) — render with a dashed amber border and a `✦` prefix on the label to signal that they did not exist in the base scenario.
+- **Unchanged nodes** — render at reduced opacity (use Mermaid `classDef` with a lighter `color` value) so the planner's eye goes directly to what changed.
+- Diff styling is applied only during an active preview; `clearPreview()` restores the standard class definitions on discard or save.
+
+`buildDef(scenario, diffContext)` derives the diff context by comparing `previewScenario.nodes` against `previewSnapshot.nodes` at the time `renderRevisionCard` is called. No server change is needed — the comparison is purely client-side.
+
+##### 9.4.3 Tool Schema Update
+
+Add an optional `rewire_from` field to the `add_node` operation object in `APPLY_SCENARIO_DIFF_TOOL.input_schema`:
+
+```json
+"rewire_from": {
+  "type": "array",
+  "description": "Specific terminal branches to rewire into the new node. Omit to auto-rewire all terminal branches.",
+  "items": {
+    "type": "object",
+    "properties": {
+      "node_id":   { "type": "string" },
+      "branch_id": { "type": "string" }
+    },
+    "required": ["node_id", "branch_id"]
+  }
+}
+```
+
+Update `REVISE_SYSTEM_PREAMBLE` to instruct Claude that `rewire_from` should be used when the scenario has multiple terminal paths that serve different story lines and only one should flow into the new node.
+
+##### 9.4.4 Acceptance Criteria for Phase 9.4
+
+- [ ] An `add_node` revision always produces a fully connected DAG — the new node has at least one incoming arrow from a previously-terminal branch.
+- [ ] When `rewire_from` is specified by Claude, only the listed branches are rewired; other terminal branches remain terminal.
+- [ ] During a live preview, nodes modified by the diff render in amber; new nodes render with a dashed border and `✦` prefix; unchanged nodes render at reduced opacity.
+- [ ] Discarding the preview fully restores the original node styling — no amber or dashed borders remain.
+- [ ] Saving the preview as a new scenario persists the standard (non-diff) styling in the selector and subsequent loads.
+
 ### Phase 10: Scenario Management (FR-7)
 
 FR-7 delivers full lifecycle control over scenarios — create, rename, delete, export, and import — so that AI-generated variants and custom planners' edits become persistent, shareable artefacts rather than ephemeral session state.
