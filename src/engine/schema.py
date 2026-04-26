@@ -46,7 +46,19 @@ class BranchOutcome:
 
 @dataclass
 class TurningPointNode:
-    """A decision point where the scenario can branch."""
+    """A decision point where the scenario can branch.
+
+    Phase 8 adds three optional provenance fields so the UI and the
+    conversational `/expand` endpoint can tell apart hand-authored seed nodes
+    from nodes minted in response to a user question:
+
+    - ``source``: ``"seed"`` (authored in schema.py), ``"expansion"`` (added
+      via `/expand`), or ``"revision"`` (added via `/revise`).
+    - ``source_question``: the natural-language prompt that triggered an
+      expansion (only meaningful when ``source == "expansion"``).
+    - ``parent_branch_ids``: branch IDs that were rewired to flow into this
+      node at expansion time — lets a reader see *why* the DAG points here.
+    """
 
     id: str
     year: int
@@ -54,6 +66,9 @@ class TurningPointNode:
     description: str
     external_driver: str  # e.g. "NDC adoption", "GenAI breakthrough"
     branches: List[BranchOutcome]
+    source: str = "seed"
+    source_question: Optional[str] = None
+    parent_branch_ids: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -160,94 +175,124 @@ def build_sample_scenario() -> Scenario:
     # --- Competitor Profiles ---
     # initial_market_share values are normalized revenue-share proxies derived
     # from each firm's most recent public filings (see metadata.source /
-    # source_year). Tracked OTAs sum to ~0.745; the remaining ~0.255 is folded
-    # into the implicit "Other" bucket at projection time. Airbnb is tracked
-    # even though it's strictly a home-sharing marketplace — it competes
-    # directly for lodging spend and its distribution decisions shape the
-    # industry envelope around the modelled OTA cohort.
+    # source_year). Tracked OTAs sum to ~0.748; the remaining ~0.252 is folded
+    # into the implicit "Other" bucket at projection time (Tripadvisor,
+    # Despegar, Yatra, Webjet, Wego, LY.com, Tongcheng, MrJet, Skyscanner
+    # referral revenue, and fragmented regional long-tail).
+    #
+    # Airbnb is tracked even though it's strictly a home-sharing marketplace —
+    # it competes directly for lodging spend and its distribution decisions
+    # shape the industry envelope around the modelled OTA cohort. MakeMyTrip
+    # was added in Phase 8 to cover the Indian outbound market, which is the
+    # fastest-growing regional OTA book globally (2023→2024 bookings +32%).
     competitors = [
         CompetitorProfile(
             name="Booking Holdings",
             key_capability=(
                 "Global performance-marketing scale; multi-brand "
-                "(Booking.com, Priceline, Kayak); AI push via Priceline Penny"
+                "(Booking.com, Priceline, Kayak); AI trip-planner / "
+                "Priceline Penny; genius loyalty programme."
             ),
-            initial_position=MatrixPosition(0.50, 0.60, StrategicStance.INNOVATION_LED),
+            initial_position=MatrixPosition(0.50, 0.65, StrategicStance.INNOVATION_LED),
             default_profile="Differentiator",
-            initial_market_share=0.28,
+            initial_market_share=0.278,
             metadata={
-                "source": "Booking Holdings 2023 10-K (NASDAQ: BKNG, ~$21.4B revenue)",
-                "source_year": "2023",
+                "source": "Booking Holdings FY2024 10-K (NASDAQ: BKNG, ~$23.7B revenue)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "23.7",
             },
         ),
         CompetitorProfile(
             name="Expedia Group",
             key_capability=(
                 "Brand portfolio (Expedia, Hotels.com, Vrbo); Trip Planner "
-                "AI; retail + B2B (Expedia Partner Solutions)"
+                "AI; retail + B2B (Expedia Partner Solutions, ~20% of revenue)."
             ),
             initial_position=MatrixPosition(0.50, 0.65, StrategicStance.INNOVATION_LED),
             default_profile="Differentiator",
-            initial_market_share=0.16,
+            initial_market_share=0.160,
             metadata={
-                "source": "Expedia Group 2023 10-K (NASDAQ: EXPE, ~$12.8B revenue)",
-                "source_year": "2023",
+                "source": "Expedia Group FY2024 10-K (NASDAQ: EXPE, ~$13.7B revenue)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "13.7",
             },
         ),
         CompetitorProfile(
             name="Airbnb",
             key_capability=(
                 "Home-sharing marketplace + experiences; high brand recall "
-                "with under-35 segment; AI concierge rollout announced 2024"
+                "with under-35 segment; AI-powered trip-planning rollout 2025."
             ),
             initial_position=MatrixPosition(0.20, 0.70, StrategicStance.INNOVATION_LED),
             default_profile="Differentiator",
-            initial_market_share=0.13,
+            initial_market_share=0.130,
             metadata={
-                "source": "Airbnb Inc. 2023 10-K (NASDAQ: ABNB, ~$9.9B revenue)",
-                "source_year": "2023",
+                "source": "Airbnb Inc. FY2024 10-K (NASDAQ: ABNB, ~$11.1B revenue)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "11.1",
             },
         ),
         CompetitorProfile(
             name="Trip.com Group",
             key_capability=(
                 "APAC dominance (China/SEA); TripGenie AI assistant at scale; "
-                "outbound China travel recovery tailwind"
+                "outbound China travel recovery tailwind; Skyscanner metasearch."
             ),
-            initial_position=MatrixPosition(0.40, 0.70, StrategicStance.INNOVATION_LED),
+            initial_position=MatrixPosition(0.40, 0.75, StrategicStance.INNOVATION_LED),
             default_profile="Differentiator",
-            initial_market_share=0.09,
+            initial_market_share=0.090,
             metadata={
-                "source": "Trip.com Group 2023 Annual Report (NASDAQ/HK: TCOM, ~$6.3B revenue)",
-                "source_year": "2023",
+                "source": "Trip.com Group FY2024 Annual Report (NASDAQ/HK: TCOM, ~$7.3B revenue, ¥53.4B)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "7.3",
             },
         ),
         CompetitorProfile(
             name="Agoda",
             key_capability=(
                 "APAC accommodations specialist; aggressive pricing + "
-                "mobile-first UX; part of Booking Holdings"
+                "mobile-first UX; AgodaGPT pilot launched 2023; part of "
+                "Booking Holdings."
             ),
-            initial_position=MatrixPosition(0.40, 0.55, StrategicStance.EFFICIENCY_LED),
+            initial_position=MatrixPosition(0.40, 0.60, StrategicStance.EFFICIENCY_LED),
             default_profile="Cost Leader",
-            initial_market_share=0.04,
+            initial_market_share=0.045,
             metadata={
-                "source": "Booking Holdings 2023 10-K (Agoda segment)",
-                "source_year": "2023",
+                "source": "Booking Holdings FY2024 10-K (Agoda segment, est. ~$3.8B)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "3.8",
+            },
+        ),
+        CompetitorProfile(
+            name="MakeMyTrip",
+            key_capability=(
+                "India's dominant OTA (MMT, Goibibo, redBus brands); "
+                "outbound India travel tailwind; fast-growing B2B and "
+                "corporate-travel book."
+            ),
+            initial_position=MatrixPosition(0.35, 0.50, StrategicStance.EFFICIENCY_LED),
+            default_profile="Cost Leader",
+            initial_market_share=0.010,
+            metadata={
+                "source": "MakeMyTrip FY2024 20-F (NASDAQ: MMYT, ~$782M revenue)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "0.78",
             },
         ),
         CompetitorProfile(
             name="eDreams ODIGEO",
             key_capability=(
-                "Prime Subscription (6M+ members); flights-first European "
-                "metasearch lineage"
+                "Prime Subscription (6.7M+ members, ~55% of revenue); "
+                "flights-first European metasearch lineage; AI-assisted "
+                "personalization on Prime."
             ),
             initial_position=MatrixPosition(0.50, 0.55, StrategicStance.EFFICIENCY_LED),
             default_profile="Cost Leader",
-            initial_market_share=0.02,
+            initial_market_share=0.020,
             metadata={
-                "source": "eDreams ODIGEO FY2024 Annual Report (BME: EDR, ~€610M revenue)",
-                "source_year": "2024",
+                "source": "eDreams ODIGEO FY2025 Annual Report (BME: EDR, ~€674M revenue)",
+                "source_year": "2025",
+                "revenue_proxy_usd_bn": "0.73",
             },
         ),
         CompetitorProfile(
@@ -255,28 +300,31 @@ def build_sample_scenario() -> Scenario:
             key_capability=(
                 "Nordic flights-focused OTA + white-label flight search "
                 "backend (powers Booking.com Flights); B2B2C flight "
-                "distribution specialist"
+                "distribution specialist."
             ),
-            initial_position=MatrixPosition(0.45, 0.50, StrategicStance.EFFICIENCY_LED),
+            initial_position=MatrixPosition(0.45, 0.55, StrategicStance.EFFICIENCY_LED),
             default_profile="Niche Search",
-            initial_market_share=0.015,
+            initial_market_share=0.005,
             metadata={
-                "source": "Etraveli Group 2023 public filings (CVC Capital portfolio)",
+                "source": "Etraveli Group 2023 filings (CVC Capital portfolio, private)",
                 "source_year": "2023",
+                "revenue_proxy_usd_bn": "0.40",
             },
         ),
         CompetitorProfile(
             name="Kiwi.com",
             key_capability=(
                 "Virtual Interlining — ML-generated multi-PNR itineraries "
-                "across non-partner carriers (proprietary algorithm)"
+                "across non-partner carriers (proprietary algorithm); "
+                "high-margin long-tail multi-city routes."
             ),
             initial_position=MatrixPosition(0.30, 0.65, StrategicStance.INNOVATION_LED),
             default_profile="Niche Search",
-            initial_market_share=0.01,
+            initial_market_share=0.010,
             metadata={
-                "source": "Kiwi.com publicly reported revenue (private, General Atlantic-backed)",
-                "source_year": "2023",
+                "source": "Kiwi.com 2024 reported bookings (~$1.8B GMV, private; General Atlantic-backed)",
+                "source_year": "2024",
+                "revenue_proxy_usd_bn": "0.22",
             },
         ),
     ]
@@ -304,7 +352,8 @@ def build_sample_scenario() -> Scenario:
         TimelineDataPoint(2020, MetricSnapshot(5.5, 0.32, 0.70), "COVID-19 collapse (-67%)"),
         TimelineDataPoint(2022, MetricSnapshot(14.5, 0.34, 0.72), "Recovery to pre-COVID volume for leaders"),
         TimelineDataPoint(2023, MetricSnapshot(18.0, 0.35, 0.74), "GenAI emergence; Expedia Trip Planner / TripGenie launch"),
-        TimelineDataPoint(2025, MetricSnapshot(22.0, 0.36, 0.78), "NDC 21.3 mainstream; AI agent pilots"),
+        TimelineDataPoint(2024, MetricSnapshot(20.5, 0.36, 0.76), "Record year — BKNG $23.7B, EXPE $13.7B, ABNB $11.1B"),
+        TimelineDataPoint(2025, MetricSnapshot(22.5, 0.36, 0.78), "NDC 21.3 mainstream; AI agent pilots; OpenAI Operator GA"),
         TimelineDataPoint(2028, MetricSnapshot(28.0, 0.38, 0.83)),
         TimelineDataPoint(2030, MetricSnapshot(33.0, 0.40, 0.86), "AI agents reshape booking"),
         TimelineDataPoint(2035, MetricSnapshot(45.0, 0.42, 0.91)),

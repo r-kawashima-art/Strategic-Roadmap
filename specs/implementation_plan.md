@@ -195,11 +195,15 @@ This phase retracts the Metrics Timeline that was introduced in Phase 3 (and inc
 - [ ] The Market Share Comparison chart still shows the 2025 / 2028 / 2032 vertical turning-point markers (confirms `turningLinePlugin` survived the cut).
 - [ ] `python3 -m tests.run_verification` → 29/29 pass (no UI tests exist today, but the backend suite must stay green).
 
-### Phase 8: Interactive Future Prediction (FR-5)
+### Phase 8: Improvements
+
+Goal: Make the data about of OTA more realistic and add a function of expanding the scenario line when the user inputs a question for the dashboard.
+
+### Phase 9: Interactive Future Prediction (FR-5)
 
 FR-5 adds a conversational layer so that strategy planners can interrogate scenarios in natural language and revise them without touching JSON or Python directly.
 
-#### 8.1 API Backend (`src/api/server.py`)
+#### 9.1 API Backend (`src/api/server.py`)
 
 Build a lightweight **FastAPI** server that acts as the bridge between the UI, the simulation engine, and the Claude API.
 
@@ -209,13 +213,13 @@ Build a lightweight **FastAPI** server that acts as the bridge between the UI, t
 
 Authentication: a single bearer token configured via environment variable (`ROADMAP_API_KEY`) is sufficient for internal/demo use.
 
-#### 8.2 Claude API Integration
+#### 9.2 Claude API Integration
 
 - Use **`claude-sonnet-4-6`** for chat (latency-sensitive) and **`claude-opus-4-7`** for revision translation (accuracy-sensitive, less frequent).
 - Enable **prompt caching** on the scenario context block, which is large and static between messages in the same session — this avoids re-tokenising the full JSON on every turn.
 - For `/revise`, expose a `apply_scenario_diff` tool so Claude returns a machine-readable patch rather than prose, keeping the revision path deterministic and auditable.
 
-#### 8.3 UI Chat Panel
+#### 9.3 UI Chat Panel
 
 Extend `src/ui/index.html` with a collapsible chat panel docked to the right side of the flowchart pane.
 

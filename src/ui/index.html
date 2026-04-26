@@ -719,6 +719,7 @@
     <div class="chat-mode-tabs" role="tablist">
       <button class="chat-mode-tab active" id="mode-chat"   role="tab" data-mode="chat">Ask</button>
       <button class="chat-mode-tab"        id="mode-revise" role="tab" data-mode="revise">Revise</button>
+      <button class="chat-mode-tab"        id="mode-expand" role="tab" data-mode="expand">Expand</button>
     </div>
     <div class="chat-context" id="chat-context">Active scenario: <b id="chat-context-name">—</b></div>
     <button class="chat-settings-toggle" id="chat-settings-toggle" type="button">⚙ API settings</button>
@@ -1307,12 +1308,16 @@
 
     if (info.type === 'turning_point') {
       const node = info.data;
+      const expansionHint = node.source === 'expansion' && node.source_question
+        ? `<div class="driver-tag" style="background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.35);color:#c4b5fd">✨ Added from question: "${escapeHtml(node.source_question)}"</div>`
+        : '';
       el.innerHTML = `
         <div class="detail-card">
           <div class="year-badge">${node.year}</div>
           <h3>${node.title}</h3>
           <p>${node.description}</p>
           <div class="driver-tag">Driver: ${node.external_driver}</div>
+          ${expansionHint}
           <div class="branches-label">Branches</div>
           ${node.branches.map(b => {
             const d  = b.metric_delta.revenue_index;
@@ -1758,16 +1763,18 @@
     });
     const input = document.getElementById('chat-input');
     const hint  = document.getElementById('chat-hint');
-    if (input) {
-      input.placeholder = mode === 'chat'
-        ? 'Ask about this scenario…'
-        : 'Describe the revision you want (e.g. "bump tp-001-a probability to 75%")';
-    }
-    if (hint) {
-      hint.textContent = mode === 'chat'
-        ? 'Enter to send · Shift+Enter for newline'
-        : 'Revise mode — Claude returns a structured diff you approve before it writes';
-    }
+    const placeholders = {
+      chat:   'Ask about this scenario…',
+      revise: 'Describe the revision you want (e.g. "bump tp-001-a probability to 75%")',
+      expand: 'Ask a "what if" that extends the scenario line (e.g. "what if the EU mandates AI-agent audit trails in 2034?")',
+    };
+    const hints = {
+      chat:   'Enter to send · Shift+Enter for newline',
+      revise: 'Revise mode — Claude returns a structured diff you approve before it writes',
+      expand: 'Expand mode — adds a new turning point after the current last node; terminal branches rewire into it',
+    };
+    if (input) input.placeholder = placeholders[mode] || placeholders.chat;
+    if (hint)  hint.textContent  = hints[mode]        || hints.chat;
   }
 
   function chatAppendBubble(role, text, el) {
@@ -1810,8 +1817,10 @@
 
     if (chatState.mode === 'chat') {
       await chatSendAsk(text);
-    } else {
+    } else if (chatState.mode === 'revise') {
       await chatSendRevise(text);
+    } else {
+      await chatSendExpand(text);
     }
   }
 
@@ -1913,6 +1922,104 @@
     } finally {
       if (sendBtn) sendBtn.disabled = false;
     }
+  }
+
+  async function chatSendExpand(question) {
+    chatAppendBubble('user', question);
+    const sendBtn = document.getElementById('chat-send');
+    if (sendBtn) sendBtn.disabled = true;
+    const pending = chatAppendSystem('Drafting a new turning point from your question…');
+
+    const scenario_id = (scenarios[activeScenIdx] || baseScenario)?.id || 'scenario-001';
+
+    try {
+      const resp = await fetch(`${chatState.settings.apiBase}/expand`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${chatState.settings.apiKey}`,
+        },
+        body: JSON.stringify({ scenario_id, question }),
+      });
+      const data = await resp.json().catch(() => ({}));
+      pending.remove();
+      if (!resp.ok) {
+        throw new Error(data.detail || `${resp.status} ${resp.statusText}`);
+      }
+      renderExpansionCard(data);
+    } catch (err) {
+      if (pending.parentNode) pending.remove();
+      chatAppendError(String(err.message || err));
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  }
+
+  function renderExpansionCard(data) {
+    const thread = document.getElementById('chat-thread');
+    const card = document.createElement('div');
+    card.className = 'chat-revision-card';
+    const node = data.new_node || {};
+    const branches = Array.isArray(node.branches) ? node.branches : [];
+    const rewires = Array.isArray(data.rewire_branches) ? data.rewire_branches : [];
+    const branchRows = branches.map(b => {
+      const pct = Math.round(((b.probability ?? 0) * 100));
+      const md  = b.metric_delta || {};
+      return `  · ${escapeHtml(b.label || b.id)} [${pct}%] `
+           + `Δrev ${(+md.revenue_index||0).toFixed(2)} `
+           + `Δms ${((+md.market_share||0)*100).toFixed(1)}pp `
+           + `Δtav ${((+md.tech_adoption_velocity||0)*100).toFixed(1)}pp`;
+    }).join('\n');
+    const rewireLine = rewires.length
+      ? rewires.map(r => `${r.node_id}/${r.branch_id}`).join(', ')
+      : '(none — new node is a standalone continuation)';
+
+    card.innerHTML = `
+      <h4>Proposed scenario expansion</h4>
+      <div class="chat-revision-summary">${escapeHtml(data.summary || '(no summary)')}</div>
+      <div class="chat-revision-ops">New node: ${escapeHtml(node.id || '?')} · ${escapeHtml(String(node.year || '?'))} — ${escapeHtml(node.title || '')}
+Driver: ${escapeHtml(node.external_driver || '?')}
+Branches:
+${branchRows}
+
+Rewiring terminal branches: ${escapeHtml(rewireLine)}</div>
+      <div class="chat-revision-actions">
+        <button type="button" class="cancel">Reject</button>
+        <button type="button" class="confirm">Apply &amp; reload</button>
+      </div>
+    `;
+    thread.appendChild(card);
+    thread.scrollTop = thread.scrollHeight;
+
+    const cancel  = card.querySelector('.cancel');
+    const confirm = card.querySelector('.confirm');
+    cancel.addEventListener('click', () => {
+      card.remove();
+      chatAppendSystem('Expansion rejected. scenarios.json was NOT modified on the server beyond the preview.');
+    });
+    confirm.addEventListener('click', () => {
+      cancel.disabled = confirm.disabled = true;
+      if (Array.isArray(data.scenarios) && data.scenarios.length) {
+        scenarios = data.scenarios;
+        baseScenario = scenarios.find(s => s.id === 'scenario-001') || scenarios[0];
+        const sel = document.getElementById('scen-sel');
+        if (sel) {
+          sel.innerHTML = '';
+          scenarios.forEach((s, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = s.name.length > 55 ? s.name.slice(0, 52) + '…' : s.name;
+            sel.appendChild(opt);
+          });
+          sel.value = Math.min(activeScenIdx, scenarios.length - 1);
+          activeScenIdx = parseInt(sel.value, 10);
+        }
+        renderFlowchart(scenarios[activeScenIdx], { preserveView: userZoomed });
+        renderMarketShare();
+        updateChatContext();
+      }
+      chatAppendSystem(`Expansion applied. ${data.note || ''}`);
+    });
   }
 
   function renderRevisionCard(data) {

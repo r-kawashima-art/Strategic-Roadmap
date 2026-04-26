@@ -1,7 +1,7 @@
 # Project Walkthrough: Strategic Roadmap OTA Visualizer
 
-**Date:** 2026-04-17
-**Status:** Phases 1–7 complete · Phase 8 (FR-5 conversational layer) not started
+**Date:** 2026-04-22
+**Status:** Phases 1–8 shipped · Phase 9 (FR-5 conversational `/chat` + `/revise` layer) ships alongside — see the Phase 8 section for the new `/expand` mode that sits on top of it
 
 ---
 
@@ -369,6 +369,115 @@ Dashboard now renders exactly the divisions listed in `user_story.md` after the 
 
 ---
 
+## Phase 8 — Improvements: OTA Data Refresh + Scenario-Line Expansion
+
+**Files:** [src/engine/schema.py](../src/engine/schema.py) · [src/api/scenario_patch.py](../src/api/scenario_patch.py) · [src/api/server.py](../src/api/server.py) · [src/ui/index.html](../src/ui/index.html) · [data/scenarios.json](../data/scenarios.json)
+
+### What was built
+
+Phase 8 addresses both halves of the plan's §Phase 8 goal: *"Make the data about OTA more realistic, and add a function of expanding the scenario line when the user inputs a question for the dashboard. In addition, define the data structure of the nodes to be expanded."* Two related UI and engine changes land together because they share the same conversational surface and the same confirmation flow.
+
+#### 8.1 OTA data refresh
+
+The competitor roster was rebuilt against FY2024 public filings (FY2025 for eDreams, which reports on a March fiscal). Three things changed in [src/engine/schema.py](../src/engine/schema.py)::`build_sample_scenario`:
+
+| Competitor | Previous seed | New seed (Phase 8) | Source |
+|---|---|---|---|
+| Booking Holdings | 28.0 % · 2023 10-K ($21.4B) | 27.8 % · **FY2024 10-K ($23.7B)** | NASDAQ: BKNG |
+| Expedia Group | 16.0 % · 2023 10-K ($12.8B) | 16.0 % · **FY2024 10-K ($13.7B)** | NASDAQ: EXPE |
+| Airbnb | 13.0 % · 2023 10-K ($9.9B) | 13.0 % · **FY2024 10-K ($11.1B)** | NASDAQ: ABNB |
+| Trip.com Group | 9.0 % · 2023 ($6.3B) | 9.0 % · **FY2024 (¥53.4B ≈ $7.3B)** | NASDAQ/HK: TCOM |
+| Agoda | 4.0 % · 2023 segment | 4.5 % · **FY2024 segment (~$3.8B)** | BKNG 10-K |
+| **MakeMyTrip (new)** | — | 1.0 % · **FY2024 20-F ($782M)** | NASDAQ: MMYT |
+| eDreams ODIGEO | 2.0 % · FY2024 (€610M) | 2.0 % · **FY2025 (€674M)** | BME: EDR |
+| Etraveli Group | 1.5 % · 2023 | 0.5 % · 2023 (rebased to revenue proxy) | CVC Capital portfolio |
+| Kiwi.com | 1.0 % · 2023 | 1.0 % · **2024 (~$1.8B GMV)** | General Atlantic-backed |
+
+Every `CompetitorProfile.metadata` now also carries a `revenue_proxy_usd_bn` field, so the normalized share is traceable back to a specific USD-denominated revenue anchor rather than the bare source citation. The tracked set sums to **74.8 %** (previously 74.5 %), leaving a ~25.2 % "Other" bucket that the plan documents as Tripadvisor / Despegar / Yatra / Webjet / Wego / LY.com / Tongcheng / Skyscanner referral revenue / fragmented regional long-tail — making the bucket legible as a concrete set rather than an opaque residual.
+
+**MakeMyTrip was added in Phase 8** because the prior roster had no Indian OTA representation. India's outbound travel book grew +32 % YoY 2023→2024, and MMT (with Goibibo and redBus) is the dominant Indian OTA by a factor of ~5× over the next-largest competitor. Skipping it would have understated the APAC competitive envelope by the fastest-growing regional book in the industry.
+
+The timeline also picked up a **2024 anchor point** — `TimelineDataPoint(2024, MetricSnapshot(20.5, 0.36, 0.76), "Record year — BKNG $23.7B, EXPE $13.7B, ABNB $11.1B")` — so the historical chain now reads BKNG-acquires-Booking (2005) → iPhone (2007) → COVID (2020) → **Record year (2024)** → NDC / AI pilots (2025) without the 2023→2025 gap that made the pre-COVID-to-GenAI transition look cleaner than it actually was.
+
+#### 8.2 Expandable-node data structure
+
+`TurningPointNode` gained three optional provenance fields in [src/engine/schema.py](../src/engine/schema.py):
+
+| Field | Purpose |
+|---|---|
+| `source` | `"seed"` (hand-authored in schema.py), `"expansion"` (added via `/expand`), or `"revision"` (added via `/revise`). Default `"seed"` so existing scenarios load unchanged. |
+| `source_question` | The natural-language question the user asked that triggered this node. Only meaningful when `source == "expansion"`. |
+| `parent_branch_ids` | The branch IDs that were rewired to flow INTO this node at expansion time — lets a reader see *why* the DAG points here. |
+
+All three default to empty, so pre-Phase-8 `scenarios.json` files deserialize without change. The 29-test war-gaming + clarity suite still passes on the refreshed data (all 13 clarity assertions match the new 9-competitor roster automatically; MakeMyTrip is covered by `test_every_competitor_has_source_attribution` and `test_every_competitor_has_initial_market_share` without new test code).
+
+#### 8.3 `/expand` endpoint and Claude tool-use
+
+**Files:** [src/api/server.py](../src/api/server.py) · [src/api/scenario_patch.py](../src/api/scenario_patch.py)
+
+A new FastAPI route, `POST /expand`, takes a user's "what if" question and mints a new turning-point node that extends the scenario line. It uses Claude Opus (`claude-opus-4-7`, accuracy-sensitive) with a dedicated `expand_scenario_from_question` tool whose schema hard-constrains the model's output:
+
+- `new_node.year` must be strictly greater than every existing TP year and ≤ 2040.
+- `new_node.external_driver` must be one of the three drivers `FitEngine.DRIVER_WEIGHTS` knows — *NDC adoption*, *GenAI breakthrough*, *Airline direct booking dominance*. The tool's `enum` surfaces this to the model so it picks the closest conceptual match rather than inventing a new driver (an EU AI-regulation question maps to *GenAI breakthrough*; a loyalty-lock-in question maps to *Airline direct booking dominance*). This is the narrow waist that keeps `test_external_drivers_are_handled_by_fit_engine` green after an expansion.
+- `rewire_branches` must list **every** currently-terminal branch in the scenario (branches with `next_node_id: null`) — non-terminal branches are explicitly out of scope.
+- Branches must carry numeric metric deltas and probabilities summing to 1.0 ± 0.001.
+
+The server then applies the expansion atomically via the new `expand_scenario` op in [src/api/scenario_patch.py](../src/api/scenario_patch.py). The op:
+
+1. Validates `new_node` structure (required fields, ≥ 2 branches, no duplicate IDs, year in future of all existing nodes, driver in the `KNOWN_EXTERNAL_DRIVERS` set, year ≤ 2040).
+2. Validates every rewire target currently has `next_node_id: null` — so an expansion can never silently detach a mid-graph edge.
+3. Stamps the provenance fields (`source="expansion"`, `source_question`, `parent_branch_ids`).
+4. Appends the node and rewires the terminal branches in a single atomic step.
+
+The whole validator is exercised as a unit on a deep copy before touching `data/scenarios.json`, so a failure on the rewire step cannot leave the on-disk file with a half-applied expansion.
+
+#### 8.4 "Expand" chat mode in the UI
+
+**File:** [src/ui/index.html](../src/ui/index.html)
+
+The existing chat panel grew a third mode tab next to **Ask** and **Revise**:
+
+```
+┌─ Scenario Chat ─────────────────────────────────┐
+│ [ Ask ] [ Revise ] [ Expand ]                    │
+│ Active scenario: AI Leapfrog                     │
+│ ...                                              │
+│ Ask a "what if" that extends the scenario line…  │
+└──────────────────────────────────────────────────┘
+```
+
+Submitting in Expand mode calls `POST /expand`. The response renders in a confirmation card showing:
+
+- The model's one-sentence `summary` of the proposed extension.
+- The new node's id, year, title, and external driver.
+- Each proposed branch with its label, probability, and all three metric deltas (Δrev / Δms / Δtav).
+- Which terminal branches will be rewired (e.g. `tp-003/tp-003-a, tp-003/tp-003-b, tp-003/tp-003-c`).
+
+The user clicks **Apply & reload** to commit — at which point the UI re-renders the Mermaid diagram and the Market Share Comparison chart from the updated `scenarios` payload returned by the server. Nothing persists before the user approves.
+
+Expanded nodes also carry a visible provenance marker in the **Detail Panel**: when the user clicks an expanded turning-point hexagon, a purple-bordered card reads *"✨ Added from question: '…'"* above the Branches list — so a reviewer can always distinguish seed nodes from nodes minted by a chat question.
+
+### Why these two shipped together
+
+Both changes serve the same planner-facing goal: *a scenario simulation that matches the real OTA market more tightly, and a mechanism to extend that simulation without editing JSON or Python.* The data refresh makes the starting state defensible; the `/expand` mode makes the future state steerable. Bundling avoids two rounds of UI review for the same right-hand chat panel.
+
+### Milestone M10 — Phase 8 Improvements ✅
+
+- OTA roster matches the top of the 2024 public-filings leaderboard; MakeMyTrip closes the India coverage gap; every seed share is traceable to a USD revenue proxy.
+- `TurningPointNode` data structure supports non-seed provenance without breaking existing scenarios or tests.
+- `POST /expand` + the Expand tab ship a user-driven scenario-line expansion path that cannot violate the FitEngine's driver contract or orphan existing edges.
+
+### Verification
+
+`python3 -m tests.run_verification` → **29 / 29 PASS** on the refreshed data (13 turning-points clarity + 16 war-gaming tests). The expansion code path was smoke-tested in isolation via `python3 -c` against `data/scenarios.json`, confirming both the happy path (3 terminal branches rewired into a new `tp-004`) and all four validation rejection paths (unknown driver, past year, non-terminal rewire, single-branch node). Browser-side acceptance for the new Expand tab still requires running the FastAPI server locally with `ANTHROPIC_API_KEY` set — see [specs/implementation_plan.md](../specs/implementation_plan.md) §8.
+
+### Known gap — stale embedded fallback + stale generated variants
+
+- The `FALLBACK` constant inside [src/ui/index.html](../src/ui/index.html) still mirrors the pre-Phase-8 roster. It only surfaces under `file://` browsing; served over HTTP the UI fetches `data/scenarios.json` and sees the refreshed data immediately. Syncing the embedded fallback is a mechanical one-line update left for a follow-up.
+- `data/scenarios_generated.json` contains 18 auto-generated path variants computed from the seed scenario at simulator-run time. After a `/expand` call, those 18 variants no longer reflect the live `scenarios.json` structure — the server returns a note to that effect in the `/expand` response body, and the fix is simply `python3 src/engine/simulator.py` to refresh them.
+
+---
+
 ## Risk Mitigation — As Executed
 
 | Risk (from plan) | Mitigation applied |
@@ -376,7 +485,8 @@ Dashboard now renders exactly the divisions listed in `user_story.md` after the 
 | Strategy logic too simple | `FitEngine` encodes driver-specific weights from PESTEL/Porter; `MatrixEngine` evolves competitor positions along all three 2x2+S axes per turning point |
 | Hard to maintain Mermaid syntax | `buildDef()` in `index.html` generates all Mermaid syntax programmatically from `scenarios.json`; raw Mermaid is never hand-edited |
 | Flowchart unreadable as nodes accumulate (FR-3) | `svg-pan-zoom` wraps every rendered Mermaid SVG, with toolbar + keyboard + touch controls (see Phase 3 §Navigability). Default view is fit-to-screen; zoom is clamped to [0.25×, 4×] so users can't lose the diagram. |
-| Missing OTA current data | Kiwi.com and eDreams ODIGEO are used as baseline templates; `CompetitorProfile` is designed to accept additional entrants without schema changes |
+| Missing OTA current data | Phase 8 refreshed every competitor to FY2024/FY2025 public filings, added MakeMyTrip to cover the Indian market, and stamped a `revenue_proxy_usd_bn` on each entry so seed shares are traceable. `CompetitorProfile` remains additive — new entrants land without schema changes. |
+| LLM-generated scenario extensions silently break engine narratives | `POST /expand` constrains Claude's tool output to the three drivers `FitEngine.DRIVER_WEIGHTS` knows, strictly-future years, and terminal-branch-only rewires. Every expansion is dry-run against a deep copy before `scenarios.json` is touched, and the tool-use path routes through the same `scenario_patch.apply_diff` validator `/revise` uses — single validation surface for both conversational write paths. |
 | Narrative drift over time (Phase 4) | `tests/test_wargame.py` codifies NDC / GenAI / direct-booking narratives as executable assertions; `tests/run_verification.py` regenerates a reviewer-facing report on demand so stakeholders can re-validate turning-point clarity without reading code |
 
 ---
@@ -414,7 +524,9 @@ Open `src/ui/index.html` in any browser. The embedded `FALLBACK` constant mirror
 | [data/scenarios_generated.json](../data/scenarios_generated.json) | All 18 generated scenario variants, ranked by composite score |
 | [src/engine/schema.py](../src/engine/schema.py) | Typed data model — dataclasses, enums, JSON serialization |
 | [src/engine/simulator.py](../src/engine/simulator.py) | FitEngine, MatrixEngine, Simulator, backtest, scenario generation |
-| [src/ui/index.html](../src/ui/index.html) | Self-contained dashboard — Mermaid flowchart + Market Share Comparison chart |
+| [src/api/server.py](../src/api/server.py) | FastAPI backend — `/chat` (SSE), `/revise` (structured diff), `/expand` (Phase 8 scenario-line expansion) |
+| [src/api/scenario_patch.py](../src/api/scenario_patch.py) | Structured-diff validator shared by `/revise` and `/expand`; Phase 8 added the `expand_scenario` op |
+| [src/ui/index.html](../src/ui/index.html) | Self-contained dashboard — Mermaid flowchart + Market Share Comparison chart + chat panel with Ask / Revise / Expand modes |
 | [tests/test_wargame.py](../tests/test_wargame.py) | Phase 4 — 12 war-gaming narrative & trend tests |
 | [tests/test_turning_points.py](../tests/test_turning_points.py) | Phase 4 — 11 turning-point clarity & structural tests |
 | [tests/run_verification.py](../tests/run_verification.py) | Phase 4 — runner that executes both suites and generates the report |

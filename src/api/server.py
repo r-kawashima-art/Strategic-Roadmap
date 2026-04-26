@@ -7,6 +7,10 @@ Endpoints
   POST /chat      — streams Claude's answer as SSE, grounded in scenario (bearer)
   POST /revise    — translates NL into a structured diff via `apply_scenario_diff`
                     tool use, applies, persists, returns updated scenarios (bearer)
+  POST /expand    — Phase 8. Takes a user *question* ("what if EU passes strict
+                    AI regulation in 2026?") and uses Claude tool-use to mint a
+                    new TurningPointNode that extends the scenario line, with
+                    terminal branches rewired to flow into it.
 
 Authentication: bearer token via `Authorization: Bearer <ROADMAP_API_KEY>`.
 Claude authentication: standard `ANTHROPIC_API_KEY` env var (server-side only;
@@ -40,10 +44,10 @@ from pydantic import BaseModel, Field
 
 # Import `apply_diff` — prefer the package form, fall back for direct-module execution.
 try:
-    from .scenario_patch import DiffError, apply_diff
+    from .scenario_patch import KNOWN_EXTERNAL_DRIVERS, DiffError, apply_diff
 except ImportError:  # pragma: no cover
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from scenario_patch import DiffError, apply_diff  # type: ignore
+    from scenario_patch import KNOWN_EXTERNAL_DRIVERS, DiffError, apply_diff  # type: ignore
 
 # ---------------------------------------------------------------------------
 # Config
@@ -128,6 +132,11 @@ class ReviseRequest(BaseModel):
     instruction: str = Field(..., min_length=1, max_length=4000)
 
 
+class ExpandRequest(BaseModel):
+    scenario_id: str = "scenario-001"
+    question: str = Field(..., min_length=1, max_length=4000)
+
+
 # ---------------------------------------------------------------------------
 # Prompt plumbing
 # ---------------------------------------------------------------------------
@@ -159,6 +168,129 @@ REVISE_SYSTEM_PREAMBLE = (
     "Do not modify `next_node_id`, the `timeline` array, or any `metadata.*` "
     "field — those are out of scope for this tool."
 )
+
+
+EXPAND_SYSTEM_PREAMBLE = (
+    "You extend an OTA strategic-scenario DAG in response to a user question. "
+    "The scenario currently ends at some latest turning-point year; the user "
+    "has asked a 'what if' question that implies a NEW decision point the "
+    "industry would face AFTER the current last node. Your job is to mint "
+    "exactly one new TurningPointNode via the `expand_scenario_from_question` "
+    "tool, with 2–3 well-reasoned branches, and rewire every currently "
+    "terminal branch to flow into it.\n\n"
+    "Hard constraints — violating any of these will cause the server to reject "
+    "your output:\n"
+    "  1. `new_node.year` MUST be strictly greater than every existing "
+    "turning-point year in the scenario, and ≤ 2040.\n"
+    f"  2. `new_node.external_driver` MUST be one of: "
+    f"{sorted(KNOWN_EXTERNAL_DRIVERS)}. Pick the closest conceptual match — "
+    f"e.g. an AI-regulation question maps to 'GenAI breakthrough'; a loyalty- "
+    f"programme lock-in question maps to 'Airline direct booking dominance'.\n"
+    "  3. `new_node.id` must follow the `tp-NNN` pattern (mint the next free "
+    "integer — e.g. if tp-001..tp-003 exist, use tp-004).\n"
+    "  4. Each branch `id` must follow `<node_id>-<letter>` (e.g. tp-004-a).\n"
+    "  5. Every branch needs a `metric_delta` with numeric `revenue_index`, "
+    "`market_share`, `tech_adoption_velocity` fields. Deltas in [-0.25, 0.25] "
+    "for revenue_index and [-0.15, 0.15] for the two fractions are defensible; "
+    "pick magnitudes consistent with the existing nodes.\n"
+    "  6. Branch probabilities must sum to 1.0 ± 0.001.\n"
+    "  7. `rewire_branches` must list EVERY currently-terminal branch "
+    "(branches whose `next_node_id` is null in the scenario JSON). Non-terminal "
+    "branches must NOT appear — rewiring mid-graph edges is out of scope.\n\n"
+    "Write a one-sentence `summary` describing the expansion in plain English "
+    "so the UI can ask the user to confirm."
+)
+
+
+EXPAND_SCENARIO_TOOL: Dict[str, Any] = {
+    "name": "expand_scenario_from_question",
+    "description": (
+        "Extend the scenario DAG with a new turning-point node that answers "
+        "the user's 'what if' question, and rewire terminal branches to flow "
+        "into it. Always include a one-sentence `summary` for user confirmation."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "summary": {
+                "type": "string",
+                "description": "One-sentence plain-English description of the expansion.",
+            },
+            "new_node": {
+                "type": "object",
+                "description": "A full TurningPointNode object for the expansion.",
+                "properties": {
+                    "id": {"type": "string"},
+                    "year": {"type": "integer"},
+                    "title": {"type": "string"},
+                    "description": {"type": "string"},
+                    "external_driver": {
+                        "type": "string",
+                        "enum": sorted(KNOWN_EXTERNAL_DRIVERS),
+                    },
+                    "branches": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 4,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "label": {"type": "string"},
+                                "description": {"type": "string"},
+                                "probability": {"type": "number"},
+                                "metric_delta": {
+                                    "type": "object",
+                                    "properties": {
+                                        "revenue_index": {"type": "number"},
+                                        "market_share": {"type": "number"},
+                                        "tech_adoption_velocity": {"type": "number"},
+                                    },
+                                    "required": [
+                                        "revenue_index",
+                                        "market_share",
+                                        "tech_adoption_velocity",
+                                    ],
+                                },
+                            },
+                            "required": [
+                                "id",
+                                "label",
+                                "description",
+                                "probability",
+                                "metric_delta",
+                            ],
+                        },
+                    },
+                },
+                "required": [
+                    "id",
+                    "year",
+                    "title",
+                    "description",
+                    "external_driver",
+                    "branches",
+                ],
+            },
+            "rewire_branches": {
+                "type": "array",
+                "description": (
+                    "Every currently-terminal branch in the scenario. Each "
+                    "entry is {node_id, branch_id}."
+                ),
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "node_id": {"type": "string"},
+                        "branch_id": {"type": "string"},
+                    },
+                    "required": ["node_id", "branch_id"],
+                },
+            },
+        },
+        "required": ["summary", "new_node", "rewire_branches"],
+    },
+}
 
 
 APPLY_SCENARIO_DIFF_TOOL: Dict[str, Any] = {
@@ -404,6 +536,90 @@ async def post_revise(req: ReviseRequest) -> Dict[str, Any]:
             "Diff applied to scenarios.json. The 18 auto-generated path "
             "variants in scenarios_generated.json are NOT re-computed — "
             "re-run `python3 src/engine/simulator.py` to refresh them."
+        ),
+        "usage": {
+            "input_tokens": response.usage.input_tokens,
+            "output_tokens": response.usage.output_tokens,
+            "cache_read_input_tokens": getattr(response.usage, "cache_read_input_tokens", 0),
+            "cache_creation_input_tokens": getattr(response.usage, "cache_creation_input_tokens", 0),
+        },
+    }
+
+
+@app.post("/expand", dependencies=[Depends(require_bearer)])
+async def post_expand(req: ExpandRequest) -> Dict[str, Any]:
+    """Phase 8: extend the scenario line in response to a user question.
+
+    The model is asked to mint a new TurningPointNode that logically follows
+    from the last turning point, and to list every currently-terminal branch
+    so the server can rewire them to flow into the new node. Rewiring and the
+    node insertion are applied atomically via
+    `scenario_patch.expand_scenario`.
+    """
+    scenarios = _load_scenarios()
+    target = _find_scenario(scenarios, req.scenario_id)
+    scenario_json = json.dumps(target, separators=(",", ":"))
+    system = _scenario_system(EXPAND_SYSTEM_PREAMBLE, scenario_json)
+
+    client = _get_claude_client()
+    try:
+        response = await client.messages.create(
+            model=REVISE_MODEL,  # expansion is accuracy-sensitive — use Opus
+            max_tokens=2048,
+            system=system,
+            tools=[EXPAND_SCENARIO_TOOL],
+            tool_choice={"type": "tool", "name": "expand_scenario_from_question"},
+            messages=[{"role": "user", "content": req.question}],
+        )
+    except anthropic.APIError as exc:
+        raise HTTPException(status_code=502, detail=f"Claude API error: {exc}")
+
+    tool_use = next(
+        (b for b in response.content if getattr(b, "type", None) == "tool_use"),
+        None,
+    )
+    if tool_use is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Model did not return an expansion tool call.",
+        )
+
+    tool_input = tool_use.input or {}
+    summary = tool_input.get("summary") or ""
+    new_node = tool_input.get("new_node") or {}
+    rewires = tool_input.get("rewire_branches") or []
+    if not new_node or not rewires:
+        raise HTTPException(
+            status_code=422,
+            detail="Expansion tool call missing `new_node` or `rewire_branches`.",
+        )
+
+    # Dry-run on a deep copy — if validation fails the live file isn't touched.
+    draft = copy.deepcopy(scenarios)
+    diff_op = {
+        "op": "expand_scenario",
+        "scenario_id": req.scenario_id,
+        "source_question": req.question,
+        "new_node": new_node,
+        "rewire_branches": rewires,
+    }
+    try:
+        apply_diff(draft, diff_op)
+    except DiffError as exc:
+        raise HTTPException(status_code=422, detail=f"Expansion rejected: {exc}")
+
+    SCENARIOS_PATH.write_text(json.dumps(draft, indent=2, ensure_ascii=False))
+
+    return {
+        "status": "applied",
+        "summary": summary,
+        "new_node": new_node,
+        "rewire_branches": rewires,
+        "scenarios": draft,
+        "note": (
+            "Scenario expanded. The 18 auto-generated path variants in "
+            "scenarios_generated.json are NOT re-computed — re-run "
+            "`python3 src/engine/simulator.py` to refresh them."
         ),
         "usage": {
             "input_tokens": response.usage.input_tokens,

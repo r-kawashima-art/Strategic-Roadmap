@@ -1,6 +1,6 @@
 # Phase 4 — Verification & Feedback Report
 
-*Generated:* 2026-04-17
+*Generated:* 2026-04-22
 
 **Overall status:** PASS — scenario is ready for Phase 5
 
@@ -44,7 +44,7 @@ test_ndc_favours_efficiency_led_over_innovation_led (tests.test_wargame.Narrativ
 Under NDC adoption, an efficiency-led profile should out-fit an ... ok
 
 ----------------------------------------------------------------------
-Ran 16 tests in 0.021s
+Ran 16 tests in 0.023s
 
 OK
 ```
@@ -89,11 +89,11 @@ OK
 
 ## Historical Backtest (1990–2025)
 
-- Data points compared: **16**
+- Data points compared: **17**
 - Mean absolute error vs. baseline timeline:
-  - `revenue_index`: 0.0019
-  - `market_share`: 0.0008
-  - `tech_adoption_velocity`: 0.0037
+  - `revenue_index`: 0.0017
+  - `market_share`: 0.0007
+  - `tech_adoption_velocity`: 0.0034
 
 ## Narrative Spot-Checks — Materialized Paths
 
@@ -101,9 +101,9 @@ For each canonical branch path, the 2040 endpoint metrics are:
 
 | Path | 2040 revenue idx | 2040 market share | 2040 tech adoption |
 |---|---:|---:|---:|
-| Optimistic (Embrace NDC → Build AI → Become Platform) | 44.42 | 49.18% | 100.00% |
-| Pessimistic (Resist NDC → Wait and See → Consolidate/Exit) | 43.86 | 8.63% | 87.44% |
-| Middle path (Embrace NDC → Partner AI → Pivot Complex) | 44.36 | 40.96% | 100.00% |
+| Optimistic (Embrace NDC → Build AI → Become Platform) | 44.91 | 48.79% | 100.00% |
+| Pessimistic (Resist NDC → Wait and See → Consolidate/Exit) | 44.36 | 8.16% | 87.29% |
+| Middle path (Embrace NDC → Partner AI → Pivot Complex) | 44.85 | 40.76% | 100.00% |
 
 These endpoints should rank pessimistic < middle < optimistic on revenue. If they don't, either the branch deltas or the fit-engine weightings need to be re-examined.
 
