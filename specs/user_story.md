@@ -18,6 +18,7 @@ The travel industry is facing massive disruption via AI (Generative AI, NDC, and
 - **FR-4: Financial and Technological Linkage**: Correlate scenarios with key metrics (Revenue Growth, Market Share, and Technology Adoption and Strategic Positioning) on **Flowchart nodes**.
 - **FR-5: Interactive Future Prediction**: Allow users to ask questions about the future scenarios and get answers based on the data and revise the scenarios based on user inputs.
 - **FR-6: Comparison of the share of OTAs**: Display the top market shares of OTAs (Expedia, Booking.com, Trip.com, Agoda, Kiwi.com, eDreams Odigeo, etc.) and allow users to compare the market share of the OTAs in the scenarios.
+- **FR-7: Scenario Management**: Allow users to create, edit, and delete scenarios. Allow users to save and load scenarios.
 
 ## 4. Technical Constraints
 

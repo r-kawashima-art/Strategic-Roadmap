@@ -9,17 +9,27 @@ Develop a "programmable" system that simulates and visualizes future strategic s
 ```text
 Strategic-Roadmap/
 ├── data/
-│   └── scenarios.json         # Structured scenario data (Branches & Nodes)
+│   └── scenarios.json         # {base: [...], user: [...]} scenario arrays
 ├── src/
 │   ├── engine/
-│   │   └── simulator.py      # Logic to process PESTEL/Five Forces into scenarios
+│   │   ├── schema.py          # Pydantic models: Scenario, Node, CompetitorProfile…
+│   │   └── simulator.py       # 2x2+S Fit Engine; project_market_shares()
 │   ├── api/
-│   │   └── server.py         # FastAPI backend: chat endpoint + scenario revision (Phase 5)
+│   │   └── server.py          # FastAPI: /chat (SSE), /revise, /scenarios CRUD
 │   └── ui/
-│       └── index.html        # Interactive flowchart visualization
-└──  specs/
-　  ├── user_story.md         # Updated requirements
-　  └── implementation_plan.md # This document
+│       └── index.html         # Single-file SPA; served as static by FastAPI
+├── tests/
+│   ├── test_turning_points.py
+│   └── test_wargame.py
+├── specs/
+│   ├── user_story.md          # Functional requirements
+│   ├── implementation_plan.md # This document
+│   └── design.md              # Architecture, data flow, LLM integration, GCP infra
+├── docs/
+│   └── walkthrough.md
+├── Dockerfile                 # Cloud Run container image (Phase 11)
+├── cloudbuild.yaml            # Cloud Build CI/CD pipeline (Phase 11)
+└── .env.example               # Local dev env vars template
 ```
 
 ## 3. Implementation Steps
@@ -209,10 +219,13 @@ FR-5 adds a conversational layer so that strategy planners can interrogate scena
 Build a lightweight **FastAPI** server that acts as the bridge between the UI, the simulation engine, and the Claude API.
 
 - **`POST /chat`** — Accepts a user message and the current `scenario_id`. Loads the matching scenario from `scenarios.json`, injects it as structured context into a Claude API call, and streams the response back via Server-Sent Events (SSE). The system prompt instructs Claude to answer strictly from the provided scenario data and flag when a question implies a revision.
-- **`POST /revise`** — Accepts a natural-language revision instruction (e.g. *"increase the probability of 'Embrace NDC' to 75%"* or *"add a new turning point in 2026 for EU AI regulation"*). A Claude API call with tool use translates the instruction into a structured diff (`{node_id, field, new_value}`). The server applies the diff to `scenarios.json`, re-runs `Simulator.generate_scenarios()`, and returns the updated scenario list.
-- **`GET /scenarios`** — Serves `data/scenarios.json` so the UI can fetch live data without a file-system dependency.
+- **`POST /revise`** — Accepts a natural-language revision instruction (e.g. *"increase the probability of 'Embrace NDC' to 75%"* or *"add a new turning point in 2026 for EU AI regulation"*). A Claude API call with tool use translates the instruction into a structured diff (`{node_id, field, new_value}`). The server returns the **preview** of the revised scenario object **without persisting it** — persistence is a separate explicit user action via `POST /scenarios`. This separates the revision preview from the save decision so base scenarios are never silently overwritten.
+- **`GET /scenarios`** — Lists all scenarios from `data/scenarios.json`, including user-saved variants alongside base scenarios. Each entry carries a `source` field (`"base"` or `"user"`) and an optional `parent_id` linking a saved variant back to its origin scenario.
+- **`POST /scenarios`** — Saves a scenario (either a new one from scratch or a revision diff applied to a parent). Accepts `{name, parent_id?, scenario_data}`. Writes to `data/scenarios.json` as a new named entry with `source: "user"`. Rejects names that collide with base scenario names.
+- **`PUT /scenarios/{id}`** — Renames or updates the metadata (`name`, `description`) of a user-created scenario. Returns `403` for base scenarios.
+- **`DELETE /scenarios/{id}`** — Removes a user-created scenario from `data/scenarios.json`. Returns `403` for base scenarios to prevent accidental data loss.
 
-Authentication: a single bearer token configured via environment variable (`ROADMAP_API_KEY`) is sufficient for internal/demo use.
+Authentication: in local development a bearer token (`ROADMAP_API_KEY` env var) is sufficient. In production on Google Cloud, Cloud IAP replaces this — the token path is disabled unless `IAP_DISABLED=true` is explicitly set. See Phase 11 for the full auth design.
 
 #### 9.2 Claude API Integration
 
@@ -226,8 +239,167 @@ Extend `src/ui/index.html` with a collapsible chat panel docked to the right sid
 
 - **Input bar** — a textarea with a send button; supports `Enter` to submit, `Shift+Enter` for newline.
 - **Message thread** — alternating user/assistant bubbles; assistant responses stream in token by token via the SSE connection.
-- **Revision confirmation card** — when the backend detects a revision intent, the response includes a structured summary of the proposed change (field, old value, new value). The user confirms or cancels; on confirmation the UI calls `/revise`, then re-renders the Mermaid diagram and chart from the updated scenario data.
-- **Context indicator** — a badge showing which scenario is active in the chat session, updated when the user switches the scenario selector dropdown.
+- **Revision confirmation card** — when the backend detects a revision intent, the response includes a structured summary of the proposed change (field, old value, new value). The user confirms or cancels; on confirmation the UI calls `/revise`, which returns a **preview** of the revised scenario. The preview renders live in the flowchart and market-share chart so the planner can evaluate the change before committing. A **"Save as New Scenario"** button and name input field appear below the confirmation card — submitting calls `POST /scenarios` and adds the saved variant to the scenario selector dropdown. Cancelling discards the preview and restores the previous state.
+- **Context indicator** — a badge showing which scenario is active in the chat session, updated when the user switches the scenario selector dropdown. Base scenarios display a lock icon; user-saved variants display a bookmark icon so the planner can distinguish seeded data from personal edits at a glance.
+
+### Phase 10: Scenario Management (FR-7)
+
+FR-7 delivers full lifecycle control over scenarios — create, rename, delete, export, and import — so that AI-generated variants and custom planners' edits become persistent, shareable artefacts rather than ephemeral session state.
+
+#### 10.1 Data Layer
+
+- `data/scenarios.json` is restructured into two top-level arrays: `base` (read-only seed scenarios) and `user` (mutable, user-created or AI-generated variants). The simulator always loads both; `GET /scenarios` merges them into a flat list tagged by `source`.
+- Each user scenario carries: `id` (UUID), `name`, `description`, `parent_id` (optional), `created_at`, `updated_at`, `source: "user"`.
+- **Export**: `GET /scenarios/{id}/export` returns the scenario object as a downloadable `{name}.scenario.json` file. The export format is self-contained — it includes the full `nodes`, `timeline`, and `metrics` so it can be re-imported on any instance.
+- **Import**: `POST /scenarios/import` accepts a multipart upload of a `.scenario.json` file. The server validates the schema, assigns a fresh `id`, and saves it to the `user` array. Duplicate-name conflicts surface as a `409` with a suggested rename.
+
+#### 10.2 UI: Scenario Manager
+
+Add a **Scenario Manager** accessible from a gear icon next to the scenario selector dropdown. It opens as a slide-over panel (not a full modal) to keep the flowchart visible for context.
+
+- **Library list** — rows for every user scenario showing name, parent scenario, created date, and three-dot menu (Rename, Export, Delete). Base scenarios appear at the top as read-only reference rows with an export-only menu.
+- **Rename inline** — clicking a name in the list makes it an editable input; `Enter` commits, `Esc` cancels. Calls `PUT /scenarios/{id}`.
+- **Delete with confirmation** — the three-dot menu delete action shows a one-line inline confirmation ("Delete «Optimistic NDC»? This cannot be undone.") before calling `DELETE /scenarios/{id}`.
+- **Import button** — opens the native file picker filtered to `.scenario.json`; calls `POST /scenarios/import` and refreshes the list on success.
+- **New blank scenario** — a "＋ New Scenario" button at the top of the list opens a name-input popover and seeds an empty scenario from the base "Status Quo" template. Calls `POST /scenarios`.
+
+#### 10.3 Scenario Selector Update
+
+The existing scenario selector dropdown gains two visual cues without a layout change:
+
+- A **bookmark icon** prefix on user-saved variants (mirrors the chat-panel context indicator from Phase 9.3).
+- An **"Unsaved changes" dot** while a `/revise` preview is active but not yet saved — a reminder to either save or discard.
+
+#### 10.4 Acceptance Criteria for Phase 10
+
+- [ ] User-created scenarios persist across browser reloads and server restarts (backed by `data/scenarios.json`).
+- [ ] Base scenarios cannot be renamed, edited metadata of, or deleted via the API (HTTP 403 enforced).
+- [ ] A scenario exported from one session and imported into another round-trips without data loss — the imported scenario renders identically in the flowchart and market-share chart.
+- [ ] Renaming a scenario updates the selector dropdown in real time without a page reload.
+- [ ] Deleting a scenario that is currently active in the chat session gracefully falls back to the first base scenario and shows a dismissible toast notification.
+- [ ] The Scenario Manager panel is reachable via keyboard navigation and its controls carry `aria-label` attributes.
+
+### Phase 11: Google Cloud Deployment (Internal Access)
+
+Deploy the application to Google Cloud Platform so that any user authenticated via the company's Google Workspace account can reach it without managing credentials. This phase is infrastructure-only — no feature code changes.
+
+#### 11.1 Containerization
+
+Create `Dockerfile` at the project root:
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ src/
+COPY data/ data/
+
+ENV PORT=8080
+CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8080"]
+```
+
+Production additions to `requirements.txt`:
+
+```text
+fastapi
+uvicorn[standard]
+anthropic
+google-cloud-storage
+google-auth
+```
+
+FastAPI serves `src/ui/index.html` as a static asset at `GET /`, so no separate static hosting is needed.
+
+#### 11.2 Scenario Data on Cloud Storage
+
+`data/scenarios.json` moves to a Cloud Storage bucket (`gs://ota-roadmap-data`) so it persists across Cloud Run container restarts. The API server reads and writes via the `google-cloud-storage` Python client. When `GCS_BUCKET` env var is unset (local dev), it falls back to the on-disk file — no code-path branching required beyond an env check at startup.
+
+#### 11.3 Secret Management
+
+The `ANTHROPIC_API_KEY` is stored in Secret Manager and injected into Cloud Run at deploy time via `--set-secrets`. It is never written to `cloudbuild.yaml` or any config file checked into source control.
+
+#### 11.4 Identity-Aware Proxy (Internal Auth)
+
+Cloud IAP fronts the Cloud Run service and validates the user's Google Workspace identity. Access is granted to the company domain (`domain:yourcompany.com`) via `roles/iap.httpsResourceAccessor`. No custom login page or token issuance is needed — employees authenticate with their existing Google account.
+
+The `ROADMAP_API_KEY` bearer-token path in `server.py` is disabled in production: the server checks for `IAP_DISABLED=true` and only activates the token guard when that flag is set, preventing accidental auth bypass in a misconfigured deploy.
+
+#### 11.5 CI/CD with Cloud Build
+
+Create `cloudbuild.yaml` at the project root:
+
+```yaml
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: [build, -t, REGION-docker.pkg.dev/PROJECT/ota-roadmap/ota-roadmap:$COMMIT_SHA, .]
+
+  - name: gcr.io/cloud-builders/docker
+    args: [push, REGION-docker.pkg.dev/PROJECT/ota-roadmap/ota-roadmap:$COMMIT_SHA]
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    args:
+      - gcloud
+      - run
+      - deploy
+      - ota-roadmap
+      - --image=REGION-docker.pkg.dev/PROJECT/ota-roadmap/ota-roadmap:$COMMIT_SHA
+      - --region=asia-northeast1
+      - --no-allow-unauthenticated
+      - --set-secrets=ANTHROPIC_API_KEY=anthropic-api-key:latest
+      - --set-env-vars=GCS_BUCKET=ota-roadmap-data
+```
+
+`--no-allow-unauthenticated` enforces that all traffic routes through IAP; direct HTTP calls without an IAP session token return `403`.
+
+#### 11.6 One-Time Setup
+
+Run once per GCP project to wire up the required services (replace placeholders before running):
+
+```bash
+# Enable required APIs
+gcloud services enable run.googleapis.com iap.googleapis.com \
+    secretmanager.googleapis.com storage.googleapis.com \
+    artifactregistry.googleapis.com cloudbuild.googleapis.com
+
+# Artifact Registry
+gcloud artifacts repositories create ota-roadmap \
+    --repository-format=docker --location=REGION
+
+# Cloud Storage for scenario data
+gsutil mb -l asia-northeast1 gs://ota-roadmap-data
+gsutil cp data/scenarios.json gs://ota-roadmap-data/scenarios.json
+
+# Anthropic API key in Secret Manager
+echo -n "$ANTHROPIC_API_KEY" | gcloud secrets create anthropic-api-key --data-file=-
+
+# IAM grants for the Cloud Run service account
+export SA=SA_EMAIL
+gcloud storage buckets add-iam-policy-binding gs://ota-roadmap-data \
+    --member="serviceAccount:$SA" --role="roles/storage.objectAdmin"
+gcloud secrets add-iam-policy-binding anthropic-api-key \
+    --member="serviceAccount:$SA" --role="roles/secretmanager.secretAccessor"
+
+# Enable IAP and restrict to company domain
+gcloud iap web enable --resource-type=cloud-run --service=ota-roadmap
+gcloud iap web add-iam-policy-binding \
+    --resource-type=cloud-run --service=ota-roadmap \
+    --member="domain:yourcompany.com" \
+    --role="roles/iap.httpsResourceAccessor"
+```
+
+#### 11.7 Acceptance Criteria for Phase 11
+
+- [ ] `docker build` succeeds locally and the container serves `index.html` at `http://localhost:8080`.
+- [ ] `gcloud run deploy` succeeds; the Cloud Run URL redirects to Google sign-in for unauthenticated users.
+- [ ] A user logged into `yourcompany.com` Google Workspace can open the app without entering a separate password or API key.
+- [ ] A user outside the company domain receives `403 Forbidden`.
+- [ ] `GET /scenarios`, `POST /chat`, and `POST /revise` all respond correctly from the deployed Cloud Run URL.
+- [ ] Saving a user scenario via `POST /scenarios` persists in `gs://ota-roadmap-data/scenarios.json` and survives a Cloud Run instance restart.
+- [ ] A new git push to `main` triggers Cloud Build, builds the image, and deploys the updated Cloud Run revision without manual steps.
+- [ ] The `ANTHROPIC_API_KEY` is not present in any file committed to source control; it is sourced exclusively from Secret Manager at runtime.
 
 ## 4. Key Milestones
 
@@ -240,3 +412,5 @@ Extend `src/ui/index.html` with a collapsible chat panel docked to the right sid
 7. **M7: Market Share Comparison**: Multi-OTA market-share view live; scenario-linked Chart.js panel shows Expedia / Booking / Trip.com / Agoda / Kiwi / eDreams trajectories side by side with toggleable series and a delta-vs-baseline summary table.
 8. **M8: Dashboard Polish**: Flowchart nodes carry revenue / share / tech-adoption chips plus stance glyphs at a glance (FR-4 update), and every main UI division is user-resizable with persistence and a reset-to-default control (new acceptance criterion).
 9. **M9: Scope Cut — Metrics Timeline Removed**: The Metrics Timeline UI division is deleted per the user-story *Not-Todos*. The dashboard now renders header + flowchart/detail split + market-share panel only, with two resize handles instead of three; the `turningLinePlugin` is retained so the market-share chart keeps its turning-point markers.
+10. **M10: Scenario Management Live**: Full FR-7 lifecycle complete — user-created and AI-revised scenarios persist in `data/scenarios.json`, are reachable from the selector dropdown with base/user visual distinction, and can be exported and re-imported as self-contained `.scenario.json` files.
+11. **M11: Production on Google Cloud**: App deployed to Cloud Run behind Cloud IAP; any company Google Workspace user can access it without credentials; `scenarios.json` persists on Cloud Storage; CI/CD pipeline auto-deploys on push to `main`.
