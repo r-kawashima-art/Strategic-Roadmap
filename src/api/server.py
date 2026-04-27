@@ -43,6 +43,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
 # Import `apply_diff` — prefer the package form, fall back for direct-module execution.
 try:
@@ -64,7 +65,9 @@ UI_PATH = PROJECT_ROOT / "src" / "ui" / "index.html"
 CHAT_MODEL = "claude-sonnet-4-6"   # latency-sensitive
 REVISE_MODEL = "claude-opus-4-7"   # accuracy-sensitive, lower frequency
 
-ROADMAP_API_KEY = os.environ.get("ROADMAP_API_KEY", "roadmap-api-key")
+load_dotenv()
+ROADMAP_API_KEY = os.getenv("ROADMAP_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Shared Claude client (async). Constructed on first use so the process can
 # start without ANTHROPIC_API_KEY and surface 503s on Claude-calling routes
