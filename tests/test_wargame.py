@@ -292,5 +292,198 @@ class MarketShareProjectionTests(unittest.TestCase):
         )
 
 
+class GraphConnectivityTests(unittest.TestCase):
+    """Phase 9.5 — every node introduced via /revise must be reachable.
+
+    Encodes the invariant from spec §9.5.1: every turning point (other than
+    the earliest, which the renderer reaches via the implicit historical
+    chain) must have at least one incoming edge from another node. Patched
+    previews from `apply_diff` must satisfy the same invariant.
+    """
+
+    def setUp(self) -> None:
+        # Late import so the war-gaming suite still runs if the FastAPI/
+        # anthropic deps used by the rest of src.api are not installed.
+        import dataclasses
+
+        from src.api.scenario_patch import DiffError, apply_diff
+
+        self._dataclasses = dataclasses
+        self._apply_diff = apply_diff
+        self._DiffError = DiffError
+
+    def _scenario_dict(self):
+        return self._dataclasses.asdict(fresh_scenario())
+
+    def _assert_connectivity(self, scen) -> None:
+        in_deg = {n["id"]: 0 for n in scen["nodes"]}
+        for n in scen["nodes"]:
+            for b in n["branches"]:
+                tgt = b.get("next_node_id")
+                if tgt and tgt in in_deg:
+                    in_deg[tgt] += 1
+        sorted_nodes = sorted(scen["nodes"], key=lambda n: n["year"])
+        # Skip the earliest turning point — it is reached via the implicit
+        # historical chain that the renderer synthesises from `timeline`.
+        for n in sorted_nodes[1:]:
+            self.assertGreaterEqual(
+                in_deg[n["id"]], 1,
+                f"Node {n['id']!r} is unreachable (in-degree 0)",
+            )
+
+    def _sample_new_node(self, node_id: str, year: int) -> dict:
+        return {
+            "id": node_id,
+            "year": year,
+            "title": "Sample expansion",
+            "description": "Connectivity-test node.",
+            "external_driver": "GenAI breakthrough",
+            "branches": [
+                {
+                    "id": f"{node_id}-a",
+                    "label": "Adapt",
+                    "description": "lean in",
+                    "probability": 0.6,
+                    "metric_delta": {
+                        "revenue_index": 0.05,
+                        "market_share": 0.01,
+                        "tech_adoption_velocity": 0.02,
+                    },
+                },
+                {
+                    "id": f"{node_id}-b",
+                    "label": "Resist",
+                    "description": "hold the line",
+                    "probability": 0.4,
+                    "metric_delta": {
+                        "revenue_index": -0.05,
+                        "market_share": -0.01,
+                        "tech_adoption_velocity": -0.02,
+                    },
+                },
+            ],
+        }
+
+    def test_every_node_is_reachable_in_baseline(self) -> None:
+        self._assert_connectivity(self._scenario_dict())
+
+    def test_add_node_auto_rewire_preserves_connectivity(self) -> None:
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-099", year=2038)
+        self._apply_diff(
+            [scen],
+            {"op": "add_node", "scenario_id": scen["id"], "node": new_node},
+        )
+        self.assertTrue(any(n["id"] == "tp-099" for n in scen["nodes"]))
+        self._assert_connectivity(scen)
+
+    def test_add_node_with_fork_from_preserves_existing_branches(self) -> None:
+        scen = self._scenario_dict()
+        target = next(n for n in scen["nodes"] if n["id"] == "tp-002")
+        pre_branches = [
+            {
+                "id": b["id"],
+                "next_node_id": b.get("next_node_id"),
+                "probability": b["probability"],
+                "label": b["label"],
+            }
+            for b in target["branches"]
+        ]
+        pre_count = len(target["branches"])
+
+        new_node = self._sample_new_node("tp-099", year=2038)
+        fork_branch = {
+            "id": "tp-002-d",
+            "label": "Cancel Prime, fund eDreams Lab",
+            "description": "Counterfactual divergent fork.",
+            "probability": 0.15,
+            "metric_delta": {
+                "revenue_index": -0.05,
+                "market_share": 0.0,
+                "tech_adoption_velocity": 0.10,
+            },
+        }
+        self._apply_diff(
+            [scen],
+            {
+                "op": "add_node",
+                "scenario_id": scen["id"],
+                "node": new_node,
+                "fork_from": [{"from_node_id": "tp-002", "branch": fork_branch}],
+            },
+        )
+
+        target_after = next(n for n in scen["nodes"] if n["id"] == "tp-002")
+        self.assertEqual(
+            len(target_after["branches"]), pre_count + 1,
+            "fork_from should add exactly one branch to the targeted past node",
+        )
+        for orig in pre_branches:
+            match = next(
+                (b for b in target_after["branches"] if b["id"] == orig["id"]),
+                None,
+            )
+            self.assertIsNotNone(match, f"Original branch {orig['id']!r} disappeared")
+            self.assertEqual(match["next_node_id"], orig["next_node_id"],
+                             "fork_from must not rewire existing edges")
+            self.assertEqual(match["probability"], orig["probability"])
+            self.assertEqual(match["label"], orig["label"])
+
+        fork = next(b for b in target_after["branches"] if b["id"] == "tp-002-d")
+        self.assertEqual(fork["next_node_id"], "tp-099",
+                         "server must stamp next_node_id on fork branches")
+
+        # Pure-divergence: fork_from set, rewire_from absent → previously-
+        # terminal branches at tp-003 must remain terminal (no auto-rewire
+        # should leak into the divergence path).
+        terminal_node = next(n for n in scen["nodes"] if n["id"] == "tp-003")
+        for b in terminal_node["branches"]:
+            self.assertIsNone(
+                b["next_node_id"],
+                "fork_from-only revisions must not auto-rewire other terminals",
+            )
+
+        self._assert_connectivity(scen)
+
+    def test_add_node_unreachable_raises(self) -> None:
+        # Synthetic scenario with zero terminal branches: a 2-node cycle.
+        cycle_scen = {
+            "id": "scenario-cycle",
+            "nodes": [
+                {
+                    "id": "x", "year": 2025, "title": "X",
+                    "description": "", "external_driver": "GenAI breakthrough",
+                    "branches": [{
+                        "id": "x-a", "label": "to y", "description": "",
+                        "probability": 1.0, "next_node_id": "y",
+                        "metric_delta": {
+                            "revenue_index": 0.0, "market_share": 0.0,
+                            "tech_adoption_velocity": 0.0,
+                        },
+                    }],
+                },
+                {
+                    "id": "y", "year": 2030, "title": "Y",
+                    "description": "", "external_driver": "GenAI breakthrough",
+                    "branches": [{
+                        "id": "y-a", "label": "to x", "description": "",
+                        "probability": 1.0, "next_node_id": "x",
+                        "metric_delta": {
+                            "revenue_index": 0.0, "market_share": 0.0,
+                            "tech_adoption_velocity": 0.0,
+                        },
+                    }],
+                },
+            ],
+        }
+        new_node = self._sample_new_node("z", year=2035)
+        with self.assertRaises(self._DiffError) as ctx:
+            self._apply_diff(
+                [cycle_scen],
+                {"op": "add_node", "scenario_id": "scenario-cycle", "node": new_node},
+            )
+        self.assertIn("unreachable", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

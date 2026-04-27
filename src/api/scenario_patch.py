@@ -169,10 +169,50 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
     for b in node["branches"]:
         b.setdefault("next_node_id", None)
 
-    # Phase 9.4.1: rewire previously-terminal branches into the new node so the
-    # DAG stays connected. Honour an explicit `rewire_from` list when Claude
-    # supplies one (multi-endpoint scenarios where only some paths should flow
-    # into the new node); otherwise auto-rewire every terminal branch.
+    # ── Divergence wiring (Phase 9.5) ───────────────────────────────────────
+    # `fork_from` sprouts a NEW branch on each listed past node, pointing at
+    # the new node. Existing branches on those nodes stay untouched, so the
+    # original storyline remains explorable alongside the divergent fork.
+    # Buffer the (host_node, new_branch) pairs so the operation stays atomic —
+    # the connectivity guard below may abort the whole add_node.
+    fork_raw = diff.get("fork_from")
+    if fork_raw is not None and not isinstance(fork_raw, list):
+        raise DiffError("`fork_from` must be a list of {from_node_id, branch} entries")
+    fork_from = fork_raw or []
+
+    fork_targets: List[Dict[str, Any]] = []  # [{"host": host_node, "branch": new_branch}, ...]
+    for item in fork_from:
+        if not isinstance(item, dict):
+            raise DiffError("fork_from entries must be objects")
+        host_id = _require(item, "from_node_id")
+        new_branch = _require(item, "branch")
+        if not isinstance(new_branch, dict):
+            raise DiffError("`fork_from.branch` must be an object")
+        for req in ("id", "label", "description", "metric_delta", "probability"):
+            if req not in new_branch:
+                raise DiffError(f"fork_from.branch missing required field: {req!r}")
+        md = new_branch["metric_delta"]
+        if not isinstance(md, dict):
+            raise DiffError("fork_from.branch.metric_delta must be an object")
+        for req in ("revenue_index", "market_share", "tech_adoption_velocity"):
+            if req not in md:
+                raise DiffError(f"fork_from.branch.metric_delta missing: {req!r}")
+
+        host = _find_node(scenario, host_id)
+        if any(b["id"] == new_branch["id"] for b in host["branches"]):
+            raise DiffError(
+                f"fork_from.branch.id {new_branch['id']!r} already exists on node {host_id!r}"
+            )
+        # The server is the single source of truth for this edge — overwrite
+        # whatever (if anything) the LLM tried to supply.
+        new_branch["next_node_id"] = node["id"]
+        fork_targets.append({"host": host, "branch": new_branch})
+
+    # ── Continuation wiring (Phase 9.4) ─────────────────────────────────────
+    # Resolution table (matches §9.5.2 of the spec):
+    #   rewire_from set → use its validated subset
+    #   rewire_from absent AND fork_from empty → auto-rewire all terminals
+    #   rewire_from absent AND fork_from non-empty → pure divergence, no auto
     rewire_from = diff.get("rewire_from")
     rewire_targets: List[Dict[str, Any]] = []
 
@@ -194,15 +234,28 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
                     f"{rb['next_node_id']!r} — only terminal branches can be rewired."
                 )
             rewire_targets.append(rb)
-    else:
+    elif not fork_targets:
+        # Neither field set → auto-rewire every terminal branch (9.4.1 default).
         for existing in scenario["nodes"]:
             for b in existing["branches"]:
                 if b.get("next_node_id") is None:
                     rewire_targets.append(b)
 
+    # ── Connectivity invariant guard (Phase 9.5.1) ──────────────────────────
+    if not rewire_targets and not fork_targets:
+        raise DiffError(
+            f"add_node {node['id']!r} would leave the new node unreachable. "
+            "Either supply `rewire_from` (continuation), `fork_from` (divergence), "
+            "or ensure the scenario has at least one terminal branch for "
+            "auto-rewire to use."
+        )
+
+    # ── Atomic mutation step ────────────────────────────────────────────────
     scenario["nodes"].append(node)
     for branch in rewire_targets:
         branch["next_node_id"] = node["id"]
+    for entry in fork_targets:
+        entry["host"]["branches"].append(entry["branch"])
 
 
 def _expand_scenario(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:

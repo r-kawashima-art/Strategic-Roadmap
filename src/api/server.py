@@ -178,7 +178,24 @@ REVISE_SYSTEM_PREAMBLE = (
     "DAG stays connected. Use the optional `rewire_from` list ONLY when the "
     "scenario has multiple terminal paths that serve different story lines and "
     "only one should flow into the new node — list the specific "
-    "{node_id, branch_id} pairs to rewire and leave the rest terminal."
+    "{node_id, branch_id} pairs to rewire and leave the rest terminal. "
+    # Phase 9.5: continuation vs. divergence guidance.
+    "Pick the wiring mode for `add_node` based on the user's framing: "
+    "When the user describes a turning point that EXTENDS the storyline past "
+    "its current end (cues like 'and after that…', 'in 2038…', "
+    "'next decision…'), leave `fork_from` empty — either omit `rewire_from` "
+    "for auto-rewire, or list specific terminal branches in `rewire_from`. "
+    "When the user describes an ALTERNATIVE or DIVERGENT past decision "
+    "(cues like 'what if instead', 'imagine that in 2028…', 'fork from', "
+    "'diverge', 'counterfactual', or any 'instead of X, do Y' framing), use "
+    "`fork_from` to attach the new node to the relevant past turning point(s). "
+    "The existing branches at those nodes stay intact, so the original "
+    "storyline remains explorable alongside the divergent one. Pick a "
+    "`probability` that reflects the user's framing (e.g. 'a small chance' "
+    "≈ 0.10–0.20); do NOT rebalance the existing branches — the simulator "
+    "normalises at run time. "
+    "Never set `next_node_id` on a `fork_from.branch` — the server sets it "
+    "for you. Setting it manually will be rejected as out-of-scope."
 )
 
 
@@ -372,6 +389,32 @@ APPLY_SCENARIO_DIFF_TOOL: Dict[str, Any] = {
                                     "branch_id": {"type": "string"},
                                 },
                                 "required": ["node_id", "branch_id"],
+                            },
+                        },
+                        "fork_from": {
+                            "type": "array",
+                            "description": (
+                                "Past nodes that should sprout a NEW branch "
+                                "pointing at the new node, modelling a divergent "
+                                "storyline. Existing branches on those nodes are "
+                                "preserved. Only valid for `add_node`."
+                            ),
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "from_node_id": {"type": "string"},
+                                    "branch": {
+                                        "type": "object",
+                                        "description": (
+                                            "Full new branch object — same shape "
+                                            "as the `branch` field on `add_branch` "
+                                            "(id, label, description, probability, "
+                                            "metric_delta). Do NOT include "
+                                            "next_node_id; the server sets it."
+                                        ),
+                                    },
+                                },
+                                "required": ["from_node_id", "branch"],
                             },
                         },
                     },

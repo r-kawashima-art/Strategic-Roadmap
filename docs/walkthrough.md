@@ -534,3 +534,11 @@ Open `src/ui/index.html` in any browser. The embedded `FALLBACK` constant mirror
 | [specs/user_story.md](../specs/user_story.md) | User story and acceptance criteria |
 | [specs/verification_report.md](../specs/verification_report.md) | Phase 4 — generated verification & reviewer-checklist report |
 | [reference/scenario-analysis.md](../reference/scenario-analysis.md) | Background: Porter's Five Forces, PESTEL, algorithms, data sources |
+
+## Phase 9
+
+What was built:
+
+- LLM integration to ask questions about the scenarios
+- Add "Ask", "Revise", "Expand" buttons to the dashboard for allowing editing nodes and branches
+- Tweaked scenario integration so that new added ones connect to the exisiting graph.
