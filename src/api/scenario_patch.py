@@ -162,7 +162,47 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
         raise DiffError("new node must carry at least one branch")
     if any(n["id"] == node["id"] for n in scenario["nodes"]):
         raise DiffError(f"Node id {node['id']!r} already exists")
+
+    # Branches on the new node are the new terminal frontier unless the caller
+    # supplied an explicit edge — match _expand_scenario's convention so the
+    # downstream simulator never sees an undefined `next_node_id`.
+    for b in node["branches"]:
+        b.setdefault("next_node_id", None)
+
+    # Phase 9.4.1: rewire previously-terminal branches into the new node so the
+    # DAG stays connected. Honour an explicit `rewire_from` list when Claude
+    # supplies one (multi-endpoint scenarios where only some paths should flow
+    # into the new node); otherwise auto-rewire every terminal branch.
+    rewire_from = diff.get("rewire_from")
+    rewire_targets: List[Dict[str, Any]] = []
+
+    if rewire_from is not None:
+        if not isinstance(rewire_from, list):
+            raise DiffError("`rewire_from` must be a list of {node_id, branch_id} entries")
+        for item in rewire_from:
+            if not isinstance(item, dict):
+                raise DiffError("rewire_from entries must be objects")
+            rn_id = _require(item, "node_id")
+            rb_id = _require(item, "branch_id")
+            rn = _find_node(scenario, rn_id)
+            rb = next((x for x in rn["branches"] if x["id"] == rb_id), None)
+            if rb is None:
+                raise DiffError(f"rewire_from target branch {rb_id!r} not on node {rn_id!r}")
+            if rb.get("next_node_id") is not None:
+                raise DiffError(
+                    f"rewire_from target {rn_id}/{rb_id} already points at "
+                    f"{rb['next_node_id']!r} — only terminal branches can be rewired."
+                )
+            rewire_targets.append(rb)
+    else:
+        for existing in scenario["nodes"]:
+            for b in existing["branches"]:
+                if b.get("next_node_id") is None:
+                    rewire_targets.append(b)
+
     scenario["nodes"].append(node)
+    for branch in rewire_targets:
+        branch["next_node_id"] = node["id"]
 
 
 def _expand_scenario(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:

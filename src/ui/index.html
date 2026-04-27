@@ -1309,15 +1309,46 @@
     }
 
     // ── Mermaid diagram ───────────────────────────────────────────────────────
-    function buildDef(scenario) {
+    // Phase 9.4.2: when `diffContext` is supplied, every node renders in a
+    // diff-aware class so the planner can spot what the live preview changed.
+    // Without diffContext, behaviour is identical to pre-9.4 (standard classes).
+    function buildDef(scenario, diffContext = null) {
       // Clear the lookup map
       Object.keys(nodeMap).forEach(k => delete nodeMap[k]);
 
+      const inDiff = !!diffContext;
       const lines = ['flowchart LR'];
-      lines.push('    classDef hist  fill:#1e293b,stroke:#334155,color:#94a3b8');
-      lines.push('    classDef tp    fill:#3b0764,stroke:#7c3aed,color:#e9d5ff,font-weight:bold');
-      lines.push('    classDef endP  fill:#052e16,stroke:#059669,color:#86efac');
-      lines.push('    classDef endN  fill:#450a0a,stroke:#dc2626,color:#fca5a5');
+      if (inDiff) {
+        lines.push('    classDef histFaded   fill:#1e293b,stroke:#334155,color:#5b6678');
+        lines.push('    classDef tpFaded     fill:#1f1037,stroke:#4c1d95,color:#7c5fbe,font-weight:bold');
+        lines.push('    classDef tpChanged   fill:#3b0764,stroke:#f59e0b,stroke-width:2px,color:#fde68a,font-weight:bold');
+        lines.push('    classDef tpAdded     fill:#3b0764,stroke:#f59e0b,stroke-width:2px,stroke-dasharray:5 3,color:#fde68a,font-weight:bold');
+        lines.push('    classDef endPFaded   fill:#052e16,stroke:#04563a,color:#4f8a6c');
+        lines.push('    classDef endNFaded   fill:#450a0a,stroke:#7f1d1d,color:#8b6065');
+        lines.push('    classDef endPChanged fill:#052e16,stroke:#f59e0b,stroke-width:2px,color:#fde68a');
+        lines.push('    classDef endNChanged fill:#450a0a,stroke:#f59e0b,stroke-width:2px,color:#fde68a');
+      } else {
+        lines.push('    classDef hist  fill:#1e293b,stroke:#334155,color:#94a3b8');
+        lines.push('    classDef tp    fill:#3b0764,stroke:#7c3aed,color:#e9d5ff,font-weight:bold');
+        lines.push('    classDef endP  fill:#052e16,stroke:#059669,color:#86efac');
+        lines.push('    classDef endN  fill:#450a0a,stroke:#dc2626,color:#fca5a5');
+      }
+
+      function tpClassFor(nodeId) {
+        if (!inDiff) return 'tp';
+        if (diffContext.addedNodeIds.has(nodeId)) return 'tpAdded';
+        if (diffContext.changedNodeIds.has(nodeId)) return 'tpChanged';
+        return 'tpFaded';
+      }
+      function histClassFor() {
+        return inDiff ? 'histFaded' : 'hist';
+      }
+      function endClassFor(branchId, isPositive) {
+        if (!inDiff) return isPositive ? 'endP' : 'endN';
+        const changed = diffContext.changedBranchIds.has(branchId);
+        if (isPositive) return changed ? 'endPChanged' : 'endPFaded';
+        return changed ? 'endNChanged' : 'endNFaded';
+      }
 
       const sorted = [...scenario.nodes].sort((a, b) => a.year - b.year);
       const firstYear = sorted[0]?.year ?? 9999;
@@ -1332,7 +1363,7 @@
         const id = `HIST_${m.year}`;
         const kpis = milestoneKpis(m);
         lines.push(`    ${id}(["${m.year}<br/>${m.label}<br/>${kpis}"])`);
-        lines.push(`    class ${id} hist`);
+        lines.push(`    class ${id} ${histClassFor()}`);
         if (prevId) lines.push(`    ${prevId} --> ${id}`);
         prevId = id;
         nodeMap[id] = { type: 'milestone', data: m };
@@ -1344,8 +1375,10 @@
         // FR-4: primary-branch (highest-probability) delta chips on the hexagon
         const primary = node.branches.reduce((a, b) => b.probability > a.probability ? b : a);
         const tpChips = deltaChips(primary.metric_delta);
-        lines.push(`    ${tpId}{{"${node.year}<br/> ${escMd(node.title)}<br/>${tpChips}"}}`);
-        lines.push(`    class ${tpId} tp`);
+        const isAdded = inDiff && diffContext.addedNodeIds.has(node.id);
+        const titlePrefix = isAdded ? '✦ ' : '';
+        lines.push(`    ${tpId}{{"${titlePrefix}${node.year}<br/> ${escMd(node.title)}<br/>${tpChips}"}}`);
+        lines.push(`    class ${tpId} ${tpClassFor(node.id)}`);
         nodeMap[tpId] = { type: 'turning_point', data: node };
 
         // Connect from previous (historical chain or previous TP already handled via branch edges)
@@ -1364,7 +1397,8 @@
           } else {
             // Terminal outcome node — FR-4: 2040 KPIs + stance glyph on the node
             const endId = `END_${branch.id.replace(/-/g, '_')}`;
-            const endClass = branch.metric_delta.revenue_index >= 0 ? 'endP' : 'endN';
+            const isPositive = branch.metric_delta.revenue_index >= 0;
+            const endClass = endClassFor(branch.id, isPositive);
             const endKpis = outcomeKpis(scenario, branch);
             const stance = branch.metric_delta.tech_adoption_velocity > 0.08 ? ' Innovation' : '⚙ Efficiency';
             lines.push(`    ${endId}(["2040<br/>${escMd(branch.label)}<br/>${endKpis}<br/>${stance}"])`);
@@ -1376,6 +1410,56 @@
       });
 
       return lines.join('\n');
+    }
+
+    // Phase 9.4.2: derive a diff context from a snapshot taken at preview time
+    // and the patched scenario. The result feeds buildDef so that added /
+    // changed / unchanged nodes render with distinct Mermaid classes.
+    function deriveDiffContext(previewScenario, previousScenario) {
+      if (!previewScenario || !previousScenario) return null;
+      const prevNodes = new Map((previousScenario.nodes || []).map(n => [n.id, n]));
+      const addedNodeIds = new Set();
+      const changedNodeIds = new Set();
+      const changedBranchIds = new Set();
+      const NODE_FIELDS = ['title', 'description', 'external_driver', 'year'];
+
+      for (const node of previewScenario.nodes || []) {
+        const prev = prevNodes.get(node.id);
+        if (!prev) {
+          addedNodeIds.add(node.id);
+          (node.branches || []).forEach(b => changedBranchIds.add(b.id));
+          continue;
+        }
+        const nodeFieldChanged = NODE_FIELDS.some(k => prev[k] !== node[k]);
+        const prevBranches = new Map((prev.branches || []).map(b => [b.id, b]));
+        let anyBranchChanged = false;
+        for (const b of node.branches || []) {
+          const pb = prevBranches.get(b.id);
+          if (!pb) {
+            changedBranchIds.add(b.id);
+            anyBranchChanged = true;
+            continue;
+          }
+          const md = b.metric_delta || {};
+          const pmd = pb.metric_delta || {};
+          const branchChanged = (
+            pb.label !== b.label ||
+            pb.description !== b.description ||
+            pb.probability !== b.probability ||
+            pb.next_node_id !== b.next_node_id ||
+            pmd.revenue_index !== md.revenue_index ||
+            pmd.market_share !== md.market_share ||
+            pmd.tech_adoption_velocity !== md.tech_adoption_velocity
+          );
+          if (branchChanged) {
+            changedBranchIds.add(b.id);
+            anyBranchChanged = true;
+          }
+        }
+        if (nodeFieldChanged || anyBranchChanged) changedNodeIds.add(node.id);
+      }
+
+      return { addedNodeIds, changedNodeIds, changedBranchIds };
     }
 
     // ── On-node KPI formatting (FR-4 update) ──────────────────────────────────
@@ -1419,7 +1503,7 @@
       return str.replace(/"/g, '&quot;').replace(/[<>]/g, '');
     }
 
-    async function renderFlowchart(scenario, { preserveView = false } = {}) {
+    async function renderFlowchart(scenario, { preserveView = false, diffContext = null } = {}) {
       const container = document.getElementById('diagram-container');
       const priorState = preserveView && panZoom ? capturePanZoom() : null;
 
@@ -1432,7 +1516,7 @@
       container.innerHTML = '<div class="loading">Rendering decision tree…</div>';
 
       try {
-        const def = buildDef(scenario);
+        const def = buildDef(scenario, diffContext);
         const { svg } = await mermaid.render('ota-roadmap', def);
         container.innerHTML = svg;
 
@@ -2421,7 +2505,10 @@ Rewiring terminal branches: ${escapeHtml(rewireLine)}</div>
 
       if (previewScenario) {
         scenarios[activeScenIdx] = previewScenario;
-        renderFlowchart(previewScenario, { preserveView: userZoomed });
+        // Phase 9.4.2: render with a diff overlay so amber strokes / dashed
+        // borders / faded unchanged nodes make the proposed change legible.
+        const diffContext = deriveDiffContext(previewScenario, previewSnapshot);
+        renderFlowchart(previewScenario, { preserveView: userZoomed, diffContext });
         renderMarketShare();
         updateChatContext();
       }

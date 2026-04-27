@@ -172,7 +172,13 @@ REVISE_SYSTEM_PREAMBLE = (
     "(except when the op is `add_node` or `add_branch`, where you mint new "
     "IDs following the existing pattern like tp-004 or tp-002-d). "
     "Do not modify `next_node_id`, the `timeline` array, or any `metadata.*` "
-    "field — those are out of scope for this tool."
+    "field — those are out of scope for this tool. "
+    "When the op is `add_node`, the server auto-rewires every currently-terminal "
+    "branch (branches whose `next_node_id` is null) into the new node so the "
+    "DAG stays connected. Use the optional `rewire_from` list ONLY when the "
+    "scenario has multiple terminal paths that serve different story lines and "
+    "only one should flow into the new node — list the specific "
+    "{node_id, branch_id} pairs to rewire and leave the rest terminal."
 )
 
 
@@ -351,6 +357,22 @@ APPLY_SCENARIO_DIFF_TOOL: Dict[str, Any] = {
                         "node": {
                             "type": "object",
                             "description": "Full new node object (required for add_node).",
+                        },
+                        "rewire_from": {
+                            "type": "array",
+                            "description": (
+                                "Specific terminal branches to rewire into the "
+                                "new node. Omit to auto-rewire all terminal "
+                                "branches. Only valid for `add_node`."
+                            ),
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "node_id": {"type": "string"},
+                                    "branch_id": {"type": "string"},
+                                },
+                                "required": ["node_id", "branch_id"],
+                            },
                         },
                     },
                     "required": ["op"],
