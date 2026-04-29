@@ -426,12 +426,32 @@ class GraphConnectivityTests(unittest.TestCase):
             self.assertIsNotNone(match, f"Original branch {orig['id']!r} disappeared")
             self.assertEqual(match["next_node_id"], orig["next_node_id"],
                              "fork_from must not rewire existing edges")
-            self.assertEqual(match["probability"], orig["probability"])
             self.assertEqual(match["label"], orig["label"])
 
         fork = next(b for b in target_after["branches"] if b["id"] == "tp-002-d")
         self.assertEqual(fork["next_node_id"], "tp-099",
                          "server must stamp next_node_id on fork branches")
+        # Fork branch keeps its supplied probability — only the *existing*
+        # branches are rescaled by the PMF guard.
+        self.assertAlmostEqual(fork["probability"], 0.15, places=6)
+
+        # PMF invariant: the host node's branch probabilities sum to 1.0.
+        host_total = sum(b["probability"] for b in target_after["branches"])
+        self.assertAlmostEqual(host_total, 1.0, delta=1e-3)
+
+        # Relative shape of the original branches is preserved (proportional
+        # rescale, not uniform): the ratio between any two original branches
+        # is unchanged from before the fork was added.
+        orig_a, orig_b = pre_branches[0], pre_branches[1]
+        post_a = next(b for b in target_after["branches"] if b["id"] == orig_a["id"])
+        post_b = next(b for b in target_after["branches"] if b["id"] == orig_b["id"])
+        if orig_b["probability"] > 0:
+            self.assertAlmostEqual(
+                post_a["probability"] / post_b["probability"],
+                orig_a["probability"] / orig_b["probability"],
+                places=6,
+                msg="proportional rescale must preserve original branch ratios",
+            )
 
         # Pure-divergence: fork_from set, rewire_from absent → previously-
         # terminal branches at tp-003 must remain terminal (no auto-rewire

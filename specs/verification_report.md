@@ -1,6 +1,6 @@
 # Phase 4 — Verification & Feedback Report
 
-*Generated:* 2026-04-27
+*Generated:* 2026-04-29
 
 **Overall status:** PASS — scenario is ready for Phase 5
 
@@ -48,7 +48,7 @@ test_ndc_favours_efficiency_led_over_innovation_led (tests.test_wargame.Narrativ
 Under NDC adoption, an efficiency-led profile should out-fit an ... ok
 
 ----------------------------------------------------------------------
-Ran 20 tests in 0.026s
+Ran 20 tests in 0.025s
 
 OK
 ```

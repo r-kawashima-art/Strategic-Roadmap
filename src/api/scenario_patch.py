@@ -20,6 +20,15 @@ The ``expand_scenario`` op is the sole exception: it *does* rewire
 into a newly-appended node is the whole point of the operation. The rewire is
 validated to only touch terminal branches so an expansion can never silently
 detach a mid-scenario edge.
+
+Probability invariant: every node that gains or hosts a new branch is
+left with branch probabilities summing to 1.0 (within ``PROB_EPS``). For
+``add_branch`` and the ``fork_from`` path of ``add_node`` the new branch
+keeps the LLM-supplied probability and the previously-existing branches
+are scaled proportionally; for the ``add_node`` op's own freshly-authored
+branches, every branch is scaled uniformly. The simulator's
+``test_branch_probabilities_sum_to_one_per_node`` invariant therefore
+holds on every patched scenario without the LLM having to pre-balance.
 """
 
 from __future__ import annotations
@@ -39,6 +48,11 @@ KNOWN_EXTERNAL_DRIVERS = frozenset({
 
 class DiffError(ValueError):
     """Raised when a diff operation is malformed or references unknown entities."""
+
+
+# Tolerance for the "branch probabilities sum to 1.0" invariant. Matches the
+# ± 0.001 wording the system preamble uses with the LLM.
+PROB_EPS = 1e-3
 
 
 # Fields Claude is allowed to set. Anything else raises DiffError.
@@ -149,6 +163,9 @@ def _add_branch(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
     if any(b["id"] == branch["id"] for b in node["branches"]):
         raise DiffError(f"Branch id {branch['id']!r} already exists on {node_id!r}")
     node["branches"].append(branch)
+    # Keep the host node's distribution a valid PMF — scale the previously-
+    # existing branches so the total sums back to 1.0.
+    _renormalize_after_branch_add(node, branch["id"])
 
 
 def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
@@ -168,6 +185,11 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
     # downstream simulator never sees an undefined `next_node_id`.
     for b in node["branches"]:
         b.setdefault("next_node_id", None)
+
+    # The new node's own branches must form a valid PMF (sum to 1.0). The LLM
+    # authors them all together so uniform rescaling preserves the relative
+    # distribution exactly.
+    _normalize_node_branches_uniform(node)
 
     # ── Divergence wiring (Phase 9.5) ───────────────────────────────────────
     # `fork_from` sprouts a NEW branch on each listed past node, pointing at
@@ -255,7 +277,12 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
     for branch in rewire_targets:
         branch["next_node_id"] = node["id"]
     for entry in fork_targets:
-        entry["host"]["branches"].append(entry["branch"])
+        host = entry["host"]
+        host["branches"].append(entry["branch"])
+        # Fork branch was just appended to a previously-balanced host node —
+        # scale its existing branches so the distribution sums to 1.0 again
+        # (preserves the LLM's claimed probability for the new fork).
+        _renormalize_after_branch_add(host, entry["branch"]["id"])
 
 
 def _expand_scenario(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
@@ -386,3 +413,88 @@ def _find_node(scenario: Dict[str, Any], node_id: str) -> Dict[str, Any]:
     if node is None:
         raise DiffError(f"Unknown node_id: {node_id!r}")
     return node
+
+
+def _renormalize_after_branch_add(node: Dict[str, Any], new_branch_id: str) -> None:
+    """Re-scale the previously-existing branches on `node` after a new branch
+    has been appended, so the host's branch probabilities sum to 1.0.
+
+    The newly-added branch keeps its supplied probability; the prior branches
+    are scaled by ``(1.0 - new_prob) / existing_total``. This preserves the
+    relative shape of the original distribution and the LLM's claim about
+    how likely the new branch is — matching the §9.5.6 system-preamble
+    contract ("the simulator normalises… do NOT rebalance").
+
+    Raises ``DiffError`` when the new branch's probability is out of range
+    or when the existing branches sum to zero (no shape to preserve).
+    """
+    new_branch = next((b for b in node["branches"] if b["id"] == new_branch_id), None)
+    if new_branch is None:  # defensive — caller just appended it
+        raise DiffError(f"Branch {new_branch_id!r} not found on node {node['id']!r}")
+
+    try:
+        new_prob = float(new_branch["probability"])
+    except (TypeError, ValueError, KeyError):
+        raise DiffError(
+            f"Branch {new_branch_id!r} probability must be numeric, "
+            f"got {new_branch.get('probability')!r}"
+        )
+    if not (0.0 <= new_prob <= 1.0):
+        raise DiffError(
+            f"Branch {new_branch_id!r} probability must be in [0, 1], got {new_prob}"
+        )
+    if new_prob > 1.0 - PROB_EPS:
+        raise DiffError(
+            f"Branch {new_branch_id!r} probability {new_prob} leaves no room for "
+            f"the existing branches at node {node['id']!r}. Pick a value < 1.0."
+        )
+
+    existing = [b for b in node["branches"] if b["id"] != new_branch_id]
+    if not existing:
+        # Single-branch node: clamp to 1.0 so the invariant holds.
+        new_branch["probability"] = 1.0
+        return
+
+    existing_total = sum(float(b["probability"]) for b in existing)
+    if existing_total <= 0:
+        raise DiffError(
+            f"Node {node['id']!r}: existing branches sum to {existing_total}; "
+            f"cannot rescale to fit the new branch."
+        )
+    scale = (1.0 - new_prob) / existing_total
+    for b in existing:
+        b["probability"] = float(b["probability"]) * scale
+
+
+def _normalize_node_branches_uniform(node: Dict[str, Any]) -> None:
+    """Scale every branch on `node` so their probabilities sum to 1.0.
+
+    Used for the new node minted by ``_add_node`` — the LLM authors all of
+    its branches together, so uniform rescaling preserves the relative
+    shape exactly. No-op when the sum is already in tolerance.
+    """
+    for b in node["branches"]:
+        try:
+            p = float(b["probability"])
+        except (TypeError, ValueError, KeyError):
+            raise DiffError(
+                f"Branch {b.get('id')!r} probability must be numeric, "
+                f"got {b.get('probability')!r}"
+            )
+        if p < 0:
+            raise DiffError(
+                f"Branch {b.get('id')!r} probability must be non-negative, got {p}"
+            )
+        b["probability"] = p
+
+    total = sum(float(b["probability"]) for b in node["branches"])
+    if total <= 0:
+        raise DiffError(
+            f"Node {node['id']!r}: branch probabilities sum to {total}; "
+            f"cannot normalize. Provide non-zero probabilities."
+        )
+    if abs(total - 1.0) <= PROB_EPS:
+        return
+    factor = 1.0 / total
+    for b in node["branches"]:
+        b["probability"] = float(b["probability"]) * factor
