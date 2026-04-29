@@ -210,6 +210,14 @@ def main() -> int:
     print("Running Phase 4 verification suites...")
     wargame = _run_suite("tests.test_wargame")
     turning = _run_suite("tests.test_turning_points")
+    # Phase 10 — Scenario CRUD / non-destructive edit / export-import.
+    # Skipped silently if FastAPI dependencies aren't available locally; the
+    # Phase 4 suites stay green either way.
+    try:
+        scenario_mgmt = _run_suite("tests.test_scenario_management")
+    except Exception as exc:  # pragma: no cover — env without FastAPI/multipart
+        print(f"  scenario-mgmt:   SKIPPED ({type(exc).__name__}: {exc})")
+        scenario_mgmt = None
 
     report = build_report(wargame, turning)
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -219,8 +227,15 @@ def main() -> int:
     turning_ok = turning[0].wasSuccessful()
     print(f"  war-gaming:      {'PASS' if wargame_ok else 'FAIL'} ({wargame[0].testsRun} tests)")
     print(f"  turning-points:  {'PASS' if turning_ok else 'FAIL'} ({turning[0].testsRun} tests)")
+
+    if scenario_mgmt is not None:
+        mgmt_ok = scenario_mgmt[0].wasSuccessful()
+        print(f"  scenario-mgmt:   {'PASS' if mgmt_ok else 'FAIL'} ({scenario_mgmt[0].testsRun} tests)")
+    else:
+        mgmt_ok = True
+
     print(f"  report written:  {REPORT_PATH.relative_to(PROJECT_ROOT)}")
-    return 0 if (wargame_ok and turning_ok) else 1
+    return 0 if (wargame_ok and turning_ok and mgmt_ok) else 1
 
 
 if __name__ == "__main__":

@@ -1053,6 +1053,211 @@
         grid-template-rows: auto auto auto;
       }
     }
+
+    /* ── Phase 10: Scenario Manager (slide-over) ─────────────────────────── */
+    .scenario-manager-btn {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .scenario-manager-btn:hover {
+      border-color: #7c3aed;
+      color: #c4b5fd;
+    }
+
+    .scen-mgr {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(440px, 100vw);
+      height: 100vh;
+      background: #0f172a;
+      border-left: 1px solid #334155;
+      box-shadow: -8px 0 24px rgba(0, 0, 0, 0.4);
+      transform: translateX(100%);
+      transition: transform 0.18s ease-out;
+      display: flex;
+      flex-direction: column;
+      z-index: 200;
+    }
+
+    .scen-mgr.open {
+      transform: translateX(0);
+    }
+
+    .scen-mgr-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .scen-mgr-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .scen-mgr-close {
+      background: transparent;
+      color: #94a3b8;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .scen-mgr-actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .scen-mgr-actions button {
+      flex: 1;
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .scen-mgr-actions button:hover {
+      border-color: #7c3aed;
+    }
+
+    .scen-mgr-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .scen-mgr-row {
+      padding: 10px 16px;
+      border-bottom: 1px solid #1e293b;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+
+    .scen-mgr-row.base {
+      background: #0b1322;
+    }
+
+    .scen-mgr-row .name {
+      color: #e2e8f0;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .scen-mgr-row .name input {
+      width: 100%;
+      background: #020617;
+      color: #e2e8f0;
+      border: 1px solid #7c3aed;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font: inherit;
+    }
+
+    .scen-mgr-row .meta {
+      color: #64748b;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .scen-mgr-row .meta a {
+      color: #94a3b8;
+      cursor: pointer;
+      text-decoration: underline dotted;
+    }
+
+    .scen-mgr-row .meta .deleted-parent {
+      color: #f87171;
+      font-style: italic;
+    }
+
+    .scen-mgr-row .row-actions {
+      display: flex;
+      gap: 4px;
+      align-items: flex-start;
+    }
+
+    .scen-mgr-row .row-actions button {
+      background: transparent;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .scen-mgr-row .row-actions button:hover {
+      color: #e2e8f0;
+      border-color: #7c3aed;
+    }
+
+    .scen-mgr-row .row-actions button.danger:hover {
+      color: #fca5a5;
+      border-color: #dc2626;
+    }
+
+    .scen-mgr-confirm {
+      grid-column: 1 / -1;
+      padding: 6px 8px;
+      background: #450a0a;
+      color: #fca5a5;
+      border-radius: 3px;
+      font-size: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .scen-mgr-confirm button {
+      background: #7f1d1d;
+      color: #fee2e2;
+      border: none;
+      padding: 2px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .scen-mgr-confirm button.cancel {
+      background: #334155;
+      color: #cbd5e1;
+    }
+
+    .scen-mgr-toast {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 250;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .scen-mgr-toast.error {
+      border-color: #dc2626;
+      color: #fca5a5;
+    }
   </style>
 </head>
 
@@ -1067,12 +1272,30 @@
     <div class="selector-group">
       <label for="scen-sel">Timeline:</label>
       <select id="scen-sel" onchange="onScenarioChange()"></select>
+      <button class="scenario-manager-btn" id="scenario-manager-btn" type="button"
+        aria-label="Open scenario manager">⚙ Manage</button>
       <button class="reset-layout-btn" id="reset-layout-btn" type="button"
         aria-label="Reset dashboard layout to defaults">Reset layout</button>
       <span id="preview-dot" role="status" aria-live="polite">Unsaved preview</span>
       <button class="chat-toggle-btn" id="chat-toggle-btn" type="button" aria-label="Open chat panel">💬 Chat</button>
     </div>
   </header>
+
+  <!-- ── Scenario Manager (Phase 10) ─────────────────────────────────────── -->
+  <aside class="scen-mgr" id="scen-mgr" role="dialog"
+         aria-label="Scenario library and management"
+         aria-hidden="true">
+    <div class="scen-mgr-header">
+      <div class="scen-mgr-title">Scenario Library</div>
+      <button class="scen-mgr-close" id="scen-mgr-close" aria-label="Close scenario manager">×</button>
+    </div>
+    <div class="scen-mgr-actions">
+      <button id="scen-mgr-new" type="button">＋ New blank</button>
+      <button id="scen-mgr-import" type="button">⬆ Import…</button>
+      <input id="scen-mgr-import-file" type="file" accept=".scenario.json,.json" style="display:none" />
+    </div>
+    <div class="scen-mgr-list" id="scen-mgr-list" role="list"></div>
+  </aside>
 
   <!-- ── Chat panel (Phase 8 / FR-5) ─────────────────────────────────────── -->
   <aside class="chat-panel" id="chat-panel" role="complementary" aria-label="Scenario chat and revision panel"
@@ -1262,13 +1485,16 @@
       buildSelector();
       await renderFlowchart(baseScenario);
       renderMarketShare();
+      bindScenarioManager();
     }
 
     // ── Scenario selector ─────────────────────────────────────────────────────
     function scenarioLabel(s) {
-      const icon = s.source === 'user' ? 'User Scenario' : 'Base Scenario';
+      // Phase 10.3 visual cues: 🔖 user variant, 🔒 read-only base.
+      const icon = s.source === 'user' ? '🔖 ' : '🔒 ';
       const name = s.name || '(unnamed)';
-      return icon + (name.length > 53 ? name.slice(0, 50) + '…' : name);
+      const trimmed = name.length > 50 ? name.slice(0, 47) + '…' : name;
+      return icon + trimmed;
     }
 
     function buildSelector() {
@@ -1306,6 +1532,356 @@
       renderFlowchart(scen, { preserveView: userZoomed });
       renderMarketShare();
       if (typeof updateChatContext === 'function') updateChatContext();
+    }
+
+    // ── Phase 10: Scenario Manager ────────────────────────────────────────────
+    // Slide-over panel for full lifecycle management of user scenarios.
+    // Honours the FR-7 non-destructive-edit invariant: no edit path here ever
+    // mutates a base scenario or overwrites the visualizing graph of an
+    // existing user scenario in place — graph changes always go through
+    // /revise → Save as New (Phase 9.3).
+    function authHeaders() {
+      // Reuses the chat-panel API base/key. Falls back to "/" + empty bearer
+      // when the SPA is served by the FastAPI server (same origin).
+      const settings = (typeof chatState !== 'undefined' && chatState.settings) || {};
+      const headers = {};
+      if (settings.apiKey) headers['Authorization'] = `Bearer ${settings.apiKey}`;
+      return headers;
+    }
+
+    function apiBase() {
+      const settings = (typeof chatState !== 'undefined' && chatState.settings) || {};
+      return settings.apiBase || '';
+    }
+
+    function showToast(message, isError = false) {
+      const t = document.createElement('div');
+      t.className = 'scen-mgr-toast' + (isError ? ' error' : '');
+      t.textContent = message;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3500);
+    }
+
+    function openScenarioManager() {
+      const panel = document.getElementById('scen-mgr');
+      panel?.setAttribute('aria-hidden', 'false');
+      panel?.classList.add('open');
+      renderManagerList();
+    }
+
+    function closeScenarioManager() {
+      const panel = document.getElementById('scen-mgr');
+      panel?.setAttribute('aria-hidden', 'true');
+      panel?.classList.remove('open');
+    }
+
+    function renderManagerList() {
+      const listEl = document.getElementById('scen-mgr-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      const byId = new Map(scenarios.map(s => [s.id, s]));
+      // Render base scenarios first, then user scenarios.
+      const baseRows = scenarios.filter(s => s.source !== 'user');
+      const userRows = scenarios.filter(s => s.source === 'user');
+
+      [...baseRows, ...userRows].forEach(s => {
+        listEl.appendChild(renderManagerRow(s, byId));
+      });
+
+      if (!scenarios.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding:16px;color:#64748b;font-size:12px';
+        empty.textContent = 'No scenarios yet. Create one or import a .scenario.json file.';
+        listEl.appendChild(empty);
+      }
+    }
+
+    function renderManagerRow(s, byId) {
+      const isUser = s.source === 'user';
+      const row = document.createElement('div');
+      row.className = 'scen-mgr-row' + (isUser ? '' : ' base');
+      row.setAttribute('role', 'listitem');
+      row.dataset.scenarioId = s.id;
+
+      // ── Name + meta column ────────────────────────────────────────────────
+      const left = document.createElement('div');
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'name';
+      nameEl.textContent = (isUser ? '🔖 ' : '🔒 ') + (s.name || '(unnamed)');
+      if (isUser) {
+        nameEl.title = 'Click to rename';
+        nameEl.style.cursor = 'pointer';
+        nameEl.addEventListener('click', () => beginInlineRename(row, s));
+      }
+      left.appendChild(nameEl);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const parts = [];
+      if (isUser) parts.push('user variant');
+      else parts.push('base · read-only');
+      if (s.parent_id) {
+        const parent = byId.get(s.parent_id);
+        if (parent) {
+          const link = document.createElement('a');
+          link.textContent = `⬅ from "${parent.name}"`;
+          link.addEventListener('click', () => focusManagerRow(parent.id));
+          parts.push('');  // placeholder so we can append after join
+          meta.append(' · ', link);
+        } else {
+          const span = document.createElement('span');
+          span.className = 'deleted-parent';
+          span.textContent = `⬅ (deleted parent)`;
+          parts.push('');
+          meta.append(' · ', span);
+        }
+      }
+      if (s.created_at) parts.push(s.created_at.slice(0, 10));
+      meta.prepend(parts.filter(Boolean).join(' · '));
+      left.appendChild(meta);
+
+      row.appendChild(left);
+
+      // ── Action column ─────────────────────────────────────────────────────
+      const actions = document.createElement('div');
+      actions.className = 'row-actions';
+
+      const exportBtn = document.createElement('button');
+      exportBtn.type = 'button';
+      exportBtn.textContent = 'Export';
+      exportBtn.addEventListener('click', () => exportScenarioFile(s));
+      actions.appendChild(exportBtn);
+
+      if (isUser) {
+        const renameBtn = document.createElement('button');
+        renameBtn.type = 'button';
+        renameBtn.textContent = 'Rename';
+        renameBtn.addEventListener('click', () => beginInlineRename(row, s));
+        actions.appendChild(renameBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'danger';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', () => beginInlineDelete(row, s));
+        actions.appendChild(delBtn);
+      }
+
+      row.appendChild(actions);
+      return row;
+    }
+
+    function focusManagerRow(scenarioId) {
+      const row = document.querySelector(`.scen-mgr-row[data-scenario-id="${scenarioId}"]`);
+      if (!row) return;
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.style.transition = 'background 0.5s';
+      row.style.background = '#1e1b4b';
+      setTimeout(() => { row.style.background = ''; }, 1200);
+    }
+
+    function beginInlineRename(row, s) {
+      const nameEl = row.querySelector('.name');
+      if (!nameEl || nameEl.querySelector('input')) return;
+      const original = s.name;
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = original;
+      input.setAttribute('aria-label', 'Rename scenario');
+
+      nameEl.textContent = '';
+      nameEl.appendChild(input);
+      input.focus();
+      input.select();
+
+      const finish = async commit => {
+        if (!commit) {
+          nameEl.textContent = '🔖 ' + original;
+          return;
+        }
+        const newName = input.value.trim();
+        if (!newName || newName === original) {
+          nameEl.textContent = '🔖 ' + original;
+          return;
+        }
+        try {
+          const resp = await fetch(`${apiBase()}/scenarios/${s.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ name: newName }),
+          });
+          const result = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(result.detail || `${resp.status}`);
+          s.name = newName;
+          s.updated_at = result.updated_at;
+          nameEl.textContent = '🔖 ' + newName;
+          rebuildSelector(scenarios, activeScenIdx);
+          showToast(`Renamed to "${newName}".`);
+        } catch (err) {
+          nameEl.textContent = '🔖 ' + original;
+          showToast(`Rename failed: ${err.message || err}`, true);
+        }
+      };
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      });
+      input.addEventListener('blur', () => finish(true));
+    }
+
+    function beginInlineDelete(row, s) {
+      if (row.querySelector('.scen-mgr-confirm')) return;
+      const confirm = document.createElement('div');
+      confirm.className = 'scen-mgr-confirm';
+      confirm.innerHTML = `
+        <span>Delete «${escapeHtml(s.name)}»? This cannot be undone.</span>
+        <span>
+          <button class="cancel" type="button">Cancel</button>
+          <button class="confirm-delete" type="button">Delete</button>
+        </span>
+      `;
+      row.appendChild(confirm);
+
+      confirm.querySelector('.cancel').addEventListener('click', () => confirm.remove());
+      confirm.querySelector('.confirm-delete').addEventListener('click', async () => {
+        try {
+          const resp = await fetch(`${apiBase()}/scenarios/${s.id}`, {
+            method: 'DELETE',
+            headers: authHeaders(),
+          });
+          if (!resp.ok && resp.status !== 204) {
+            const result = await resp.json().catch(() => ({}));
+            throw new Error(result.detail || `${resp.status}`);
+          }
+          // Remove from local cache; if the deleted scenario was active, fall
+          // back to the first base scenario (Phase 10.4 acceptance).
+          const wasActive = scenarios[activeScenIdx]?.id === s.id;
+          const newScenarios = scenarios.filter(x => x.id !== s.id);
+          const newIdx = wasActive
+            ? newScenarios.findIndex(x => x.source !== 'user')
+            : Math.max(0, scenarios.findIndex(x => x.id === scenarios[activeScenIdx]?.id));
+          rebuildSelector(newScenarios, Math.max(0, newIdx));
+          if (wasActive) onScenarioChange();
+          renderManagerList();
+          showToast(`Deleted "${s.name}".`);
+        } catch (err) {
+          showToast(`Delete failed: ${err.message || err}`, true);
+        }
+      });
+    }
+
+    async function exportScenarioFile(s) {
+      try {
+        const resp = await fetch(`${apiBase()}/scenarios/${s.id}/export`, { headers: authHeaders() });
+        if (!resp.ok) {
+          const result = await resp.json().catch(() => ({}));
+          throw new Error(result.detail || `${resp.status}`);
+        }
+        const blob = await resp.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${(s.name || 'scenario').replace(/[^A-Za-z0-9._-]+/g, '-').toLowerCase()}.scenario.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        showToast(`Exported "${s.name}".`);
+      } catch (err) {
+        showToast(`Export failed: ${err.message || err}`, true);
+      }
+    }
+
+    async function importScenarioFile(file) {
+      const form = new FormData();
+      form.append('file', file);
+      try {
+        const resp = await fetch(`${apiBase()}/scenarios/import`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: form,
+        });
+        const result = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          const detail = result.detail;
+          if (resp.status === 409 && detail && detail.suggested_name) {
+            showToast(`${detail.message} Try "${detail.suggested_name}".`, true);
+          } else {
+            throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail || result));
+          }
+          return;
+        }
+        // Refresh the scenarios list from the server so the imported entry shows up.
+        const refreshed = await fetch(`${apiBase()}/scenarios`).then(r => r.json());
+        rebuildSelector(refreshed, refreshed.findIndex(s => s.id === result.id));
+        onScenarioChange();
+        renderManagerList();
+        showToast(`Imported "${result.name}".`);
+      } catch (err) {
+        showToast(`Import failed: ${err.message || err}`, true);
+      }
+    }
+
+    async function createBlankScenario() {
+      const proposed = window.prompt('Name for the new scenario:', 'New scenario');
+      if (!proposed) return;
+      const template = scenarios.find(s => s.id === 'scenario-001') || baseScenario;
+      if (!template) {
+        showToast('No template scenario available to seed from.', true);
+        return;
+      }
+      // Deep clone the template's graph so the server stores an independent copy.
+      const seed = JSON.parse(JSON.stringify(template));
+      delete seed.id;
+      delete seed.source;
+      delete seed.created_at;
+      delete seed.updated_at;
+      try {
+        const resp = await fetch(`${apiBase()}/scenarios`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({
+            name: proposed,
+            parent_id: template.id,
+            scenario_data: seed,
+          }),
+        });
+        const result = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(result.detail || `${resp.status}`);
+        const refreshed = await fetch(`${apiBase()}/scenarios`).then(r => r.json());
+        rebuildSelector(refreshed, refreshed.findIndex(s => s.id === result.id));
+        onScenarioChange();
+        renderManagerList();
+        showToast(`Created "${result.name}".`);
+      } catch (err) {
+        showToast(`Create failed: ${err.message || err}`, true);
+      }
+    }
+
+    function bindScenarioManager() {
+      document.getElementById('scenario-manager-btn')?.addEventListener('click', openScenarioManager);
+      document.getElementById('scen-mgr-close')?.addEventListener('click', closeScenarioManager);
+      document.getElementById('scen-mgr-new')?.addEventListener('click', createBlankScenario);
+
+      const importBtn = document.getElementById('scen-mgr-import');
+      const importFile = document.getElementById('scen-mgr-import-file');
+      importBtn?.addEventListener('click', () => importFile?.click());
+      importFile?.addEventListener('change', e => {
+        const file = e.target.files?.[0];
+        if (file) importScenarioFile(file);
+        e.target.value = '';
+      });
+
+      // Esc closes the panel when it's open.
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          const panel = document.getElementById('scen-mgr');
+          if (panel?.classList.contains('open')) closeScenarioManager();
+        }
+      });
     }
 
     // ── Mermaid diagram ───────────────────────────────────────────────────────
@@ -1476,17 +2052,21 @@
       return `${sign}${pct.toFixed(0)}%`;
     }
     function deltaChips(delta) {
+      /* Excessive
       return [
         `${glyph(delta.revenue_index)}R ${signed(delta.revenue_index)}`,
         `${glyph(delta.market_share)}M ${signedPct(delta.market_share)}`,
         `${glyph(delta.tech_adoption_velocity)}T ${signedPct(delta.tech_adoption_velocity)}`,
       ].join(' · ');
+      */
+      return '';
     }
     function milestoneKpis(m) {
       const rev = m.metrics.revenue_index.toFixed(1);
       const share = Math.round(m.metrics.market_share * 100);
       const tech = Math.round(m.metrics.tech_adoption_velocity * 100);
-      return `rev ${rev}× · ms ${share}% · tav ${tech}%`;
+      // return `rev ${rev}× · ms ${share}% · tav ${tech}%`;
+      return '';
     }
     // 2040 projected KPIs for an outcome: baseline 2040 + branch delta.
     function outcomeKpis(scenario, branch) {
@@ -1495,7 +2075,8 @@
       const rev = (t2040.metrics.revenue_index + branch.metric_delta.revenue_index).toFixed(1);
       const share = Math.round(Math.max(0, Math.min(1, t2040.metrics.market_share + branch.metric_delta.market_share)) * 100);
       const tech = Math.round(Math.max(0, Math.min(1, t2040.metrics.tech_adoption_velocity + branch.metric_delta.tech_adoption_velocity)) * 100);
-      return `rev ${rev}× · ms ${share}% · tav ${tech}%`;
+      // return `rev ${rev}× · ms ${share}% · tav ${tech}%`;
+      return '';
     }
 
     function escMd(str) {
@@ -2450,10 +3031,13 @@
       const branchRows = branches.map(b => {
         const pct = Math.round(((b.probability ?? 0) * 100));
         const md = b.metric_delta || {};
+        /* rev: revenue, ms: market share, tav: tech adoptation velocity
         return `  · ${escapeHtml(b.label || b.id)} [${pct}%] `
           + `Δrev ${(+md.revenue_index || 0).toFixed(2)} `
           + `Δms ${((+md.market_share || 0) * 100).toFixed(1)}pp `
           + `Δtav ${((+md.tech_adoption_velocity || 0) * 100).toFixed(1)}pp`;
+          */
+        return '';
       }).join('\n');
       const rewireLine = rewires.length
         ? rewires.map(r => `${r.node_id}/${r.branch_id}`).join(', ')

@@ -433,7 +433,7 @@ The only documentation work is a short paragraph in `docs/walkthrough.md` (Phase
 - [ ] A `/revise` call seeded with *"what if instead, in 2028, eDreams had cancelled Prime?"* returns a tool call whose `add_node` operation uses `fork_from` (not `rewire_from`), and the resulting preview shows the past node with both its original branches and the new amber fork.
 - [ ] Saving the preview as a new scenario persists both the new node AND the new fork branches; subsequent loads render the divergent topology correctly without diff styling.
 
-### Phase 10: Scenario Management (FR-7)
+### Phase 10: Scenario and Data Management (FR-7)
 
 FR-7 delivers full lifecycle control over scenarios — create, rename, delete, export, and import — so that AI-generated variants and custom planners' edits become persistent, shareable artefacts rather than ephemeral session state.
 
@@ -461,13 +461,32 @@ The existing scenario selector dropdown gains two visual cues without a layout c
 - A **bookmark icon** prefix on user-saved variants (mirrors the chat-panel context indicator from Phase 9.3).
 - An **"Unsaved changes" dot** while a `/revise` preview is active but not yet saved — a reminder to either save or discard.
 
-#### 10.4 Acceptance Criteria for Phase 10
+#### 10.4 Non-Destructive Edit Semantics (FR-7 update)
+
+User-story addition (§FR-7): *"You should update the data of visualizing graph, without deleting the original data."*
+
+Every edit path — natural-language `/revise` (Phase 9.3) and direct manipulation via the Scenario Manager (§10.2) — produces a NEW scenario entry linked to its source via `parent_id`. The source row in `data/scenarios.json` is never mutated by an edit. This applies symmetrically to base **and** user scenarios:
+
+- **Base scenarios** — already protected by the HTTP 403 returned from `PUT /scenarios/{id}` and `DELETE /scenarios/{id}` (Phase 9.1). The `/revise` → Save-as-New flow (Phase 9.3) is the only mutation path, and it always emits a new `source: "user"` entry whose `parent_id` points at the base scenario.
+- **User scenarios** — `PUT /scenarios/{id}` is restricted to **metadata only** (`name`, `description`); it does not accept `nodes`, `timeline`, `metrics`, or any field that affects the visualizing graph. Payloads carrying graph keys are rejected with HTTP 400. Graph-level edits route through `POST /scenarios` with the user-scenario `id` as `parent_id`, producing a new variant alongside the original. This keeps the version chain auditable and lets the planner roll back by selecting the parent.
+- **Preview lifecycle** — the Phase 9.5 preview/discard semantics already enforce the same invariant in-flight: a `/revise` preview lives only in client memory until the planner clicks **Save as New**; **Discard preview** restores the snapshot without ever calling a mutating endpoint, so an aborted edit cannot reach `data/scenarios.json`.
+
+Version chain in the UI:
+
+- The **Scenario Manager** library list (§10.2) renders each row's `parent_id` as a focus link; clicking it scrolls to and highlights the parent row, letting the planner walk the chain back to its base ancestor.
+- The scenario selector dropdown (§10.3) indents variants under their parent so a forked tree of edits is visually obvious without opening the Manager.
+- Deleting a user scenario (`DELETE /scenarios/{id}`) does NOT cascade to its children — orphaned variants keep their `parent_id` pointing at a now-missing record. The Manager surfaces this as a faded "(deleted parent)" annotation rather than purging the children, so the planner's edit history survives a single bad delete.
+
+#### 10.5 Acceptance Criteria for Phase 10
 
 - [ ] User-created scenarios persist across browser reloads and server restarts (backed by `data/scenarios.json`).
 - [ ] Base scenarios cannot be renamed, edited metadata of, or deleted via the API (HTTP 403 enforced).
+- [ ] **Editing any existing scenario produces a new entry whose `parent_id` points to the source; the source row in `data/scenarios.json` is never mutated.** Verified for both base scenarios (via `/revise` → Save as New) and user scenarios (via Scenario Manager edits and `/revise`).
+- [ ] `PUT /scenarios/{id}` rejects payloads containing `nodes`, `timeline`, or `metrics` keys with HTTP 400 — metadata-only edits are the sole in-place mutation path for user scenarios.
 - [ ] A scenario exported from one session and imported into another round-trips without data loss — the imported scenario renders identically in the flowchart and market-share chart.
 - [ ] Renaming a scenario updates the selector dropdown in real time without a page reload.
 - [ ] Deleting a scenario that is currently active in the chat session gracefully falls back to the first base scenario and shows a dismissible toast notification.
+- [ ] Deleting a user scenario that has children leaves the children intact; the Manager flags them as "(deleted parent)" without auto-purging.
 - [ ] The Scenario Manager panel is reachable via keyboard navigation and its controls carry `aria-label` attributes.
 
 ### Phase 11: Google Cloud Deployment (Internal Access)
