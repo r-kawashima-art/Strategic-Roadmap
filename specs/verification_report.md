@@ -61,7 +61,7 @@ test_ndc_favours_efficiency_led_over_innovation_led (tests.test_wargame.Narrativ
 Under NDC adoption, an efficiency-led profile should out-fit an ... ok
 
 ----------------------------------------------------------------------
-Ran 33 tests in 0.028s
+Ran 33 tests in 0.031s
 
 OK
 ```

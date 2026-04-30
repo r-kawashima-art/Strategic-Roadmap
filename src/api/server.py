@@ -180,7 +180,7 @@ REVISE_SYSTEM_PREAMBLE = (
     "scenario has multiple terminal paths that serve different story lines and "
     "only one should flow into the new node — list the specific "
     "{node_id, branch_id} pairs to rewire and leave the rest terminal. "
-    # Phase 9.5: continuation vs. divergence guidance.
+
     "Pick the wiring mode for `add_node` based on the user's framing: "
     "When the user describes a turning point that EXTENDS the storyline past "
     "its current end (cues like 'and after that…', 'in 2038…', "
@@ -197,7 +197,7 @@ REVISE_SYSTEM_PREAMBLE = (
     "normalises at run time. "
     "Never set `next_node_id` on a `fork_from.branch` — the server sets it "
     "for you. Setting it manually will be rejected as out-of-scope. "
-    # Phase 10.5 — chronological invariant.
+
     "Pick the new node's `year` so that every predecessor that links INTO it "
     "is chronologically prior or simultaneous. Concretely: every `rewire_from` "
     "host node and every `fork_from.from_node_id` must have `year ≤ new_node.year`. "
@@ -901,13 +901,15 @@ async def import_scenario(file: UploadFile = File(...)) -> Dict[str, Any]:
 
 @app.post("/expand", dependencies=[Depends(require_bearer)])
 async def post_expand(req: ExpandRequest) -> Dict[str, Any]:
-    """Phase 8: extend the scenario line in response to a user question.
+    """Phase 8 + Phase 10.6: extend the scenario line with a new TurningPoint
+    in response to a user question and return a preview WITHOUT mutating
+    ``data/scenarios.json``.
 
-    The model is asked to mint a new TurningPointNode that logically follows
-    from the last turning point, and to list every currently-terminal branch
-    so the server can rewire them to flow into the new node. Rewiring and the
-    node insertion are applied atomically via
-    `scenario_patch.expand_scenario`.
+    The expansion is applied to a deep copy and surfaced to the client. The
+    user explicitly saves the result as a NEW user scenario via
+    ``POST /scenarios`` with ``parent_id`` set to the source — mirroring the
+    ``/revise`` → Save-as-New flow from Phase 9.3 and matching the Phase 10.4
+    non-destructive-edit invariant ("the source row is never mutated").
     """
     scenarios = _load_scenarios()
     target = _find_scenario(scenarios, req.scenario_id)
@@ -947,7 +949,8 @@ async def post_expand(req: ExpandRequest) -> Dict[str, Any]:
             detail="Expansion tool call missing `new_node` or `rewire_branches`.",
         )
 
-    # Dry-run on a deep copy — if validation fails the live file isn't touched.
+    # Apply on a deep copy ONLY — Phase 10.6 makes /expand non-destructive.
+    # The caller persists explicitly via POST /scenarios.
     draft = copy.deepcopy(scenarios)
     diff_op = {
         "op": "expand_scenario",
@@ -961,18 +964,19 @@ async def post_expand(req: ExpandRequest) -> Dict[str, Any]:
     except DiffError as exc:
         raise HTTPException(status_code=422, detail=f"Expansion rejected: {exc}")
 
-    SCENARIOS_PATH.write_text(json.dumps(draft, indent=2, ensure_ascii=False), encoding="utf-8")
+    preview_scenario = _find_scenario(draft, req.scenario_id)
 
     return {
-        "status": "applied",
+        "status": "preview",
         "summary": summary,
         "new_node": new_node,
         "rewire_branches": rewires,
-        "scenarios": draft,
+        "preview_scenario": preview_scenario,
         "note": (
-            "Scenario expanded. The 18 auto-generated path variants in "
-            "scenarios_generated.json are NOT re-computed — re-run "
-            "`python3 src/engine/simulator.py` to refresh them."
+            "Expansion applied to a preview only — data/scenarios.json was NOT "
+            "modified. Save as a new user scenario via the chat panel's "
+            "'Save as new' button (POST /scenarios with parent_id set to the "
+            "source scenario)."
         ),
         "usage": {
             "input_tokens": response.usage.input_tokens,

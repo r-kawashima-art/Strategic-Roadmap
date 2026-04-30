@@ -256,5 +256,247 @@ class ScenarioManagementTests(unittest.TestCase):
         self.assertEqual(detail["suggested_name"], "Variant A (2)")
 
 
+# ── Phase 10.6 — Turning Point Expansion Save Function ───────────────────
+
+
+def _expandable_fixture() -> dict:
+    """Fixture with terminal branches so /expand has something to rewire.
+
+    Mirrors the smallest valid shape `_expand_scenario` accepts: one base
+    scenario, one turning point (tp-001), two terminal branches.
+    """
+    return {
+        "base": [
+            {
+                "id": "scenario-001",
+                "name": "Base for expand",
+                "description": "fixture for /expand tests",
+                "timeline": [],
+                "metrics": {},
+                "nodes": [
+                    {
+                        "id": "tp-001",
+                        "year": 2025,
+                        "title": "NDC adoption",
+                        "description": "",
+                        "external_driver": "NDC adoption",
+                        "branches": [
+                            {
+                                "id": "tp-001-a", "label": "Embrace",
+                                "description": "", "probability": 0.6,
+                                "next_node_id": None,
+                                "metric_delta": {"revenue_index": 0.10,
+                                                 "market_share": 0.02,
+                                                 "tech_adoption_velocity": 0.05},
+                            },
+                            {
+                                "id": "tp-001-b", "label": "Resist",
+                                "description": "", "probability": 0.4,
+                                "next_node_id": None,
+                                "metric_delta": {"revenue_index": -0.05,
+                                                 "market_share": -0.01,
+                                                 "tech_adoption_velocity": -0.02},
+                            },
+                        ],
+                    }
+                ],
+            }
+        ],
+        "user": [],
+    }
+
+
+class ExpandSaveSemanticsTests(unittest.TestCase):
+    """Phase 10.6 — /expand is a non-destructive preview.
+
+    The endpoint historically wrote the entire scenarios array back to
+    `data/scenarios.json` before the user accepted, leaving "Reject" as a
+    UI-only no-op. This suite locks in the new contract:
+
+      * /expand returns ``status: "preview"`` and a ``preview_scenario``.
+      * The on-disk file is byte-identical before and after the call.
+      * Saving the preview via POST /scenarios produces a NEW user variant
+        whose ``parent_id`` points at the source, leaving the source
+        scenario row untouched (Phase 10.4 invariant).
+    """
+
+    def setUp(self) -> None:
+        from fastapi.testclient import TestClient
+
+        from src.api import server
+
+        self._server = server
+
+        self.tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, encoding="utf-8",
+        )
+        json.dump(_expandable_fixture(), self.tmp)
+        self.tmp.close()
+
+        self._patch = patch.object(server, "SCENARIOS_PATH", Path(self.tmp.name))
+        self._patch.start()
+
+        self.client = TestClient(server.app)
+        self.bearer = {"Authorization": "Bearer test-bearer"}
+
+    def tearDown(self) -> None:
+        self._patch.stop()
+        try:
+            os.unlink(self.tmp.name)
+        except OSError:
+            pass
+
+    def _read_disk_bytes(self) -> bytes:
+        return Path(self.tmp.name).read_bytes()
+
+    def _fake_expand_response(self) -> object:
+        """Build a stand-in for `client.messages.create()` returning a tool_use
+        block that satisfies `_expand_scenario`'s validation contract."""
+        from unittest.mock import MagicMock
+
+        block = MagicMock()
+        block.type = "tool_use"
+        block.input = {
+            "summary": "EU AI Act tightens, OTAs decide whether to comply",
+            "new_node": {
+                "id": "tp-002",
+                "year": 2030,
+                "title": "EU AI regulation",
+                "description": "EU AI Act tightens",
+                "external_driver": "GenAI breakthrough",
+                "branches": [
+                    {
+                        "id": "tp-002-a", "label": "Comply",
+                        "description": "", "probability": 0.6,
+                        "metric_delta": {"revenue_index": 0.05,
+                                         "market_share": 0.01,
+                                         "tech_adoption_velocity": 0.02},
+                    },
+                    {
+                        "id": "tp-002-b", "label": "Localise",
+                        "description": "", "probability": 0.4,
+                        "metric_delta": {"revenue_index": -0.05,
+                                         "market_share": -0.01,
+                                         "tech_adoption_velocity": -0.02},
+                    },
+                ],
+            },
+            "rewire_branches": [
+                {"node_id": "tp-001", "branch_id": "tp-001-a"},
+                {"node_id": "tp-001", "branch_id": "tp-001-b"},
+            ],
+        }
+        response = MagicMock()
+        response.content = [block]
+        response.usage = MagicMock(
+            input_tokens=1, output_tokens=1,
+            cache_read_input_tokens=0, cache_creation_input_tokens=0,
+        )
+        return response
+
+    def _patched_claude_client(self) -> object:
+        """Return an AsyncMock-backed client compatible with `await
+        client.messages.create(...)`."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        client = MagicMock()
+        client.messages = MagicMock()
+        client.messages.create = AsyncMock(return_value=self._fake_expand_response())
+        return client
+
+    # ── Tests ──────────────────────────────────────────────────────────────
+
+    def test_expand_returns_preview_without_writing_disk(self) -> None:
+        before = self._read_disk_bytes()
+        with patch.object(
+            self._server, "_get_claude_client",
+            return_value=self._patched_claude_client(),
+        ):
+            r = self.client.post(
+                "/expand",
+                json={"scenario_id": "scenario-001",
+                      "question": "What if EU passes strict AI rules in 2030?"},
+                headers=self.bearer,
+            )
+        after = self._read_disk_bytes()
+
+        self.assertEqual(r.status_code, 200, r.text)
+        body = r.json()
+        self.assertEqual(body["status"], "preview")
+        self.assertIn("preview_scenario", body)
+        self.assertNotIn("scenarios", body,
+                         "destructive 'scenarios' array must NOT be in /expand response")
+        # The disk file is byte-identical — Phase 10.6 non-destructive contract.
+        self.assertEqual(before, after,
+                         "/expand must not mutate data/scenarios.json")
+
+    def test_expand_preview_contains_new_node(self) -> None:
+        with patch.object(
+            self._server, "_get_claude_client",
+            return_value=self._patched_claude_client(),
+        ):
+            r = self.client.post(
+                "/expand",
+                json={"scenario_id": "scenario-001", "question": "what if?"},
+                headers=self.bearer,
+            )
+        self.assertEqual(r.status_code, 200, r.text)
+        preview = r.json()["preview_scenario"]
+        node_ids = [n["id"] for n in preview["nodes"]]
+        self.assertIn("tp-001", node_ids, "source node must survive in preview")
+        self.assertIn("tp-002", node_ids, "new TP must appear in preview")
+        # Terminal branches on tp-001 are now wired into tp-002.
+        tp001 = next(n for n in preview["nodes"] if n["id"] == "tp-001")
+        for b in tp001["branches"]:
+            self.assertEqual(b["next_node_id"], "tp-002",
+                             "rewire must redirect tp-001's terminals into tp-002")
+
+    def test_expand_preview_save_round_trips_as_new_variant(self) -> None:
+        # 1. /expand → preview only.
+        with patch.object(
+            self._server, "_get_claude_client",
+            return_value=self._patched_claude_client(),
+        ):
+            r = self.client.post(
+                "/expand",
+                json={"scenario_id": "scenario-001", "question": "what if?"},
+                headers=self.bearer,
+            )
+        self.assertEqual(r.status_code, 200)
+        preview = r.json()["preview_scenario"]
+
+        # 2. POST /scenarios with parent_id = source — emulates "Save as new".
+        save = self.client.post(
+            "/scenarios",
+            json={
+                "name": "Base for expand (expanded)",
+                "parent_id": "scenario-001",
+                "scenario_data": preview,
+            },
+            headers=self.bearer,
+        )
+        self.assertEqual(save.status_code, 200, save.text)
+        saved = save.json()
+        self.assertTrue(saved["id"].startswith("user-"))
+        self.assertEqual(saved["parent_id"], "scenario-001")
+
+        # 3. Source scenario row is intact — only tp-001 still, its branches
+        #    still terminal (no in-place mutation from the expand path).
+        disk = json.loads(Path(self.tmp.name).read_text(encoding="utf-8"))
+        original = next(s for s in disk["base"] if s["id"] == "scenario-001")
+        self.assertEqual([n["id"] for n in original["nodes"]], ["tp-001"])
+        for b in original["nodes"][0]["branches"]:
+            self.assertIsNone(
+                b["next_node_id"],
+                "source's terminal branches must not be rewired in place",
+            )
+
+        # 4. A user variant is now persisted with the expanded graph.
+        variants = [s for s in disk["user"] if s["id"] == saved["id"]]
+        self.assertEqual(len(variants), 1)
+        variant_node_ids = [n["id"] for n in variants[0]["nodes"]]
+        self.assertIn("tp-002", variant_node_ids)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

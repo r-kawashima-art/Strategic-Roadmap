@@ -3023,58 +3023,120 @@
 
     function renderExpansionCard(data) {
       const thread = document.getElementById('chat-thread');
-      const card = document.createElement('div');
-      card.className = 'chat-revision-card';
+
+      // Phase 10.6: live preview + Save-as-New, mirroring renderRevisionCard.
+      // The /expand endpoint now returns a `preview_scenario` rather than
+      // rewriting scenarios.json on the server, so the UI is the single
+      // source of truth for "saved" vs "discarded".
+      const previewScenario = data.preview_scenario;
+      const previewSnapshot = JSON.parse(JSON.stringify(scenarios[activeScenIdx] || baseScenario));
+
+      if (previewScenario) {
+        scenarios[activeScenIdx] = previewScenario;
+        // Reuse the Phase 9.4.2 diff overlay so the new TP renders with
+        // dashed amber + ✦ prefix and the rewired terminals stand out.
+        const diffContext = deriveDiffContext(previewScenario, previewSnapshot);
+        renderFlowchart(previewScenario, { preserveView: userZoomed, diffContext });
+        renderMarketShare();
+        updateChatContext();
+      }
+
+      chatState.previewActive = true;
+      chatState.previewSnapshot = previewSnapshot;
+      document.getElementById('preview-dot')?.classList.add('visible');
+
+      function clearPreview() {
+        chatState.previewActive = false;
+        chatState.previewSnapshot = null;
+        document.getElementById('preview-dot')?.classList.remove('visible');
+      }
+
       const node = data.new_node || {};
-      const branches = Array.isArray(node.branches) ? node.branches : [];
       const rewires = Array.isArray(data.rewire_branches) ? data.rewire_branches : [];
-      const branchRows = branches.map(b => {
-        const pct = Math.round(((b.probability ?? 0) * 100));
-        const md = b.metric_delta || {};
-        /* rev: revenue, ms: market share, tav: tech adoptation velocity
-        return `  · ${escapeHtml(b.label || b.id)} [${pct}%] `
-          + `Δrev ${(+md.revenue_index || 0).toFixed(2)} `
-          + `Δms ${((+md.market_share || 0) * 100).toFixed(1)}pp `
-          + `Δtav ${((+md.tech_adoption_velocity || 0) * 100).toFixed(1)}pp`;
-          */
-        return '';
-      }).join('\n');
       const rewireLine = rewires.length
         ? rewires.map(r => `${r.node_id}/${r.branch_id}`).join(', ')
         : '(none — new node is a standalone continuation)';
+      const defaultName = escapeHtml((previewScenario?.name || previewSnapshot.name || 'Scenario') + ' (expanded)');
 
+      const card = document.createElement('div');
+      card.className = 'chat-revision-card';
       card.innerHTML = `
-      <h4>Proposed scenario expansion</h4>
-      <div class="chat-revision-summary">${escapeHtml(data.summary || '(no summary)')}</div>
-      <div class="chat-revision-ops">New node: ${escapeHtml(node.id || '?')} · ${escapeHtml(String(node.year || '?'))} — ${escapeHtml(node.title || '')}
+        <h4>Proposed scenario expansion — live preview</h4>
+        <div class="chat-revision-summary">${escapeHtml(data.summary || '(no summary)')}</div>
+        <div class="chat-revision-ops">New node: ${escapeHtml(node.id || '?')} · ${escapeHtml(String(node.year || '?'))} — ${escapeHtml(node.title || '')}
 Driver: ${escapeHtml(node.external_driver || '?')}
-Branches:
-${branchRows}
-
 Rewiring terminal branches: ${escapeHtml(rewireLine)}</div>
-      <div class="chat-revision-actions">
-        <button type="button" class="cancel">Reject</button>
-        <button type="button" class="confirm">Apply &amp; reload</button>
-      </div>
-    `;
+        <div class="chat-save-form">
+          <input class="chat-save-input" type="text"
+                 placeholder="New scenario name…"
+                 value="${defaultName}"
+                 aria-label="Name for the saved scenario" />
+          <button type="button" class="confirm save-new">Save as new</button>
+        </div>
+        <div class="chat-revision-actions">
+          <button type="button" class="cancel">Discard preview</button>
+        </div>
+      `;
       thread.appendChild(card);
       thread.scrollTop = thread.scrollHeight;
 
-      const cancel = card.querySelector('.cancel');
-      const confirm = card.querySelector('.confirm');
-      cancel.addEventListener('click', () => {
+      const cancelBtn = card.querySelector('.cancel');
+      const saveBtn = card.querySelector('.save-new');
+      const nameInput = card.querySelector('.chat-save-input');
+
+      cancelBtn.addEventListener('click', () => {
+        scenarios[activeScenIdx] = previewSnapshot;
+        renderFlowchart(previewSnapshot, { preserveView: userZoomed });
+        renderMarketShare();
+        updateChatContext();
+        clearPreview();
         card.remove();
-        chatAppendSystem('Expansion rejected. scenarios.json was NOT modified on the server beyond the preview.');
+        chatAppendSystem('Expansion preview discarded. No changes were saved.');
       });
-      confirm.addEventListener('click', () => {
-        cancel.disabled = confirm.disabled = true;
-        if (Array.isArray(data.scenarios) && data.scenarios.length) {
-          rebuildSelector(data.scenarios, activeScenIdx);
-          renderFlowchart(scenarios[activeScenIdx], { preserveView: userZoomed });
+
+      saveBtn.addEventListener('click', async () => {
+        const name = nameInput.value.trim();
+        if (!name) { nameInput.focus(); return; }
+
+        saveBtn.disabled = cancelBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+
+        try {
+          const resp = await fetch(`${chatState.settings.apiBase}/scenarios`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${chatState.settings.apiKey}`,
+            },
+            body: JSON.stringify({
+              name,
+              parent_id: previewSnapshot.id || null,
+              scenario_data: previewScenario,
+            }),
+          });
+          const result = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(result.detail || `${resp.status} ${resp.statusText}`);
+
+          // Server assigned a fresh id and source:"user" — merge the metadata
+          // into the preview object so the local cache reflects the saved row.
+          const savedScenario = { ...previewScenario, ...result };
+
+          // Restore the source scenario in its slot so it stays unmutated;
+          // append the new variant at the end and switch the selector to it.
+          scenarios[activeScenIdx] = previewSnapshot;
+          scenarios.push(savedScenario);
+          rebuildSelector(scenarios, scenarios.length - 1);
+          renderFlowchart(savedScenario, { preserveView: userZoomed });
           renderMarketShare();
           updateChatContext();
+          clearPreview();
+          card.remove();
+          chatAppendSystem(`Saved expansion as "${escapeHtml(name)}". Select it any time from the scenario dropdown.`);
+        } catch (err) {
+          saveBtn.textContent = 'Save as new';
+          saveBtn.disabled = cancelBtn.disabled = false;
+          chatAppendError(`Save failed: ${err.message || err}`);
         }
-        chatAppendSystem(`Expansion applied. ${data.note || ''}`);
       });
     }
 

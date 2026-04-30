@@ -488,7 +488,20 @@ Develop the code logic that prevents the chronological contradiction when updati
 Action:
 Modify `src/api/scenario_patch.py` and other relevant files to implement the scenario update logic.
 
-#### 10.6 Acceptance Criteria for Phase 10
+#### 10.6 Turning Point Expansion Save Function
+
+Situtation:
+Currently, the user can ask the LLM to make a turning point of the scenario line so that the user can predict the trend of the OTA industry.However, after loading the changes, there is no way to save the changes to the scenario.
+
+Task:
+Develop the code logic that saves the changes to the scenario when using Expand/Turn-Point tool use.
+
+Action:
+
+- Analyze the `Expand/Turn-Point` tool use in `src/api/server.py`, and `src/api/scenario_patch.py`.
+- Modify relevant files to save the changes to the scenario.
+
+#### 10.7 Acceptance Criteria for Phase 10
 
 - [ ] User-created scenarios persist across browser reloads and server restarts (backed by `data/scenarios.json`).
 - [ ] Base scenarios cannot be renamed, edited metadata of, or deleted via the API (HTTP 403 enforced).

@@ -297,7 +297,7 @@
                 "tech_adoption_velocity": 0.08
               },
               "probability": 0.45,
-              "next_node_id": null
+              "next_node_id": "tp-004"
             },
             {
               "id": "tp-003-b",
@@ -309,7 +309,7 @@
                 "tech_adoption_velocity": 0.12
               },
               "probability": 0.35,
-              "next_node_id": null
+              "next_node_id": "tp-004"
             },
             {
               "id": "tp-003-c",
@@ -321,12 +321,64 @@
                 "tech_adoption_velocity": 0.0
               },
               "probability": 0.2,
-              "next_node_id": null
+              "next_node_id": "tp-004"
             }
           ],
           "source": "seed",
           "source_question": null,
           "parent_branch_ids": []
+        },
+        {
+          "id": "tp-004",
+          "year": 2036,
+          "title": "MakeMyTrip Achieves 50% Indian Market Dominance",
+          "description": "Riding India's explosive outbound travel boom, a UPI-native super-app strategy, and AI-powered vernacular trip planning, MakeMyTrip (MMT) consolidates Goibibo, redBus, and regional rail+bus inventory to capture over 50% of India's OTA market by 2036 — a market projected to exceed $50B GMV. This dominance creates a strategic inflection: does MMT use its home-market fortress to expand aggressively into South & Southeast Asia, invest in a proprietary GenAI travel OS to defend against global OTA encroachment, or position itself as a high-value acquisition target for a hyperscaler (Google, Amazon, or a sovereign wealth-backed conglomerate) seeking instant APAC scale?",
+          "external_driver": "Airline direct booking dominance",
+          "branches": [
+            {
+              "id": "tp-004-a",
+              "label": "Regional APAC Expansion",
+              "description": "MMT leverages its India dominance as a springboard into South Asia (Sri Lanka, Bangladesh, Nepal) and Southeast Asia (Indonesia, Vietnam, Philippines), building a pan-APAC super-app for price-sensitive, mobile-first travellers. Direct competition with Trip.com and Agoda on their home turf; high growth potential but capital-intensive.",
+              "probability": 0.35,
+              "metric_delta": {
+                "revenue_index": 0.18,
+                "market_share": 0.1,
+                "tech_adoption_velocity": 0.08
+              },
+              "next_node_id": null
+            },
+            {
+              "id": "tp-004-b",
+              "label": "Build a Proprietary GenAI Travel OS",
+              "description": "MMT bets its India data moat — billions of vernacular search queries, multi-modal (flight+rail+bus) booking graphs, and price-sensitivity signals — on training a best-in-class South Asian travel AI. The OS is licensed to airlines, hotels, and regional OTAs, transforming MMT from a retailer into a B2B2C platform. High R&D burn; defensible against global AI gatekeepers if India data is truly unique.",
+              "probability": 0.4,
+              "metric_delta": {
+                "revenue_index": 0.2,
+                "market_share": 0.08,
+                "tech_adoption_velocity": 0.15
+              },
+              "next_node_id": null
+            },
+            {
+              "id": "tp-004-c",
+              "label": "Accept Hyperscaler Acquisition",
+              "description": "With 50%+ Indian market share and a proven AI stack, MMT becomes an irresistible target for Google (Flights/Maps synergy), Amazon (Prime Travel bundle), or a Gulf sovereign fund seeking APAC travel exposure. An exit crystallises shareholder value but cedes strategic independence; the acquirer's global distribution could supercharge or subsume the MMT brand.",
+              "probability": 0.25,
+              "metric_delta": {
+                "revenue_index": -0.05,
+                "market_share": -0.02,
+                "tech_adoption_velocity": 0.05
+              },
+              "next_node_id": null
+            }
+          ],
+          "source": "expansion",
+          "source_question": "What if makeMyTrip dominated the indian market by 50%?",
+          "parent_branch_ids": [
+            "tp-003-a",
+            "tp-003-b",
+            "tp-003-c"
+          ]
         }
       ],
       "strategic_profiles": [
@@ -18914,6 +18966,1480 @@
       "parent_id": "user-0a9a527dfd5d",
       "created_at": "2026-04-30T06:30:27.040543+00:00",
       "updated_at": "2026-04-30T06:30:27.040543+00:00"
+    },
+    {
+      "id": "user-ff01e0086c64",
+      "name": "AI Leapfrog (Thank you)",
+      "description": "A scenario where NDC-driven retailing, Generative-AI travel agents, and airline direct-booking pressure compound over 2025–2040. Early movers that build or partner into AI concierges capture the consumer surface; laggards on traditional search-and-book UX commoditize. Airline direct booking crosses 50% by 2032, forcing OTAs to pivot to complex itineraries, become AI-first aggregators, or consolidate out.",
+      "timeline": [
+        {
+          "year": 1990,
+          "metrics": {
+            "revenue_index": 1,
+            "market_share": 0.02,
+            "tech_adoption_velocity": 0.05
+          },
+          "label": "OTA industry nascent (pre-web)"
+        },
+        {
+          "year": 1995,
+          "metrics": {
+            "revenue_index": 1.5,
+            "market_share": 0.03,
+            "tech_adoption_velocity": 0.1
+          },
+          "label": null
+        },
+        {
+          "year": 2000,
+          "metrics": {
+            "revenue_index": 3.5,
+            "market_share": 0.12,
+            "tech_adoption_velocity": 0.22
+          },
+          "label": "Dot-com peak; first OTA IPOs"
+        },
+        {
+          "year": 2001,
+          "metrics": {
+            "revenue_index": 2.8,
+            "market_share": 0.1,
+            "tech_adoption_velocity": 0.22
+          },
+          "label": "9/11 travel shock"
+        },
+        {
+          "year": 2005,
+          "metrics": {
+            "revenue_index": 6,
+            "market_share": 0.22,
+            "tech_adoption_velocity": 0.32
+          },
+          "label": "Priceline acquires Booking.com"
+        },
+        {
+          "year": 2007,
+          "metrics": {
+            "revenue_index": 8.5,
+            "market_share": 0.28,
+            "tech_adoption_velocity": 0.38
+          },
+          "label": "iPhone launch — mobile era begins"
+        },
+        {
+          "year": 2008,
+          "metrics": {
+            "revenue_index": 7.2,
+            "market_share": 0.28,
+            "tech_adoption_velocity": 0.4
+          },
+          "label": "Global financial crisis"
+        },
+        {
+          "year": 2010,
+          "metrics": {
+            "revenue_index": 8.5,
+            "market_share": 0.31,
+            "tech_adoption_velocity": 0.45
+          },
+          "label": "Mobile booking scales"
+        },
+        {
+          "year": 2011,
+          "metrics": {
+            "revenue_index": 9.2,
+            "market_share": 0.33,
+            "tech_adoption_velocity": 0.48
+          },
+          "label": "Airbnb $1B valuation — home-sharing enters OTA airspace"
+        },
+        {
+          "year": 2015,
+          "metrics": {
+            "revenue_index": 12,
+            "market_share": 0.36,
+            "tech_adoption_velocity": 0.58
+          },
+          "label": "Meta-search era; mobile majority of bookings"
+        },
+        {
+          "year": 2017,
+          "metrics": {
+            "revenue_index": 14,
+            "market_share": 0.37,
+            "tech_adoption_velocity": 0.62
+          },
+          "label": "Google Flights / Hotel Ads push intensifies"
+        },
+        {
+          "year": 2019,
+          "metrics": {
+            "revenue_index": 17,
+            "market_share": 0.38,
+            "tech_adoption_velocity": 0.68
+          },
+          "label": "Pre-pandemic peak (~$400B gross bookings)"
+        },
+        {
+          "year": 2020,
+          "metrics": {
+            "revenue_index": 5.5,
+            "market_share": 0.32,
+            "tech_adoption_velocity": 0.7
+          },
+          "label": "COVID-19 collapse (-67%)"
+        },
+        {
+          "year": 2022,
+          "metrics": {
+            "revenue_index": 14.5,
+            "market_share": 0.34,
+            "tech_adoption_velocity": 0.72
+          },
+          "label": "Recovery to pre-COVID volume for leaders"
+        },
+        {
+          "year": 2023,
+          "metrics": {
+            "revenue_index": 18,
+            "market_share": 0.35,
+            "tech_adoption_velocity": 0.74
+          },
+          "label": "GenAI emergence; Expedia Trip Planner / TripGenie launch"
+        },
+        {
+          "year": 2024,
+          "metrics": {
+            "revenue_index": 20.5,
+            "market_share": 0.36,
+            "tech_adoption_velocity": 0.76
+          },
+          "label": "Record year — BKNG $23.7B, EXPE $13.7B, ABNB $11.1B"
+        },
+        {
+          "year": 2025,
+          "metrics": {
+            "revenue_index": 22.5,
+            "market_share": 0.36,
+            "tech_adoption_velocity": 0.78
+          },
+          "label": "NDC 21.3 mainstream; AI agent pilots; OpenAI Operator GA"
+        },
+        {
+          "year": 2028,
+          "metrics": {
+            "revenue_index": 28,
+            "market_share": 0.38,
+            "tech_adoption_velocity": 0.83
+          },
+          "label": null
+        },
+        {
+          "year": 2030,
+          "metrics": {
+            "revenue_index": 33,
+            "market_share": 0.4,
+            "tech_adoption_velocity": 0.86
+          },
+          "label": "AI agents reshape booking"
+        },
+        {
+          "year": 2035,
+          "metrics": {
+            "revenue_index": 45,
+            "market_share": 0.42,
+            "tech_adoption_velocity": 0.91
+          },
+          "label": null
+        },
+        {
+          "year": 2040,
+          "metrics": {
+            "revenue_index": 60,
+            "market_share": 0.45,
+            "tech_adoption_velocity": 0.94
+          },
+          "label": "Autonomous travel planning default"
+        }
+      ],
+      "nodes": [
+        {
+          "id": "tp-001",
+          "year": 2025,
+          "title": "NDC + ONE Order Adoption",
+          "description": "IATA NDC 21.3 and ONE Order go mainstream on major carriers (Lufthansa Group, British Airways, American, Singapore). Retailing shifts from GDS passive content to airline-controlled offer management. OTAs decide whether to build direct NDC pipelines — unlocking ancillary revenue (seats, bags, meals) at the cost of higher integration effort — or stay passive behind GDS aggregators and risk eroding content parity against airline.com.",
+          "external_driver": "NDC adoption",
+          "branches": [
+            {
+              "id": "tp-001-a",
+              "label": "Embrace NDC + ONE Order",
+              "description": "Build direct NDC pipelines to the major carriers; integrate airline Offer & Order management; capture rich content and ancillary margin. Higher cost-to-serve per booking, but a defensible content-parity moat.",
+              "metric_delta": {
+                "revenue_index": 0.05,
+                "market_share": 0.02,
+                "tech_adoption_velocity": 0.1
+              },
+              "probability": 0.7,
+              "next_node_id": "tp-002"
+            },
+            {
+              "id": "tp-001-b",
+              "label": "Stay GDS-first",
+              "description": "Maintain Amadeus / Sabre / Travelport as the primary channel; mitigate content gaps with aggregator partnerships. Lower upfront cost; gradual content parity erosion vs direct airline.com over 2–3 years.",
+              "metric_delta": {
+                "revenue_index": -0.03,
+                "market_share": -0.04,
+                "tech_adoption_velocity": 0.02
+              },
+              "probability": 0.3,
+              "next_node_id": "tp-002"
+            }
+          ],
+          "source": "seed",
+          "source_question": null,
+          "parent_branch_ids": []
+        },
+        {
+          "id": "tp-002",
+          "year": 2028,
+          "title": "AI Agent Gateway Decision",
+          "description": "Generative-AI-powered travel agents (OpenAI Operator, Anthropic computer-use, Perplexity Travel, Google Gemini Travel) move from pilot to consumer default. Whoever sits between the user and the inventory captures the consumer relationship — and the margin. OTAs decide whether to build the agent themselves, partner with a platform provider, or defer the bet and protect the legacy search-and-book funnel.",
+          "external_driver": "GenAI breakthrough",
+          "branches": [
+            {
+              "id": "tp-002-a",
+              "label": "Build Proprietary AI Concierge",
+              "description": "Heavy R&D into in-house conversational booking (successor generations of Expedia Trip Planner, Trip.com TripGenie, Priceline Penny). Owns the consumer surface; defensible moat if adoption lands.",
+              "metric_delta": {
+                "revenue_index": 0.12,
+                "market_share": 0.06,
+                "tech_adoption_velocity": 0.15
+              },
+              "probability": 0.3,
+              "next_node_id": "tp-003"
+            },
+            {
+              "id": "tp-002-b",
+              "label": "Partner with AI Gatekeepers",
+              "description": "Integrate as the travel-fulfillment backend for OpenAI / Anthropic / Google agents. Fast to market, low R&D burn; gives up the consumer-facing surface to whoever owns the assistant.",
+              "metric_delta": {
+                "revenue_index": 0.08,
+                "market_share": 0.03,
+                "tech_adoption_velocity": 0.12
+              },
+              "probability": 0.5,
+              "next_node_id": "tp-003"
+            },
+            {
+              "id": "tp-002-c",
+              "label": "Defer AI Investment",
+              "description": "Double down on search-and-book UX and performance marketing. Lowest short-term cost; highest risk of being routed around once agents reach mainstream adoption (2029–2031 central estimate).",
+              "metric_delta": {
+                "revenue_index": -0.02,
+                "market_share": -0.05,
+                "tech_adoption_velocity": 0.03
+              },
+              "probability": 0.2,
+              "next_node_id": "tp-003"
+            }
+          ],
+          "source": "seed",
+          "source_question": null,
+          "parent_branch_ids": []
+        },
+        {
+          "id": "tp-003",
+          "year": 2032,
+          "title": "Airline Direct-Booking Tipping Point",
+          "description": "Airlines capture >50% of flight bookings directly on domestic routes — propelled by NDC, loyalty-program lock-in, and AI agents that now query airline.com directly. OTAs no longer 'own' the flight transaction and must redefine the value proposition or consolidate.",
+          "external_driver": "Airline direct booking dominance",
+          "branches": [
+            {
+              "id": "tp-003-a",
+              "label": "Pivot to Complex Itineraries",
+              "description": "Focus on multi-city, multi-modal (flight + rail + car + lodge), multi-PNR itineraries that airlines and their AI agents cannot serve directly. Higher margin per trip; smaller addressable market.",
+              "metric_delta": {
+                "revenue_index": 0.1,
+                "market_share": -0.02,
+                "tech_adoption_velocity": 0.08
+              },
+              "probability": 0.45,
+              "next_node_id": "tp-004"
+            },
+            {
+              "id": "tp-003-b",
+              "label": "Become AI-First Aggregator",
+              "description": "Transform into a marketplace API layer that suppliers plug into and consumer-facing AI agents query. Volume play in a post-consumer-UX world; margin compresses but scale is enormous.",
+              "metric_delta": {
+                "revenue_index": 0.15,
+                "market_share": 0.05,
+                "tech_adoption_velocity": 0.12
+              },
+              "probability": 0.35,
+              "next_node_id": "tp-004"
+            },
+            {
+              "id": "tp-003-c",
+              "label": "Consolidate or Exit",
+              "description": "M&A to gain scale, sell to a hyperscaler, or exit the market as unit economics compress beyond viable return on ad spend.",
+              "metric_delta": {
+                "revenue_index": -0.2,
+                "market_share": -0.15,
+                "tech_adoption_velocity": 0
+              },
+              "probability": 0.2,
+              "next_node_id": "tp-004"
+            }
+          ],
+          "source": "seed",
+          "source_question": null,
+          "parent_branch_ids": []
+        },
+        {
+          "id": "tp-004",
+          "year": 2036,
+          "title": "MakeMyTrip Achieves 50% Indian Market Dominance",
+          "description": "Riding India's explosive outbound travel boom, a UPI-native super-app strategy, and AI-powered vernacular trip planning, MakeMyTrip (MMT) consolidates Goibibo, redBus, and regional rail+bus inventory to capture over 50% of India's OTA market by 2036 — a market projected to exceed $50B GMV. This dominance creates a strategic inflection: does MMT use its home-market fortress to expand aggressively into South & Southeast Asia, invest in a proprietary GenAI travel OS to defend against global OTA encroachment, or position itself as a high-value acquisition target for a hyperscaler (Google, Amazon, or a sovereign wealth-backed conglomerate) seeking instant APAC scale?",
+          "external_driver": "Airline direct booking dominance",
+          "branches": [
+            {
+              "id": "tp-004-a",
+              "label": "Regional APAC Expansion",
+              "description": "MMT leverages its India dominance as a springboard into South Asia (Sri Lanka, Bangladesh, Nepal) and Southeast Asia (Indonesia, Vietnam, Philippines), building a pan-APAC super-app for price-sensitive, mobile-first travellers. Direct competition with Trip.com and Agoda on their home turf; high growth potential but capital-intensive.",
+              "probability": 0.35,
+              "metric_delta": {
+                "revenue_index": 0.18,
+                "market_share": 0.1,
+                "tech_adoption_velocity": 0.08
+              },
+              "next_node_id": "tp-005"
+            },
+            {
+              "id": "tp-004-b",
+              "label": "Build a Proprietary GenAI Travel OS",
+              "description": "MMT bets its India data moat — billions of vernacular search queries, multi-modal (flight+rail+bus) booking graphs, and price-sensitivity signals — on training a best-in-class South Asian travel AI. The OS is licensed to airlines, hotels, and regional OTAs, transforming MMT from a retailer into a B2B2C platform. High R&D burn; defensible against global AI gatekeepers if India data is truly unique.",
+              "probability": 0.4,
+              "metric_delta": {
+                "revenue_index": 0.2,
+                "market_share": 0.08,
+                "tech_adoption_velocity": 0.15
+              },
+              "next_node_id": "tp-005"
+            },
+            {
+              "id": "tp-004-c",
+              "label": "Accept Hyperscaler Acquisition",
+              "description": "With 50%+ Indian market share and a proven AI stack, MMT becomes an irresistible target for Google (Flights/Maps synergy), Amazon (Prime Travel bundle), or a Gulf sovereign fund seeking APAC travel exposure. An exit crystallises shareholder value but cedes strategic independence; the acquirer's global distribution could supercharge or subsume the MMT brand.",
+              "probability": 0.25,
+              "metric_delta": {
+                "revenue_index": -0.05,
+                "market_share": -0.02,
+                "tech_adoption_velocity": 0.05
+              },
+              "next_node_id": "tp-005"
+            }
+          ],
+          "source": "expansion",
+          "source_question": "What if makeMyTrip dominated the indian market by 50%?",
+          "parent_branch_ids": [
+            "tp-003-a",
+            "tp-003-b",
+            "tp-003-c"
+          ]
+        },
+        {
+          "id": "tp-005",
+          "year": 2039,
+          "title": "MakeMyTrip Achieves 70% Indian Market Dominance",
+          "description": "By 2039, MakeMyTrip commands an unprecedented 70% share of India's OTA market — now a $70B+ GMV opportunity — by fully absorbing redBus, Goibibo, and regional rail+bus corridors into a unified UPI-native super-app powered by a proprietary South Asian travel AI. This hyper-dominant position triggers a three-way strategic inflection: (1) use India as a launchpad for aggressive pan-Asian expansion against Trip.com and Agoda, (2) spin up a sovereign-grade AI travel data platform licensed to governments and large enterprises across the Global South, or (3) face antitrust and regulatory break-up pressure from the Competition Commission of India (CCI) and international regulators, forcing structural remedies.",
+          "external_driver": "Airline direct booking dominance",
+          "branches": [
+            {
+              "id": "tp-005-a",
+              "label": "Pan-Asian Super-App Blitz",
+              "description": "MMT leverages its 70% Indian stronghold as both a capital base and a brand proof-point to aggressively enter Southeast Asia (Indonesia, Vietnam, Thailand, Philippines) and South Asia (Bangladesh, Sri Lanka, Nepal). Deep UPI-interoperability and GenAI vernacular trip planning give it an edge over incumbents (Trip.com, Agoda) in price-sensitive, mobile-first corridors. Capital-intensive but addressable market doubles overnight.",
+              "probability": 0.35,
+              "metric_delta": {
+                "revenue_index": 0.22,
+                "market_share": 0.12,
+                "tech_adoption_velocity": 0.1
+              },
+              "next_node_id": null
+            },
+            {
+              "id": "tp-005-b",
+              "label": "Sovereign AI Travel Data Platform",
+              "description": "MMT monetises its unrivalled Indian travel data moat — billions of multi-modal (flight + rail + bus + hotel) queries, price-sensitivity signals, and vernacular interactions — by launching a B2G/B2B2C AI platform licensed to governments (National Tourism Boards, railway operators) and large enterprises across the Global South. Transforms MMT from a retailer into an infrastructure layer, commanding SaaS-like recurring margins and insulating it from airline direct-booking erosion.",
+              "probability": 0.4,
+              "metric_delta": {
+                "revenue_index": 0.2,
+                "market_share": 0.08,
+                "tech_adoption_velocity": 0.15
+              },
+              "next_node_id": null
+            },
+            {
+              "id": "tp-005-c",
+              "label": "Regulatory Break-Up & Structural Remedies",
+              "description": "A 70% market share triggers CCI intervention and potentially SEBI scrutiny; international regulators pile on as MMT's AI platform shows signs of data-lock-in and predatory pricing against smaller Indian OTAs. Structural remedies — mandatory data-sharing APIs, algorithmic audits, forced divestiture of redBus or Goibibo — fragment the super-app and erode the competitive moat. Revenue and share contract in the near term, though a leaner, compliant entity could re-accelerate post-2041.",
+              "probability": 0.25,
+              "metric_delta": {
+                "revenue_index": -0.1,
+                "market_share": -0.08,
+                "tech_adoption_velocity": 0.02
+              },
+              "next_node_id": null
+            }
+          ],
+          "source": "expansion",
+          "source_question": "What if MakeMyTrip dominates 70% share of the Indian market?",
+          "parent_branch_ids": [
+            "tp-004-a",
+            "tp-004-b",
+            "tp-004-c"
+          ]
+        }
+      ],
+      "strategic_profiles": [
+        {
+          "name": "Cost Leader",
+          "description": "Volume-and-scale play: wins on commoditized hotel and flight inventory via performance marketing, aggressive cancellation flexibility, and operational efficiency. Typical of budget- focused brands (Agoda, eDreams), subscription-led price players, and flight-only aggregators.",
+          "ai_adoption_bias": 0.4,
+          "direct_booking_resilience": 0.3,
+          "strategic_stance": "Efficiency-led"
+        },
+        {
+          "name": "Differentiator",
+          "description": "Content and experience play: invests in AI-driven personalization, premium UX (Trip Planner, AI concierges), unique inventory (Vrbo / homes), and brand. Defensible against airline direct-booking pressure because the value-add isn't just the ticket — it's itinerary, stay, and ancillary.",
+          "ai_adoption_bias": 0.9,
+          "direct_booking_resilience": 0.7,
+          "strategic_stance": "Innovation-led"
+        },
+        {
+          "name": "Niche Search",
+          "description": "Technical-moat play: solves a hard specialist problem airlines and hyperscalers can't easily copy — multi-city virtual interlining (Kiwi.com), complex multi-PNR itineraries, regional dominance. Volume is small but margin per booking and customer loyalty are high.",
+          "ai_adoption_bias": 0.7,
+          "direct_booking_resilience": 0.5,
+          "strategic_stance": "Innovation-led"
+        }
+      ],
+      "competitors": [
+        {
+          "name": "Booking Holdings",
+          "key_capability": "Global performance-marketing scale; multi-brand (Booking.com, Priceline, Kayak); AI trip-planner / Priceline Penny; genius loyalty programme.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.5,
+            "ai_agent_adoption": 0.65,
+            "strategic_orientation": "Innovation-led"
+          },
+          "default_profile": "Differentiator",
+          "initial_market_share": 0.278,
+          "metadata": {
+            "source": "Booking Holdings FY2024 10-K (NASDAQ: BKNG, ~$23.7B revenue)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "23.7"
+          }
+        },
+        {
+          "name": "Expedia Group",
+          "key_capability": "Brand portfolio (Expedia, Hotels.com, Vrbo); Trip Planner AI; retail + B2B (Expedia Partner Solutions, ~20% of revenue).",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.5,
+            "ai_agent_adoption": 0.65,
+            "strategic_orientation": "Innovation-led"
+          },
+          "default_profile": "Differentiator",
+          "initial_market_share": 0.16,
+          "metadata": {
+            "source": "Expedia Group FY2024 10-K (NASDAQ: EXPE, ~$13.7B revenue)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "13.7"
+          }
+        },
+        {
+          "name": "Airbnb",
+          "key_capability": "Home-sharing marketplace + experiences; high brand recall with under-35 segment; AI-powered trip-planning rollout 2025.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.2,
+            "ai_agent_adoption": 0.7,
+            "strategic_orientation": "Innovation-led"
+          },
+          "default_profile": "Differentiator",
+          "initial_market_share": 0.13,
+          "metadata": {
+            "source": "Airbnb Inc. FY2024 10-K (NASDAQ: ABNB, ~$11.1B revenue)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "11.1"
+          }
+        },
+        {
+          "name": "Trip.com Group",
+          "key_capability": "APAC dominance (China/SEA); TripGenie AI assistant at scale; outbound China travel recovery tailwind; Skyscanner metasearch.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.4,
+            "ai_agent_adoption": 0.75,
+            "strategic_orientation": "Innovation-led"
+          },
+          "default_profile": "Differentiator",
+          "initial_market_share": 0.09,
+          "metadata": {
+            "source": "Trip.com Group FY2024 Annual Report (NASDAQ/HK: TCOM, ~$7.3B revenue, ¥53.4B)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "7.3"
+          }
+        },
+        {
+          "name": "Agoda",
+          "key_capability": "APAC accommodations specialist; aggressive pricing + mobile-first UX; AgodaGPT pilot launched 2023; part of Booking Holdings.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.4,
+            "ai_agent_adoption": 0.6,
+            "strategic_orientation": "Efficiency-led"
+          },
+          "default_profile": "Cost Leader",
+          "initial_market_share": 0.045,
+          "metadata": {
+            "source": "Booking Holdings FY2024 10-K (Agoda segment, est. ~$3.8B)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "3.8"
+          }
+        },
+        {
+          "name": "MakeMyTrip",
+          "key_capability": "India's dominant OTA (MMT, Goibibo, redBus brands); outbound India travel tailwind; fast-growing B2B and corporate-travel book.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.35,
+            "ai_agent_adoption": 0.5,
+            "strategic_orientation": "Efficiency-led"
+          },
+          "default_profile": "Cost Leader",
+          "initial_market_share": 0.01,
+          "metadata": {
+            "source": "MakeMyTrip FY2024 20-F (NASDAQ: MMYT, ~$782M revenue)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "0.78"
+          }
+        },
+        {
+          "name": "eDreams ODIGEO",
+          "key_capability": "Prime Subscription (6.7M+ members, ~55% of revenue); flights-first European metasearch lineage; AI-assisted personalization on Prime.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.5,
+            "ai_agent_adoption": 0.55,
+            "strategic_orientation": "Efficiency-led"
+          },
+          "default_profile": "Cost Leader",
+          "initial_market_share": 0.02,
+          "metadata": {
+            "source": "eDreams ODIGEO FY2025 Annual Report (BME: EDR, ~€674M revenue)",
+            "source_year": "2025",
+            "revenue_proxy_usd_bn": "0.73"
+          }
+        },
+        {
+          "name": "Etraveli Group",
+          "key_capability": "Nordic flights-focused OTA + white-label flight search backend (powers Booking.com Flights); B2B2C flight distribution specialist.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.45,
+            "ai_agent_adoption": 0.55,
+            "strategic_orientation": "Efficiency-led"
+          },
+          "default_profile": "Niche Search",
+          "initial_market_share": 0.005,
+          "metadata": {
+            "source": "Etraveli Group 2023 filings (CVC Capital portfolio, private)",
+            "source_year": "2023",
+            "revenue_proxy_usd_bn": "0.40"
+          }
+        },
+        {
+          "name": "Kiwi.com",
+          "key_capability": "Virtual Interlining — ML-generated multi-PNR itineraries across non-partner carriers (proprietary algorithm); high-margin long-tail multi-city routes.",
+          "initial_position": {
+            "airline_direct_booking_dominance": 0.3,
+            "ai_agent_adoption": 0.65,
+            "strategic_orientation": "Innovation-led"
+          },
+          "default_profile": "Niche Search",
+          "initial_market_share": 0.01,
+          "metadata": {
+            "source": "Kiwi.com 2024 reported bookings (~$1.8B GMV, private; General Atlantic-backed)",
+            "source_year": "2024",
+            "revenue_proxy_usd_bn": "0.22"
+          }
+        }
+      ],
+      "metadata": {
+        "author": "Strategic Roadmap Engine",
+        "version": "1.0",
+        "base_year": "2025",
+        "frameworks": "PESTEL, Porter's Five Forces, 2x2+S Matrix"
+      },
+      "market_share_projection": {
+        "Booking Holdings": [
+          {
+            "year": 1990,
+            "share": 0.278
+          },
+          {
+            "year": 1995,
+            "share": 0.278
+          },
+          {
+            "year": 2000,
+            "share": 0.278
+          },
+          {
+            "year": 2001,
+            "share": 0.278
+          },
+          {
+            "year": 2005,
+            "share": 0.278
+          },
+          {
+            "year": 2007,
+            "share": 0.278
+          },
+          {
+            "year": 2008,
+            "share": 0.278
+          },
+          {
+            "year": 2010,
+            "share": 0.278
+          },
+          {
+            "year": 2011,
+            "share": 0.278
+          },
+          {
+            "year": 2015,
+            "share": 0.278
+          },
+          {
+            "year": 2017,
+            "share": 0.278
+          },
+          {
+            "year": 2019,
+            "share": 0.278
+          },
+          {
+            "year": 2020,
+            "share": 0.278
+          },
+          {
+            "year": 2022,
+            "share": 0.278
+          },
+          {
+            "year": 2023,
+            "share": 0.278
+          },
+          {
+            "year": 2024,
+            "share": 0.278
+          },
+          {
+            "year": 2025,
+            "share": 0.278
+          },
+          {
+            "year": 2028,
+            "share": 0.2906
+          },
+          {
+            "year": 2030,
+            "share": 0.3073
+          },
+          {
+            "year": 2035,
+            "share": 0.2952
+          },
+          {
+            "year": 2040,
+            "share": 0.2952
+          }
+        ],
+        "Expedia Group": [
+          {
+            "year": 1990,
+            "share": 0.16
+          },
+          {
+            "year": 1995,
+            "share": 0.16
+          },
+          {
+            "year": 2000,
+            "share": 0.16
+          },
+          {
+            "year": 2001,
+            "share": 0.16
+          },
+          {
+            "year": 2005,
+            "share": 0.16
+          },
+          {
+            "year": 2007,
+            "share": 0.16
+          },
+          {
+            "year": 2008,
+            "share": 0.16
+          },
+          {
+            "year": 2010,
+            "share": 0.16
+          },
+          {
+            "year": 2011,
+            "share": 0.16
+          },
+          {
+            "year": 2015,
+            "share": 0.16
+          },
+          {
+            "year": 2017,
+            "share": 0.16
+          },
+          {
+            "year": 2019,
+            "share": 0.16
+          },
+          {
+            "year": 2020,
+            "share": 0.16
+          },
+          {
+            "year": 2022,
+            "share": 0.16
+          },
+          {
+            "year": 2023,
+            "share": 0.16
+          },
+          {
+            "year": 2024,
+            "share": 0.16
+          },
+          {
+            "year": 2025,
+            "share": 0.16
+          },
+          {
+            "year": 2028,
+            "share": 0.1832
+          },
+          {
+            "year": 2030,
+            "share": 0.1893
+          },
+          {
+            "year": 2035,
+            "share": 0.1772
+          },
+          {
+            "year": 2040,
+            "share": 0.1772
+          }
+        ],
+        "Airbnb": [
+          {
+            "year": 1990,
+            "share": 0.13
+          },
+          {
+            "year": 1995,
+            "share": 0.13
+          },
+          {
+            "year": 2000,
+            "share": 0.13
+          },
+          {
+            "year": 2001,
+            "share": 0.13
+          },
+          {
+            "year": 2005,
+            "share": 0.13
+          },
+          {
+            "year": 2007,
+            "share": 0.13
+          },
+          {
+            "year": 2008,
+            "share": 0.13
+          },
+          {
+            "year": 2010,
+            "share": 0.13
+          },
+          {
+            "year": 2011,
+            "share": 0.13
+          },
+          {
+            "year": 2015,
+            "share": 0.13
+          },
+          {
+            "year": 2017,
+            "share": 0.13
+          },
+          {
+            "year": 2019,
+            "share": 0.13
+          },
+          {
+            "year": 2020,
+            "share": 0.13
+          },
+          {
+            "year": 2022,
+            "share": 0.13
+          },
+          {
+            "year": 2023,
+            "share": 0.13
+          },
+          {
+            "year": 2024,
+            "share": 0.13
+          },
+          {
+            "year": 2025,
+            "share": 0.13
+          },
+          {
+            "year": 2028,
+            "share": 0.1559
+          },
+          {
+            "year": 2030,
+            "share": 0.1593
+          },
+          {
+            "year": 2035,
+            "share": 0.1473
+          },
+          {
+            "year": 2040,
+            "share": 0.1473
+          }
+        ],
+        "Trip.com Group": [
+          {
+            "year": 1990,
+            "share": 0.09
+          },
+          {
+            "year": 1995,
+            "share": 0.09
+          },
+          {
+            "year": 2000,
+            "share": 0.09
+          },
+          {
+            "year": 2001,
+            "share": 0.09
+          },
+          {
+            "year": 2005,
+            "share": 0.09
+          },
+          {
+            "year": 2007,
+            "share": 0.09
+          },
+          {
+            "year": 2008,
+            "share": 0.09
+          },
+          {
+            "year": 2010,
+            "share": 0.09
+          },
+          {
+            "year": 2011,
+            "share": 0.09
+          },
+          {
+            "year": 2015,
+            "share": 0.09
+          },
+          {
+            "year": 2017,
+            "share": 0.09
+          },
+          {
+            "year": 2019,
+            "share": 0.09
+          },
+          {
+            "year": 2020,
+            "share": 0.09
+          },
+          {
+            "year": 2022,
+            "share": 0.09
+          },
+          {
+            "year": 2023,
+            "share": 0.09
+          },
+          {
+            "year": 2024,
+            "share": 0.09
+          },
+          {
+            "year": 2025,
+            "share": 0.09
+          },
+          {
+            "year": 2028,
+            "share": 0.1195
+          },
+          {
+            "year": 2030,
+            "share": 0.1194
+          },
+          {
+            "year": 2035,
+            "share": 0.1074
+          },
+          {
+            "year": 2040,
+            "share": 0.1074
+          }
+        ],
+        "Agoda": [
+          {
+            "year": 1990,
+            "share": 0.045
+          },
+          {
+            "year": 1995,
+            "share": 0.045
+          },
+          {
+            "year": 2000,
+            "share": 0.045
+          },
+          {
+            "year": 2001,
+            "share": 0.045
+          },
+          {
+            "year": 2005,
+            "share": 0.045
+          },
+          {
+            "year": 2007,
+            "share": 0.045
+          },
+          {
+            "year": 2008,
+            "share": 0.045
+          },
+          {
+            "year": 2010,
+            "share": 0.045
+          },
+          {
+            "year": 2011,
+            "share": 0.045
+          },
+          {
+            "year": 2015,
+            "share": 0.045
+          },
+          {
+            "year": 2017,
+            "share": 0.045
+          },
+          {
+            "year": 2019,
+            "share": 0.045
+          },
+          {
+            "year": 2020,
+            "share": 0.045
+          },
+          {
+            "year": 2022,
+            "share": 0.045
+          },
+          {
+            "year": 2023,
+            "share": 0.045
+          },
+          {
+            "year": 2024,
+            "share": 0.045
+          },
+          {
+            "year": 2025,
+            "share": 0.045
+          },
+          {
+            "year": 2028,
+            "share": 0.06
+          },
+          {
+            "year": 2030,
+            "share": 0.0503
+          },
+          {
+            "year": 2035,
+            "share": 0.0346
+          },
+          {
+            "year": 2040,
+            "share": 0.0346
+          }
+        ],
+        "MakeMyTrip": [
+          {
+            "year": 1990,
+            "share": 0.01
+          },
+          {
+            "year": 1995,
+            "share": 0.01
+          },
+          {
+            "year": 2000,
+            "share": 0.01
+          },
+          {
+            "year": 2001,
+            "share": 0.01
+          },
+          {
+            "year": 2005,
+            "share": 0.01
+          },
+          {
+            "year": 2007,
+            "share": 0.01
+          },
+          {
+            "year": 2008,
+            "share": 0.01
+          },
+          {
+            "year": 2010,
+            "share": 0.01
+          },
+          {
+            "year": 2011,
+            "share": 0.01
+          },
+          {
+            "year": 2015,
+            "share": 0.01
+          },
+          {
+            "year": 2017,
+            "share": 0.01
+          },
+          {
+            "year": 2019,
+            "share": 0.01
+          },
+          {
+            "year": 2020,
+            "share": 0.01
+          },
+          {
+            "year": 2022,
+            "share": 0.01
+          },
+          {
+            "year": 2023,
+            "share": 0.01
+          },
+          {
+            "year": 2024,
+            "share": 0.01
+          },
+          {
+            "year": 2025,
+            "share": 0.01
+          },
+          {
+            "year": 2028,
+            "share": 0.0281
+          },
+          {
+            "year": 2030,
+            "share": 0.0155
+          },
+          {
+            "year": 2035,
+            "share": 0
+          },
+          {
+            "year": 2040,
+            "share": 0
+          }
+        ],
+        "eDreams ODIGEO": [
+          {
+            "year": 1990,
+            "share": 0.02
+          },
+          {
+            "year": 1995,
+            "share": 0.02
+          },
+          {
+            "year": 2000,
+            "share": 0.02
+          },
+          {
+            "year": 2001,
+            "share": 0.02
+          },
+          {
+            "year": 2005,
+            "share": 0.02
+          },
+          {
+            "year": 2007,
+            "share": 0.02
+          },
+          {
+            "year": 2008,
+            "share": 0.02
+          },
+          {
+            "year": 2010,
+            "share": 0.02
+          },
+          {
+            "year": 2011,
+            "share": 0.02
+          },
+          {
+            "year": 2015,
+            "share": 0.02
+          },
+          {
+            "year": 2017,
+            "share": 0.02
+          },
+          {
+            "year": 2019,
+            "share": 0.02
+          },
+          {
+            "year": 2020,
+            "share": 0.02
+          },
+          {
+            "year": 2022,
+            "share": 0.02
+          },
+          {
+            "year": 2023,
+            "share": 0.02
+          },
+          {
+            "year": 2024,
+            "share": 0.02
+          },
+          {
+            "year": 2025,
+            "share": 0.02
+          },
+          {
+            "year": 2028,
+            "share": 0.0372
+          },
+          {
+            "year": 2030,
+            "share": 0.0252
+          },
+          {
+            "year": 2035,
+            "share": 0.0095
+          },
+          {
+            "year": 2040,
+            "share": 0.0095
+          }
+        ],
+        "Etraveli Group": [
+          {
+            "year": 1990,
+            "share": 0.005
+          },
+          {
+            "year": 1995,
+            "share": 0.005
+          },
+          {
+            "year": 2000,
+            "share": 0.005
+          },
+          {
+            "year": 2001,
+            "share": 0.005
+          },
+          {
+            "year": 2005,
+            "share": 0.005
+          },
+          {
+            "year": 2007,
+            "share": 0.005
+          },
+          {
+            "year": 2008,
+            "share": 0.005
+          },
+          {
+            "year": 2010,
+            "share": 0.005
+          },
+          {
+            "year": 2011,
+            "share": 0.005
+          },
+          {
+            "year": 2015,
+            "share": 0.005
+          },
+          {
+            "year": 2017,
+            "share": 0.005
+          },
+          {
+            "year": 2019,
+            "share": 0.005
+          },
+          {
+            "year": 2020,
+            "share": 0.005
+          },
+          {
+            "year": 2022,
+            "share": 0.005
+          },
+          {
+            "year": 2023,
+            "share": 0.005
+          },
+          {
+            "year": 2024,
+            "share": 0.005
+          },
+          {
+            "year": 2025,
+            "share": 0.005
+          },
+          {
+            "year": 2028,
+            "share": 0.0354
+          },
+          {
+            "year": 2030,
+            "share": 0.0251
+          },
+          {
+            "year": 2035,
+            "share": 0.0114
+          },
+          {
+            "year": 2040,
+            "share": 0.0114
+          }
+        ],
+        "Kiwi.com": [
+          {
+            "year": 1990,
+            "share": 0.01
+          },
+          {
+            "year": 1995,
+            "share": 0.01
+          },
+          {
+            "year": 2000,
+            "share": 0.01
+          },
+          {
+            "year": 2001,
+            "share": 0.01
+          },
+          {
+            "year": 2005,
+            "share": 0.01
+          },
+          {
+            "year": 2007,
+            "share": 0.01
+          },
+          {
+            "year": 2008,
+            "share": 0.01
+          },
+          {
+            "year": 2010,
+            "share": 0.01
+          },
+          {
+            "year": 2011,
+            "share": 0.01
+          },
+          {
+            "year": 2015,
+            "share": 0.01
+          },
+          {
+            "year": 2017,
+            "share": 0.01
+          },
+          {
+            "year": 2019,
+            "share": 0.01
+          },
+          {
+            "year": 2020,
+            "share": 0.01
+          },
+          {
+            "year": 2022,
+            "share": 0.01
+          },
+          {
+            "year": 2023,
+            "share": 0.01
+          },
+          {
+            "year": 2024,
+            "share": 0.01
+          },
+          {
+            "year": 2025,
+            "share": 0.01
+          },
+          {
+            "year": 2028,
+            "share": 0.04
+          },
+          {
+            "year": 2030,
+            "share": 0.0302
+          },
+          {
+            "year": 2035,
+            "share": 0.0165
+          },
+          {
+            "year": 2040,
+            "share": 0.0165
+          }
+        ],
+        "Other": [
+          {
+            "year": 1990,
+            "share": 0.252
+          },
+          {
+            "year": 1995,
+            "share": 0.252
+          },
+          {
+            "year": 2000,
+            "share": 0.252
+          },
+          {
+            "year": 2001,
+            "share": 0.252
+          },
+          {
+            "year": 2005,
+            "share": 0.252
+          },
+          {
+            "year": 2007,
+            "share": 0.252
+          },
+          {
+            "year": 2008,
+            "share": 0.252
+          },
+          {
+            "year": 2010,
+            "share": 0.252
+          },
+          {
+            "year": 2011,
+            "share": 0.252
+          },
+          {
+            "year": 2015,
+            "share": 0.252
+          },
+          {
+            "year": 2017,
+            "share": 0.252
+          },
+          {
+            "year": 2019,
+            "share": 0.252
+          },
+          {
+            "year": 2020,
+            "share": 0.252
+          },
+          {
+            "year": 2022,
+            "share": 0.252
+          },
+          {
+            "year": 2023,
+            "share": 0.252
+          },
+          {
+            "year": 2024,
+            "share": 0.252
+          },
+          {
+            "year": 2025,
+            "share": 0.252
+          },
+          {
+            "year": 2028,
+            "share": 0.05
+          },
+          {
+            "year": 2030,
+            "share": 0.0786
+          },
+          {
+            "year": 2035,
+            "share": 0.2009
+          },
+          {
+            "year": 2040,
+            "share": 0.2009
+          }
+        ]
+      },
+      "parent_id": "scenario-001",
+      "created_at": "2026-04-30T06:58:07.884664+00:00",
+      "updated_at": "2026-04-30T06:58:07.884664+00:00"
     }
   ]
 }
