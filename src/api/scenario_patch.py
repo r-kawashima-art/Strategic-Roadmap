@@ -33,6 +33,7 @@ holds on every patched scenario without the LLM having to pre-balance.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List
 
 
@@ -172,11 +173,49 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
     node = _require(diff, "node")
     if not isinstance(node, dict):
         raise DiffError("`node` must be an object")
+
+    if "id" not in node:
+        raise DiffError("New node missing required field: 'id'")
+
+    # Phase 10.5 ID coherence: the LLM sometimes picks a numerically-misleading
+    # id (e.g. "tp-099" for a node squeezed between tp-002 and tp-003) or a
+    # duplicate of an existing id. Override with the next free sequential
+    # `tp-NNN` so the numeric suffix tracks chronological insertion order and
+    # the diff never fails on an id collision. The original (LLM-supplied) id
+    # is captured here so we can re-prefix any branch ids the LLM tied to it.
+    requested_id = node["id"]
+    canonical_id = _assign_chronological_id(scenario, requested_id)
+    if canonical_id != requested_id:
+        node["id"] = canonical_id
+        # Re-prefix the new node's own branch ids when they were keyed off
+        # the LLM's id (e.g. "tp-099-a" → "tp-004-a"). Branches whose ids
+        # don't carry the prefix (LLM picked an unrelated naming) are left
+        # alone; the duplicate-id check on the host node will catch any
+        # accidental collisions.
+        if isinstance(node.get("branches"), list):
+            prefix = requested_id + "-"
+            for b in node["branches"]:
+                bid = b.get("id")
+                if isinstance(bid, str) and bid.startswith(prefix):
+                    b["id"] = canonical_id + "-" + bid[len(prefix):]
+
+    # Phase 10.5 mergeability fix: the LLM occasionally generates a node
+    # without an explicit `branches` array — particularly for divergent
+    # forks where the narrative focus is on the node itself, not its
+    # outgoing decisions. Rather than rejecting the diff (which blocks the
+    # whole merge), synthesize a single terminal "Continue" branch so the
+    # new node is a valid leaf and the rest of the wiring can proceed.
+    # The branch carries probability 1.0 and a neutral metric_delta so the
+    # simulator treats the node as a no-op decision point until a follow-up
+    # /revise enriches it.
+    if not isinstance(node.get("branches"), list) or not node.get("branches"):
+        node["branches"] = [_default_terminal_branch(node["id"])]
+
     for req in ("id", "year", "title", "description", "external_driver", "branches"):
         if req not in node:
             raise DiffError(f"New node missing required field: {req!r}")
-    if not isinstance(node["branches"], list) or not node["branches"]:
-        raise DiffError("new node must carry at least one branch")
+    # The canonical-id pass already guarantees uniqueness, but keep the
+    # defensive check as a hard floor in case future code paths bypass it.
     if any(n["id"] == node["id"] for n in scenario["nodes"]):
         raise DiffError(f"Node id {node['id']!r} already exists")
 
@@ -190,6 +229,16 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
     # authors them all together so uniform rescaling preserves the relative
     # distribution exactly.
     _normalize_node_branches_uniform(node)
+
+    # Phase 10.5 — chronological invariant: the HEAD of the new branch (this
+    # node) must be reachable only from predecessors at year ≤ new_year. The
+    # year is parsed once here and reused by every wiring guard below.
+    try:
+        new_year = int(node["year"])
+    except (TypeError, ValueError):
+        raise DiffError(
+            f"new node year must be an integer, got {node['year']!r}"
+        )
 
     # ── Divergence wiring (Phase 9.5) ───────────────────────────────────────
     # `fork_from` sprouts a NEW branch on each listed past node, pointing at
@@ -220,10 +269,26 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
             if req not in md:
                 raise DiffError(f"fork_from.branch.metric_delta missing: {req!r}")
 
-        host = _find_node(scenario, host_id)
+        # Phase 10.5 mergeability: if the LLM hallucinates a host_id, fall
+        # back to the chronologically-nearest predecessor (year < new_year)
+        # so the merge can still proceed instead of failing the whole diff.
+        # Strict resolution would just raise DiffError("Unknown node_id…").
+        host = _find_node(scenario, host_id, fallback_year=new_year)
         if any(b["id"] == new_branch["id"] for b in host["branches"]):
             raise DiffError(
-                f"fork_from.branch.id {new_branch['id']!r} already exists on node {host_id!r}"
+                f"fork_from.branch.id {new_branch['id']!r} already exists on "
+                f"node {host['id']!r} (resolved from requested {host_id!r})"
+            )
+        # Phase 10.5 chronological guard — defence in depth. The fallback
+        # path only ever returns a predecessor with year < new_year, so this
+        # only catches the case where the requested id WAS found but lives
+        # in the future relative to the new node.
+        host_year = _node_year(host)
+        if host_year > new_year:
+            raise DiffError(
+                f"chronological contradiction: cannot fork from node {host_id!r} "
+                f"(year {host_year}) into new node {node['id']!r} (year {new_year}) — "
+                f"the predecessor must not be in the future relative to the new node."
             )
         # The server is the single source of truth for this edge — overwrite
         # whatever (if anything) the LLM tried to supply.
@@ -255,21 +320,39 @@ def _add_node(scenario: Dict[str, Any], diff: Dict[str, Any]) -> None:
                     f"rewire_from target {rn_id}/{rb_id} already points at "
                     f"{rb['next_node_id']!r} — only terminal branches can be rewired."
                 )
+            # Phase 10.5 — host year must be ≤ new node year.
+            rn_year = _node_year(rn)
+            if rn_year > new_year:
+                raise DiffError(
+                    f"chronological contradiction: cannot rewire branch {rb_id!r} on "
+                    f"node {rn_id!r} (year {rn_year}) into new node {node['id']!r} "
+                    f"(year {new_year}) — the predecessor must not be in the future "
+                    f"relative to the new node."
+                )
             rewire_targets.append(rb)
     elif not fork_targets:
-        # Neither field set → auto-rewire every terminal branch (9.4.1 default).
+        # Neither field set → auto-rewire every terminal branch whose host
+        # node is chronologically valid (Phase 10.5). Terminals on nodes whose
+        # year > new_year would create backwards-in-time edges and are skipped.
         for existing in scenario["nodes"]:
+            if _node_year(existing) > new_year:
+                continue
             for b in existing["branches"]:
                 if b.get("next_node_id") is None:
                     rewire_targets.append(b)
 
-    # ── Connectivity invariant guard (Phase 9.5.1) ──────────────────────────
+    # ── Connectivity invariant guard (Phase 9.5.1 + 10.5) ──────────────────
+    # If neither explicit field was supplied AND auto-rewire found no
+    # chronologically-valid terminals (i.e. every terminal lives at year >
+    # new_year), the new node would be unreachable. Tell the LLM both
+    # remediation paths so it can retry without guessing.
     if not rewire_targets and not fork_targets:
         raise DiffError(
-            f"add_node {node['id']!r} would leave the new node unreachable. "
-            "Either supply `rewire_from` (continuation), `fork_from` (divergence), "
-            "or ensure the scenario has at least one terminal branch for "
-            "auto-rewire to use."
+            f"add_node {node['id']!r} (year {new_year}) would leave the new node "
+            "unreachable. Either supply `rewire_from` (continuation) or "
+            "`fork_from` (divergence) referencing a node whose year ≤ "
+            f"{new_year}, or pick a `year` strictly later than every existing "
+            "terminal so auto-rewire has a chronologically-valid candidate."
         )
 
     # ── Atomic mutation step ────────────────────────────────────────────────
@@ -408,11 +491,114 @@ def _require(diff: Dict[str, Any], key: str) -> Any:
     return diff[key]
 
 
-def _find_node(scenario: Dict[str, Any], node_id: str) -> Dict[str, Any]:
+def _find_node(
+    scenario: Dict[str, Any],
+    node_id: str,
+    fallback_year: int = None,
+) -> Dict[str, Any]:
+    """Return the node with ``node_id``.
+
+    Strict by default: a missing id raises ``DiffError`` so typos in
+    ``set_node_field`` / ``set_branch_field`` / ``rewire_from`` paths surface
+    explicitly.
+
+    Phase 10.5 mergeability fallback: when ``fallback_year`` is supplied and
+    the exact id is missing, return the chronologically-latest node whose
+    year is strictly < ``fallback_year``. This lets the head of an LLM-
+    generated branch attach to the nearest plausible predecessor instead of
+    failing the whole diff when the model hallucinates a host_id. Callers
+    that want strict resolution simply omit ``fallback_year``.
+    """
     node = next((n for n in scenario["nodes"] if n["id"] == node_id), None)
-    if node is None:
+    if node is not None:
+        return node
+    if fallback_year is None:
         raise DiffError(f"Unknown node_id: {node_id!r}")
-    return node
+
+    candidates = [n for n in scenario["nodes"] if _node_year(n) < fallback_year]
+    if not candidates:
+        raise DiffError(
+            f"Unknown node_id: {node_id!r} — and no chronologically-prior "
+            f"node exists before year {fallback_year} to fall back on."
+        )
+    return max(candidates, key=_node_year)
+
+
+def _default_terminal_branch(node_id: str) -> Dict[str, Any]:
+    """Synthesize a single terminal branch for a node generated without one.
+
+    Used by ``_add_node`` to keep an LLM-emitted node mergeable when the
+    ``branches`` field is missing or empty (Phase 10.5). The branch claims
+    100% probability, a neutral metric_delta, and ``next_node_id`` is null
+    so the new node enters the scenario as a clean terminal leaf — exactly
+    how downstream consumers treat any other terminal branch.
+    """
+    return {
+        "id": f"{node_id}-a",
+        "label": "Continue",
+        "description": (
+            "Default continuation — no decision branch was specified for "
+            "this turning point. A follow-up /revise can replace this with "
+            "explicit alternatives."
+        ),
+        "probability": 1.0,
+        "metric_delta": {
+            "revenue_index": 0.0,
+            "market_share": 0.0,
+            "tech_adoption_velocity": 0.0,
+        },
+        "next_node_id": None,
+    }
+
+
+def _node_year(node: Dict[str, Any]) -> int:
+    """Coerce ``node["year"]`` to int, raising DiffError on malformed values.
+
+    Used by the Phase 10.5 chronological guards. Centralised so the
+    rewire / fork / auto-rewire paths all surface the same error wording.
+    """
+    raw = node.get("year")
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        raise DiffError(
+            f"node {node.get('id')!r} has invalid year {raw!r} — expected an integer"
+        )
+
+
+# Recognises the ``tp-NNN`` node-id convention so we can pull out the
+# integer suffix and mint the next free one.
+_TP_ID_PATTERN = re.compile(r"^tp-(\d+)$")
+
+
+def _assign_chronological_id(scenario: Dict[str, Any], requested_id: str) -> str:
+    """Return a ``tp-NNN`` id that is unique AND monotonically increasing.
+
+    Phase 10.5 ID-coherence fix: the LLM occasionally picks an id like
+    ``tp-099`` for a node that lives between existing turning points (e.g.
+    year 2030 with tp-001 / tp-002 / tp-003 in place), which makes the
+    numeric suffix lie about the chronological position. It also sometimes
+    reuses an existing id — a hard duplicate failure. Both cases are fixed
+    here by computing ``max(existing tp-NNN) + 1`` and only honouring the
+    LLM's requested id when it already matches that next-free integer.
+
+    Returns the requested id if it is already coherent and unique;
+    otherwise returns the freshly-minted next-sequential id.
+    """
+    existing_ids = {n["id"] for n in scenario["nodes"]}
+    existing_nums: List[int] = []
+    for nid in existing_ids:
+        m = _TP_ID_PATTERN.match(nid)
+        if m:
+            existing_nums.append(int(m.group(1)))
+    next_num = (max(existing_nums) + 1) if existing_nums else 1
+    canonical = f"tp-{next_num:03d}"
+
+    # Honour the LLM's id only if it IS the canonical next sequence.
+    # Otherwise (misaligned suffix, duplicate, non-tp-NNN naming) override.
+    if requested_id == canonical and requested_id not in existing_ids:
+        return requested_id
+    return canonical
 
 
 def _renormalize_after_branch_add(node: Dict[str, Any], new_branch_id: str) -> None:

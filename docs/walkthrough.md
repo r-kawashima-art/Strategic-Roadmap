@@ -543,3 +543,12 @@ What was built:
 - Add "Ask", "Revise", "Expand" buttons to the dashboard for allowing editing nodes and branches
 - Tweaked scenario integration so that new added ones connect to the exisiting graph.
 - In phase 9.5, we added a new logic to ensure that the total probability of branches on a node always sums to 1.0.
+
+---
+
+### Phase10
+
+what was built:
+
+- Scenario Storage Function
+- Metrics Update Function

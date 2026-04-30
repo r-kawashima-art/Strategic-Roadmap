@@ -196,7 +196,15 @@ REVISE_SYSTEM_PREAMBLE = (
     "≈ 0.10–0.20); do NOT rebalance the existing branches — the simulator "
     "normalises at run time. "
     "Never set `next_node_id` on a `fork_from.branch` — the server sets it "
-    "for you. Setting it manually will be rejected as out-of-scope."
+    "for you. Setting it manually will be rejected as out-of-scope. "
+    # Phase 10.5 — chronological invariant.
+    "Pick the new node's `year` so that every predecessor that links INTO it "
+    "is chronologically prior or simultaneous. Concretely: every `rewire_from` "
+    "host node and every `fork_from.from_node_id` must have `year ≤ new_node.year`. "
+    "When omitting `rewire_from` (auto-rewire), pick a `year` strictly later "
+    "than every currently-terminal branch's host year — otherwise the server "
+    "will reject the diff with a 'chronological contradiction' / 'unreachable' "
+    "error because the only valid predecessors are in the past."
 )
 
 

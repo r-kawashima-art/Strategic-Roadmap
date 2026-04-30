@@ -477,7 +477,18 @@ Version chain in the UI:
 - The scenario selector dropdown (§10.3) indents variants under their parent so a forked tree of edits is visually obvious without opening the Manager.
 - Deleting a user scenario (`DELETE /scenarios/{id}`) does NOT cascade to its children — orphaned variants keep their `parent_id` pointing at a now-missing record. The Manager surfaces this as a faded "(deleted parent)" annotation rather than purging the children, so the planner's edit history survives a single bad delete.
 
-#### 10.5 Acceptance Criteria for Phase 10
+#### 10.5 Scenario Update Logic Refinement
+
+Situation:
+Currently, the LLM generates a new scenario branch base on the user's output. However, this can make a chronological contradiction when the new branch is integrated to the exsiting scenario. The contradiction is the next node before which the output branch was inserted, is a node that shows a prior event of the inserted branch.
+
+Task:
+Develop the code logic that prevents the chronological contradiction when updating the scenario. You should note that the tail of the new branch does not necessarily merge into the existing scenario branch. What should be connected to the main branch is the **head** of the new branch.
+
+Action:
+Modify `src/api/scenario_patch.py` and other relevant files to implement the scenario update logic.
+
+#### 10.6 Acceptance Criteria for Phase 10
 
 - [ ] User-created scenarios persist across browser reloads and server restarts (backed by `data/scenarios.json`).
 - [ ] Base scenarios cannot be renamed, edited metadata of, or deleted via the API (HTTP 403 enforced).

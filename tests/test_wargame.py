@@ -369,12 +369,12 @@ class GraphConnectivityTests(unittest.TestCase):
 
     def test_add_node_auto_rewire_preserves_connectivity(self) -> None:
         scen = self._scenario_dict()
-        new_node = self._sample_new_node("tp-099", year=2038)
+        new_node = self._sample_new_node("tp-004", year=2038)
         self._apply_diff(
             [scen],
             {"op": "add_node", "scenario_id": scen["id"], "node": new_node},
         )
-        self.assertTrue(any(n["id"] == "tp-099" for n in scen["nodes"]))
+        self.assertTrue(any(n["id"] == "tp-004" for n in scen["nodes"]))
         self._assert_connectivity(scen)
 
     def test_add_node_with_fork_from_preserves_existing_branches(self) -> None:
@@ -391,7 +391,7 @@ class GraphConnectivityTests(unittest.TestCase):
         ]
         pre_count = len(target["branches"])
 
-        new_node = self._sample_new_node("tp-099", year=2038)
+        new_node = self._sample_new_node("tp-004", year=2038)
         fork_branch = {
             "id": "tp-002-d",
             "label": "Cancel Prime, fund eDreams Lab",
@@ -429,7 +429,7 @@ class GraphConnectivityTests(unittest.TestCase):
             self.assertEqual(match["label"], orig["label"])
 
         fork = next(b for b in target_after["branches"] if b["id"] == "tp-002-d")
-        self.assertEqual(fork["next_node_id"], "tp-099",
+        self.assertEqual(fork["next_node_id"], "tp-004",
                          "server must stamp next_node_id on fork branches")
         # Fork branch keeps its supplied probability — only the *existing*
         # branches are rescaled by the PMF guard.
@@ -503,6 +503,299 @@ class GraphConnectivityTests(unittest.TestCase):
                 {"op": "add_node", "scenario_id": "scenario-cycle", "node": new_node},
             )
         self.assertIn("unreachable", str(ctx.exception))
+
+    # ── Phase 10.5 — chronological-consistency guards ──────────────────────
+    # Baseline turning-point years: tp-001 = 2025, tp-002 = 2028, tp-003 = 2032.
+    # All three guards (rewire_from / fork_from / auto-rewire) must reject any
+    # wiring that would create an arrow going backwards in time.
+
+    def test_fork_from_rejects_future_predecessor(self) -> None:
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-004", year=2030)
+        fork_branch = {
+            "id": "tp-003-d", "label": "Backwards fork", "description": "",
+            "probability": 0.10,
+            "metric_delta": {
+                "revenue_index": 0.0, "market_share": 0.0,
+                "tech_adoption_velocity": 0.0,
+            },
+        }
+        with self.assertRaises(self._DiffError) as ctx:
+            self._apply_diff([scen], {
+                "op": "add_node",
+                "scenario_id": scen["id"],
+                "node": new_node,
+                # tp-003 is at year 2032 — strictly after the new node's 2030.
+                "fork_from": [{"from_node_id": "tp-003", "branch": fork_branch}],
+            })
+        self.assertIn("chronological contradiction", str(ctx.exception))
+        # Atomicity: the rejected diff must not have appended the new node or
+        # mutated tp-003's branches.
+        self.assertFalse(any(n["id"] == "tp-004" for n in scen["nodes"]))
+        tp003 = next(n for n in scen["nodes"] if n["id"] == "tp-003")
+        self.assertFalse(any(b["id"] == "tp-003-d" for b in tp003["branches"]))
+
+    def test_rewire_from_rejects_future_predecessor(self) -> None:
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-004", year=2030)
+        # tp-003-a is a terminal branch at year 2032 — rewiring it into a 2030
+        # new node would point backwards in time.
+        with self.assertRaises(self._DiffError) as ctx:
+            self._apply_diff([scen], {
+                "op": "add_node",
+                "scenario_id": scen["id"],
+                "node": new_node,
+                "rewire_from": [{"node_id": "tp-003", "branch_id": "tp-003-a"}],
+            })
+        self.assertIn("chronological contradiction", str(ctx.exception))
+        self.assertFalse(any(n["id"] == "tp-004" for n in scen["nodes"]))
+
+    def test_auto_rewire_skips_future_terminals_yielding_unreachable(self) -> None:
+        # New node year 2030. The baseline scenario's only terminal branches
+        # live at tp-003 (year 2032). Auto-rewire must skip them — leaving the
+        # rewire-target set empty — and the connectivity guard must fire.
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-004", year=2030)
+        with self.assertRaises(self._DiffError) as ctx:
+            self._apply_diff([scen], {
+                "op": "add_node",
+                "scenario_id": scen["id"],
+                "node": new_node,
+            })
+        self.assertIn("unreachable", str(ctx.exception))
+        # tp-003's terminals must remain terminal — chronological guard
+        # short-circuited the auto-rewire scan before any mutation.
+        tp003 = next(n for n in scen["nodes"] if n["id"] == "tp-003")
+        for b in tp003["branches"]:
+            self.assertIsNone(b["next_node_id"])
+
+    def test_fork_from_succeeds_when_predecessor_is_earlier(self) -> None:
+        # tp-002 = 2028, new node = 2030 — the legitimate divergence path.
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-004", year=2030)
+        fork_branch = {
+            "id": "tp-002-d", "label": "Legitimate fork", "description": "",
+            "probability": 0.10,
+            "metric_delta": {
+                "revenue_index": 0.0, "market_share": 0.0,
+                "tech_adoption_velocity": 0.0,
+            },
+        }
+        self._apply_diff([scen], {
+            "op": "add_node",
+            "scenario_id": scen["id"],
+            "node": new_node,
+            "fork_from": [{"from_node_id": "tp-002", "branch": fork_branch}],
+        })
+        # New node is in scenario; fork branch on tp-002 points at it.
+        self.assertTrue(any(n["id"] == "tp-004" for n in scen["nodes"]))
+        tp002 = next(n for n in scen["nodes"] if n["id"] == "tp-002")
+        fork = next(b for b in tp002["branches"] if b["id"] == "tp-002-d")
+        self.assertEqual(fork["next_node_id"], "tp-004")
+        self._assert_connectivity(scen)
+
+    def test_auto_rewire_continuation_after_latest_year_still_works(self) -> None:
+        # Regression guard: a new node strictly later than every existing TP
+        # must still pull tp-003's terminals via auto-rewire (preserves the
+        # 9.4.1 behaviour after Phase 10.5 was layered on).
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-004", year=2035)
+        self._apply_diff([scen], {
+            "op": "add_node",
+            "scenario_id": scen["id"],
+            "node": new_node,
+        })
+        tp003 = next(n for n in scen["nodes"] if n["id"] == "tp-003")
+        for b in tp003["branches"]:
+            self.assertEqual(
+                b["next_node_id"], "tp-004",
+                "auto-rewire must still consume tp-003's terminals when the "
+                "new node is strictly later than 2032",
+            )
+        self._assert_connectivity(scen)
+
+    # ── Phase 10.5 — mergeability fallbacks ────────────────────────────────
+    # The LLM occasionally emits a node without an explicit `branches` array,
+    # or specifies a fork_from host_id that doesn't exist in the scenario.
+    # These cases must still produce a valid merged scenario rather than
+    # rejecting the whole diff outright.
+
+    def test_add_node_synthesizes_default_branch_when_missing(self) -> None:
+        # LLM returns a node with NO `branches` key at all. Server should
+        # synthesize a single terminal "Continue" branch so the new node is
+        # a valid leaf and the wiring (auto-rewire here) can complete.
+        scen = self._scenario_dict()
+        node_no_branches = {
+            "id": "tp-004",
+            "year": 2035,
+            "title": "Auto-synthesized leaf",
+            "description": "LLM omitted branches.",
+            "external_driver": "GenAI breakthrough",
+            # `branches` deliberately absent
+        }
+        self._apply_diff([scen], {
+            "op": "add_node",
+            "scenario_id": scen["id"],
+            "node": node_no_branches,
+        })
+
+        added = next(n for n in scen["nodes"] if n["id"] == "tp-004")
+        self.assertEqual(len(added["branches"]), 1)
+        default = added["branches"][0]
+        self.assertEqual(default["id"], "tp-004-a")
+        self.assertEqual(default["label"], "Continue")
+        self.assertAlmostEqual(default["probability"], 1.0)
+        self.assertIsNone(default["next_node_id"], "default branch must be terminal")
+        for k in ("revenue_index", "market_share", "tech_adoption_velocity"):
+            self.assertEqual(default["metric_delta"][k], 0.0)
+        self._assert_connectivity(scen)
+
+    def test_add_node_synthesizes_default_branch_when_empty_list(self) -> None:
+        # Same as above but with `branches: []` instead of missing key.
+        scen = self._scenario_dict()
+        node_empty_branches = {
+            "id": "tp-004",
+            "year": 2035,
+            "title": "Auto-synthesized leaf",
+            "description": "LLM emitted empty branches.",
+            "external_driver": "GenAI breakthrough",
+            "branches": [],
+        }
+        self._apply_diff([scen], {
+            "op": "add_node",
+            "scenario_id": scen["id"],
+            "node": node_empty_branches,
+        })
+        added = next(n for n in scen["nodes"] if n["id"] == "tp-004")
+        self.assertEqual(len(added["branches"]), 1)
+        self.assertEqual(added["branches"][0]["id"], "tp-004-a")
+
+    def test_fork_from_falls_back_to_predecessor_on_unknown_host(self) -> None:
+        # LLM hallucinates an unknown host_id. The fallback resolves to the
+        # nearest predecessor (year < new_year) so the merge still completes.
+        scen = self._scenario_dict()
+        new_node = self._sample_new_node("tp-004", year=2030)
+        fork_branch = {
+            "id": "tp-fallback-a",
+            "label": "Hallucinated fork",
+            "description": "LLM gave a bad host id.",
+            "probability": 0.10,
+            "metric_delta": {
+                "revenue_index": 0.0, "market_share": 0.0,
+                "tech_adoption_velocity": 0.0,
+            },
+        }
+        self._apply_diff([scen], {
+            "op": "add_node",
+            "scenario_id": scen["id"],
+            "node": new_node,
+            "fork_from": [{"from_node_id": "tp-imaginary", "branch": fork_branch}],
+        })
+        # The fork branch must have landed on the nearest pre-2030 node,
+        # which is tp-002 (year 2028) — strictly later than tp-001 (2025).
+        tp002 = next(n for n in scen["nodes"] if n["id"] == "tp-002")
+        fork = next(
+            (b for b in tp002["branches"] if b["id"] == "tp-fallback-a"),
+            None,
+        )
+        self.assertIsNotNone(fork, "fork must land on the fallback predecessor")
+        self.assertEqual(fork["next_node_id"], "tp-004")
+        self._assert_connectivity(scen)
+
+    def test_strict_lookup_callers_still_error_on_unknown_id(self) -> None:
+        # Regression guard: set_node_field uses _find_node WITHOUT fallback,
+        # so a typo'd node_id must surface as DiffError rather than silently
+        # routing to a different node.
+        scen = self._scenario_dict()
+        with self.assertRaises(self._DiffError) as ctx:
+            self._apply_diff([scen], {
+                "op": "set_node_field",
+                "scenario_id": scen["id"],
+                "node_id": "tp-imaginary",
+                "field": "title",
+                "value": "x",
+            })
+        self.assertIn("Unknown node_id", str(ctx.exception))
+
+    # ── Phase 10.5 — ID coherence (chronological order ↔ tp-NNN suffix) ────
+    # Baseline tp-001 / tp-002 / tp-003 → canonical next free id is tp-004.
+    # The server overrides any LLM-supplied id that isn't tp-004 so the
+    # numeric suffix tracks insertion order and id collisions never break
+    # the merge.
+
+    def test_add_node_overrides_misaligned_id(self) -> None:
+        scen = self._scenario_dict()
+        # LLM picked a far-future-looking id even though new_year=2035 is just
+        # after tp-003. Server should rename to tp-004.
+        misleading = self._sample_new_node("tp-099", year=2035)
+        self._apply_diff([scen], {
+            "op": "add_node", "scenario_id": scen["id"], "node": misleading,
+        })
+        self.assertTrue(any(n["id"] == "tp-004" for n in scen["nodes"]))
+        self.assertFalse(any(n["id"] == "tp-099" for n in scen["nodes"]))
+        # Branch ids prefixed with the original "tp-099-" must follow the
+        # rename so the <node_id>-<letter> convention stays consistent.
+        added = next(n for n in scen["nodes"] if n["id"] == "tp-004")
+        self.assertTrue(any(b["id"] == "tp-004-a" for b in added["branches"]))
+        self.assertTrue(any(b["id"] == "tp-004-b" for b in added["branches"]))
+        self.assertFalse(any(b["id"].startswith("tp-099") for b in added["branches"]))
+
+    def test_add_node_overrides_duplicate_id(self) -> None:
+        # The LLM picked the id of an EXISTING node — would be a hard
+        # duplicate failure under the old code. Server reassigns to tp-004.
+        scen = self._scenario_dict()
+        dup = self._sample_new_node("tp-002", year=2035)
+        self._apply_diff([scen], {
+            "op": "add_node", "scenario_id": scen["id"], "node": dup,
+        })
+        # Original tp-002 (year 2028) is intact; the new node landed at tp-004.
+        original = next(n for n in scen["nodes"] if n["id"] == "tp-002")
+        self.assertEqual(original["year"], 2028)
+        self.assertTrue(any(n["id"] == "tp-004" for n in scen["nodes"]))
+        added = next(n for n in scen["nodes"] if n["id"] == "tp-004")
+        self.assertEqual(added["year"], 2035)
+        # Branches re-prefixed from "tp-002-" → "tp-004-" so they don't
+        # collide with the existing tp-002's branches.
+        self.assertTrue(any(b["id"] == "tp-004-a" for b in added["branches"]))
+
+    def test_add_node_keeps_aligned_id(self) -> None:
+        # If the LLM follows the preamble and supplies the canonical next
+        # id ("tp-004" when baseline has tp-001..tp-003), the server keeps
+        # it as-is.
+        scen = self._scenario_dict()
+        canonical = self._sample_new_node("tp-004", year=2035)
+        self._apply_diff([scen], {
+            "op": "add_node", "scenario_id": scen["id"], "node": canonical,
+        })
+        added = next(n for n in scen["nodes"] if n["id"] == "tp-004")
+        self.assertEqual(added["year"], 2035)
+        # Branch ids (tp-004-a / tp-004-b) were already canonical so no rename.
+        self.assertTrue(any(b["id"] == "tp-004-a" for b in added["branches"]))
+        self.assertTrue(any(b["id"] == "tp-004-b" for b in added["branches"]))
+
+    def test_add_node_override_updates_fork_branch_next_node_id(self) -> None:
+        # Override happens upfront, so by the time fork_from is processed
+        # the new branch's next_node_id is stamped with the canonical id.
+        scen = self._scenario_dict()
+        misleading = self._sample_new_node("tp-099", year=2030)
+        fork_branch = {
+            "id": "tp-002-d", "label": "Counterfactual",
+            "description": "", "probability": 0.10,
+            "metric_delta": {
+                "revenue_index": 0.0, "market_share": 0.0,
+                "tech_adoption_velocity": 0.0,
+            },
+        }
+        self._apply_diff([scen], {
+            "op": "add_node", "scenario_id": scen["id"], "node": misleading,
+            "fork_from": [{"from_node_id": "tp-002", "branch": fork_branch}],
+        })
+        tp002 = next(n for n in scen["nodes"] if n["id"] == "tp-002")
+        fork = next(b for b in tp002["branches"] if b["id"] == "tp-002-d")
+        self.assertEqual(
+            fork["next_node_id"], "tp-004",
+            "fork branch must point at the canonical id, not the LLM's tp-099",
+        )
 
 
 if __name__ == "__main__":
